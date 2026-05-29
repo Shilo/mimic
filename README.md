@@ -1,0 +1,310 @@
+# Mimic Multiplayer
+
+Mimic Multiplayer is an early Godot 4 addon for making multiplayer setup feel closer to "drop in a component and connect" than wiring every low-level Godot multiplayer piece by hand.
+
+The long-term goal is simple authoring: add one `MimicSync` node to a networked scene, keep using Godot's native `MultiplayerSynchronizer` and `SceneReplicationConfig` for property replication, and let Mimic handle the repetitive setup around networking, connection flow, and eventually dynamic spawn/despawn.
+
+This project is intentionally smaller than full networking frameworks. Mimic is for developers who want a lightweight helper around Godot's built-in high-level multiplayer API, not a prediction, rollback, interpolation, lag compensation, relay, or full gameplay framework.
+
+## Current Status
+
+Mimic is currently focused on connection setup and project configuration.
+
+Working now:
+
+- Plugin-managed `Mimic` singleton.
+- Project Settings for connection defaults.
+- ENet server/client startup.
+- WebSocket server/client startup.
+- Offline mode placeholder.
+- WebRTC enum placeholder, currently unsupported.
+- Optional UPnP port forwarding.
+- Runtime connection state signals.
+- `MimicConnector` component for simple host/join/stop calls and auto-connect.
+- `MimicSync` component that subclasses Godot's `MultiplayerSynchronizer`.
+
+Planned, but not ready yet:
+
+- Replacing manual `MultiplayerSpawner` setup.
+- Server-authoritative dynamic spawn/despawn replication.
+- Late-join spawn replay.
+- Spawn-state transfer from `SceneReplicationConfig` spawn properties.
+- One visible network node per networked entity.
+
+## Requirements
+
+- Godot 4.6 or newer.
+- A project using Godot's high-level multiplayer API.
+
+## Installation
+
+Copy the addon into your project:
+
+```text
+res://addons/mimic/
+```
+
+Enable the plugin:
+
+1. Open Project > Project Settings.
+2. Go to the Plugins tab.
+3. Enable `Mimic`.
+
+When enabled, the plugin adds a `Mimic` singleton so your scripts can call `Mimic.start_server()`, `Mimic.start_client()`, and related helpers.
+
+## Configure Connection Defaults
+
+Open Project > Project Settings and search for `Mimic Multiplayer`.
+
+Common settings:
+
+```text
+mimic_multiplayer/connection/transport_type: Offline, ENet, WebSocket, or WebRTC (Unsupported)
+mimic_multiplayer/connection/address: Client address, default 127.0.0.1
+mimic_multiplayer/connection/port: Server/client port, default 8910
+mimic_multiplayer/connection/bind_address: Server bind address, default *
+mimic_multiplayer/connection/max_clients: Max server clients, default 32
+mimic_multiplayer/connection/replace_existing_peer: Stop existing peer before starting a new one
+mimic_multiplayer/connection/refuse_new_connections: Start server while refusing new peers
+mimic_multiplayer/logging/log_level: All, Warning, Error, or None
+```
+
+ENet-specific settings:
+
+```text
+mimic_multiplayer/enet/channel_count
+mimic_multiplayer/enet/in_bandwidth
+mimic_multiplayer/enet/out_bandwidth
+mimic_multiplayer/enet/client_local_port
+```
+
+WebSocket-specific settings:
+
+```text
+mimic_multiplayer/websocket/client_use_tls
+mimic_multiplayer/websocket/path
+mimic_multiplayer/websocket/handshake_timeout
+```
+
+Optional port forwarding settings:
+
+```text
+mimic_multiplayer/port_forwarding/enabled
+mimic_multiplayer/port_forwarding/delete_mapping_on_stop
+mimic_multiplayer/port_forwarding/query_external_address
+mimic_multiplayer/port_forwarding/protocol
+mimic_multiplayer/port_forwarding/duration
+mimic_multiplayer/port_forwarding/upnp_discover_timeout_ms
+mimic_multiplayer/port_forwarding/upnp_discover_ttl
+mimic_multiplayer/port_forwarding/description
+```
+
+Port forwarding depends on the user's router, network, and platform. Treat it as a convenience for local testing, not a guaranteed matchmaking or NAT traversal solution.
+
+## Start Networking From Code
+
+Host a server using the Project Settings defaults:
+
+```gdscript
+var error := Mimic.start_server()
+if error != OK:
+	push_error("Failed to start server: %s" % error_string(error))
+```
+
+Join a server using the Project Settings defaults:
+
+```gdscript
+var error := Mimic.start_client()
+if error != OK:
+	push_error("Failed to start client: %s" % error_string(error))
+```
+
+Override the address or port for a single call:
+
+```gdscript
+Mimic.start_server(9000)
+Mimic.start_client("192.168.1.25", 9000)
+```
+
+Stop networking:
+
+```gdscript
+Mimic.stop()
+```
+
+Cancel an in-progress client connection:
+
+```gdscript
+Mimic.cancel_connection()
+```
+
+Start as server if possible, otherwise connect as a client:
+
+```gdscript
+Mimic.start_server_if_first_else_client()
+```
+
+This is useful for quick local multi-instance testing. The first running instance usually binds the port and becomes server; later instances fail to bind and fall back to client.
+
+## Listen For Connection Events
+
+Connect to Mimic signals from any script:
+
+```gdscript
+func _ready() -> void:
+	Mimic.server_started.connect(_on_server_started)
+	Mimic.client_connected.connect(_on_client_connected)
+	Mimic.client_connection_failed.connect(_on_client_connection_failed)
+	Mimic.peer_connected.connect(_on_peer_connected)
+	Mimic.peer_disconnected.connect(_on_peer_disconnected)
+	Mimic.stopped.connect(_on_stopped)
+
+
+func _on_server_started(port: int) -> void:
+	print("Server listening on ", port)
+
+
+func _on_client_connected() -> void:
+	print("Connected")
+
+
+func _on_client_connection_failed(message: String) -> void:
+	push_warning(message)
+
+
+func _on_peer_connected(peer_id: int) -> void:
+	print("Peer connected: ", peer_id)
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	print("Peer disconnected: ", peer_id)
+
+
+func _on_stopped() -> void:
+	print("Networking stopped")
+```
+
+Useful state helpers:
+
+```gdscript
+Mimic.is_offline()
+Mimic.is_connecting()
+Mimic.is_server()
+Mimic.is_client()
+Mimic.get_state()
+Mimic.get_local_peer_id()
+Mimic.get_peer_ids()
+Mimic.get_external_address()
+```
+
+## Use MimicConnector
+
+Add a `MimicConnector` node to a scene when you want a simple component that starts and stops networking for you.
+
+Call it from scripts:
+
+```gdscript
+@onready var connector: MimicConnector = $MimicConnector
+
+
+func _on_host_pressed() -> void:
+	connector.host()
+
+
+func _on_join_pressed() -> void:
+	connector.join()
+
+
+func _on_stop_pressed() -> void:
+	connector.stop()
+```
+
+Set `auto_connect_mode` in the inspector:
+
+```text
+Disabled: Do nothing on ready.
+Server: Start a server on ready.
+Client: Start a client on ready.
+Server If First Else Client: Try server first, then fall back to client.
+```
+
+This is meant to support a future drag-and-drop UI flow with an IP field, port field, Host button, Join button, and Stop button. For now, bring your own UI and call `host()`, `join()`, and `stop()`.
+
+## Use MimicSync
+
+Add a `MimicSync` node under a scene/entity you want to prepare for synchronization.
+
+`MimicSync` is a `MultiplayerSynchronizer`, so configure it like Godot's native synchronizer:
+
+1. Add `MimicSync` as a child of the node you want to sync.
+2. Set or confirm its `root_path`.
+3. Assign a `SceneReplicationConfig`.
+4. Choose the properties Godot should replicate.
+
+Current note: runtime property replication remains Godot's native `MultiplayerSynchronizer` behavior. Mimic does not yet replace `MultiplayerSpawner` or perform automatic dynamic spawning in the current connection MVP.
+
+## Logging
+
+Mimic logs connection attempts, connection results, peer changes, stop events, and UPnP results.
+
+Set log output in Project Settings:
+
+```text
+mimic_multiplayer/logging/log_level: All, Warning, Error, None
+```
+
+Example log line:
+
+```text
+05-29 22:14:03 [Mimic 2] Connected to server.
+```
+
+The number inside the Mimic tag appears only when a connected multiplayer peer has a valid local peer ID.
+
+## Mimic Or NetFox?
+
+Mimic and NetFox are not trying to be the same thing.
+
+Use Mimic if you want:
+
+- A smaller helper around Godot's built-in high-level multiplayer API.
+- Basic connection setup through project settings.
+- A lightweight host/join/stop workflow.
+- A future path toward simpler `MultiplayerSpawner` and `MultiplayerSynchronizer` authoring.
+- Fewer systems to learn before prototyping.
+
+Use NetFox if you need:
+
+- Consistent network timing.
+- Rollback.
+- Client-side prediction.
+- Server reconciliation.
+- Interpolation helpers.
+- Lag compensation.
+- Noray integration.
+- A more complete networking framework for responsive online games.
+
+NetFox is the better fit when your game needs advanced netcode features. Mimic is intentionally smaller and aims to make the common Godot multiplayer setup easier rather than replacing a full-featured framework.
+
+## Current Limitations
+
+- WebRTC is listed but not implemented.
+- Mimic does not yet perform dynamic spawn/despawn replication.
+- Mimic does not yet package spawn properties from `SceneReplicationConfig`.
+- Mimic does not yet provide built-in UI controls.
+- Mimic does not provide prediction, rollback, interpolation, lag compensation, matchmaking, or relay services.
+
+## Minimal Local Test
+
+1. Set `mimic_multiplayer/connection/transport_type` to `ENet`.
+2. Set `mimic_multiplayer/connection/address` to `127.0.0.1`.
+3. Set `mimic_multiplayer/connection/port` to `8910`.
+4. Add a `MimicConnector` node to your startup scene.
+5. Set `auto_connect_mode` to `Server If First Else Client`.
+6. Run two game instances.
+
+Expected result:
+
+- The first instance starts as server.
+- The second instance joins as client.
+- Connection events appear in the Godot output.

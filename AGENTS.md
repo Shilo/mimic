@@ -21,6 +21,7 @@ project.godot: Godot project configuration, autoloads, plugin enablement, input 
 icon.svg: Default Godot project icon.
 icon.svg.import: Godot import metadata for the project icon.
 AGENTS.md: Agent-facing project guidance.
+README.md: User-facing developer guide for installing, configuring, and using Mimic.
 addons/: Godot addon root.
 addons/mimic/: Mimic addon source folder.
 addons/mimic/plugin.cfg: Godot editor plugin manifest.

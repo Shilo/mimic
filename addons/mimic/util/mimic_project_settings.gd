@@ -1,29 +1,29 @@
 @tool
 class_name MimicProjectSettings extends Object
 
-const _LOG_LEVEL := "mimic/logging/log_level"
-const _TRANSPORT_TYPE := "mimic/connection/transport_type"
-const _ADDRESS := "mimic/connection/address"
-const _PORT := "mimic/connection/port"
-const _BIND_ADDRESS := "mimic/connection/bind_address"
-const _MAX_CLIENTS := "mimic/connection/max_clients"
-const _REPLACE_EXISTING_PEER := "mimic/connection/replace_existing_peer"
-const _REFUSE_NEW_CONNECTIONS := "mimic/connection/refuse_new_connections"
-const _ENET_CHANNEL_COUNT := "mimic/enet/channel_count"
-const _ENET_IN_BANDWIDTH := "mimic/enet/in_bandwidth"
-const _ENET_OUT_BANDWIDTH := "mimic/enet/out_bandwidth"
-const _ENET_CLIENT_LOCAL_PORT := "mimic/enet/client_local_port"
-const _WEBSOCKET_CLIENT_USE_TLS := "mimic/websocket/client_use_tls"
-const _WEBSOCKET_PATH := "mimic/websocket/path"
-const _WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic/websocket/handshake_timeout"
-const _PORT_FORWARDING_ENABLED := "mimic/port_forwarding/enabled"
-const _PORT_MAPPING_DELETE_ON_STOP := "mimic/port_forwarding/delete_mapping_on_stop"
-const _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic/port_forwarding/query_external_address"
-const _PORT_MAPPING_PROTOCOL := "mimic/port_forwarding/protocol"
-const _PORT_MAPPING_DURATION := "mimic/port_forwarding/duration"
-const _UPNP_DISCOVER_TIMEOUT_MS := "mimic/port_forwarding/upnp_discover_timeout_ms"
-const _UPNP_DISCOVER_TTL := "mimic/port_forwarding/upnp_discover_ttl"
-const _UPNP_DESCRIPTION := "mimic/port_forwarding/description"
+const _LOG_LEVEL := "mimic_multiplayer/logging/log_level"
+const _TRANSPORT_TYPE := "mimic_multiplayer/connection/transport_type"
+const _ADDRESS := "mimic_multiplayer/connection/address"
+const _PORT := "mimic_multiplayer/connection/port"
+const _BIND_ADDRESS := "mimic_multiplayer/connection/bind_address"
+const _MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
+const _REPLACE_EXISTING_PEER := "mimic_multiplayer/connection/replace_existing_peer"
+const _REFUSE_NEW_CONNECTIONS := "mimic_multiplayer/connection/refuse_new_connections"
+const _ENET_CHANNEL_COUNT := "mimic_multiplayer/enet/channel_count"
+const _ENET_IN_BANDWIDTH := "mimic_multiplayer/enet/in_bandwidth"
+const _ENET_OUT_BANDWIDTH := "mimic_multiplayer/enet/out_bandwidth"
+const _ENET_CLIENT_LOCAL_PORT := "mimic_multiplayer/enet/client_local_port"
+const _WEBSOCKET_CLIENT_USE_TLS := "mimic_multiplayer/websocket/client_use_tls"
+const _WEBSOCKET_PATH := "mimic_multiplayer/websocket/path"
+const _WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic_multiplayer/websocket/handshake_timeout"
+const _PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
+const _PORT_MAPPING_DELETE_ON_STOP := "mimic_multiplayer/port_forwarding/delete_mapping_on_stop"
+const _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic_multiplayer/port_forwarding/query_external_address"
+const _PORT_MAPPING_PROTOCOL := "mimic_multiplayer/port_forwarding/protocol"
+const _PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
+const _UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/upnp_discover_timeout_ms"
+const _UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/upnp_discover_ttl"
+const _UPNP_DESCRIPTION := "mimic_multiplayer/port_forwarding/description"
 
 const _DEFAULT_LOG_LEVEL := 1
 const _DEFAULT_TRANSPORT_TYPE := 1
@@ -338,6 +338,7 @@ static func register() -> void:
 	if _registered:
 		return
 
+	_migrate_legacy_settings()
 	for setting in _SETTINGS:
 		_register_setting(setting)
 
@@ -401,3 +402,13 @@ static func _register_setting(setting: Dictionary) -> void:
 		property_info["hint_string"] = String(setting["hint_string"])
 
 	ProjectSettings.add_property_info(property_info)
+
+
+static func _migrate_legacy_settings() -> void:
+	for setting in _SETTINGS:
+		var name := String(setting["name"])
+		var legacy_name := name.replace("mimic_multiplayer/", "mimic/")
+		if ProjectSettings.has_setting(legacy_name):
+			if not ProjectSettings.has_setting(name):
+				ProjectSettings.set_setting(name, ProjectSettings.get_setting(legacy_name))
+			ProjectSettings.clear(legacy_name)
