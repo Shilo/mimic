@@ -1,5 +1,10 @@
 @tool
 class_name MimicProjectSettings extends Object
+## Typed accessors and registration helpers for Mimic Project Settings.
+##
+## Settings are registered by the editor plugin and read by the Mimic runtime.
+## ProjectSettings itself does not currently expose a description field for
+## custom setting tooltips, so user-facing descriptions live in the README.
 
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
 const _ADDRESS := "mimic_multiplayer/connection/address"
@@ -185,120 +190,140 @@ const _SETTINGS := [
 	},
 ]
 
+## Configured Mimic transport. See [enum Mimic.TransportType].
 static var transport: int:
 	get:
 		return _get_int(_TRANSPORT, _DEFAULT_TRANSPORT)
 	set(value):
 		_set_setting(_TRANSPORT, value)
 
+## Default client address used by [method Mimic.start_client].
 static var address: String:
 	get:
 		return _get_string(_ADDRESS, _DEFAULT_ADDRESS)
 	set(value):
 		_set_setting(_ADDRESS, value)
 
+## Default server/client port used by Mimic connection helpers.
 static var port: int:
 	get:
 		return _get_int(_PORT, _DEFAULT_PORT)
 	set(value):
 		_set_setting(_PORT, value)
 
+## Maximum ENet clients accepted by [method Mimic.start_server].
 static var max_clients: int:
 	get:
 		return _get_int(_MAX_CLIENTS, _DEFAULT_MAX_CLIENTS)
 	set(value):
 		_set_setting(_MAX_CLIENTS, value)
 
+## Local bind address for server sockets and ENet client local binding.
 static var bind_address: String:
 	get:
 		return _get_string(_BIND_ADDRESS, _DEFAULT_BIND_ADDRESS)
 	set(value):
 		_set_setting(_BIND_ADDRESS, value)
 
+## ENet channel count passed to ENet server/client creation.
 static var enet_channel_count: int:
 	get:
 		return _get_int(_ENET_CHANNEL_COUNT, _DEFAULT_ENET_CHANNEL_COUNT)
 	set(value):
 		_set_setting(_ENET_CHANNEL_COUNT, value)
 
+## ENet incoming bandwidth limit in bytes per second, or [code]0[/code] for unlimited.
 static var enet_in_bandwidth: int:
 	get:
 		return _get_int(_ENET_IN_BANDWIDTH, _DEFAULT_ENET_IN_BANDWIDTH)
 	set(value):
 		_set_setting(_ENET_IN_BANDWIDTH, value)
 
+## ENet outgoing bandwidth limit in bytes per second, or [code]0[/code] for unlimited.
 static var enet_out_bandwidth: int:
 	get:
 		return _get_int(_ENET_OUT_BANDWIDTH, _DEFAULT_ENET_OUT_BANDWIDTH)
 	set(value):
 		_set_setting(_ENET_OUT_BANDWIDTH, value)
 
+## Local port used by ENet clients, or [code]0[/code] for an ephemeral port.
 static var enet_client_local_port: int:
 	get:
 		return _get_int(_ENET_CLIENT_LOCAL_PORT, _DEFAULT_ENET_CLIENT_LOCAL_PORT)
 	set(value):
 		_set_setting(_ENET_CLIENT_LOCAL_PORT, value)
 
+## If [code]true[/code], WebSocket clients use [code]wss://[/code] instead of [code]ws://[/code].
 static var websocket_client_use_tls: bool:
 	get:
 		return _get_bool(_WEBSOCKET_CLIENT_USE_TLS, _DEFAULT_WEBSOCKET_CLIENT_USE_TLS)
 	set(value):
 		_set_setting(_WEBSOCKET_CLIENT_USE_TLS, value)
 
+## Optional WebSocket URL path appended to client connection URLs.
 static var websocket_path: String:
 	get:
 		return _get_string(_WEBSOCKET_PATH, _DEFAULT_WEBSOCKET_PATH)
 	set(value):
 		_set_setting(_WEBSOCKET_PATH, value)
 
+## WebSocket handshake timeout in seconds.
 static var websocket_handshake_timeout: float:
 	get:
 		return _get_float(_WEBSOCKET_HANDSHAKE_TIMEOUT, _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
 	set(value):
 		_set_setting(_WEBSOCKET_HANDSHAKE_TIMEOUT, value)
 
+## If [code]true[/code], Mimic tries to create UPnP port mappings when hosting.
 static var port_forwarding_enabled: bool:
 	get:
 		return _get_bool(_PORT_FORWARDING_ENABLED, _DEFAULT_PORT_FORWARDING_ENABLED)
 	set(value):
 		_set_setting(_PORT_FORWARDING_ENABLED, value)
 
+## If [code]true[/code], Mimic deletes owned UPnP mappings when networking stops.
 static var port_mapping_delete_on_stop: bool:
 	get:
 		return _get_bool(_PORT_MAPPING_DELETE_ON_STOP, _DEFAULT_PORT_MAPPING_DELETE_ON_STOP)
 	set(value):
 		_set_setting(_PORT_MAPPING_DELETE_ON_STOP, value)
 
+## If [code]true[/code], Mimic asks the UPnP gateway for its external address.
 static var port_mapping_query_external_address: bool:
 	get:
 		return _get_bool(_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS)
 	set(value):
 		_set_setting(_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, value)
 
+## Protocol selection used when creating UPnP port mappings.
 static var port_mapping_protocol: int:
 	get:
 		return _get_int(_PORT_MAPPING_PROTOCOL, _DEFAULT_PORT_MAPPING_PROTOCOL)
 	set(value):
 		_set_setting(_PORT_MAPPING_PROTOCOL, value)
 
+## UPnP port mapping lease duration in seconds. [code]0[/code] requests a permanent mapping.
 static var port_mapping_duration: int:
 	get:
 		return _get_int(_PORT_MAPPING_DURATION, _DEFAULT_PORT_MAPPING_DURATION)
 	set(value):
 		_set_setting(_PORT_MAPPING_DURATION, value)
 
+## UPnP discovery timeout in milliseconds.
 static var upnp_discover_timeout_ms: int:
 	get:
 		return _get_int(_UPNP_DISCOVER_TIMEOUT_MS, _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS)
 	set(value):
 		_set_setting(_UPNP_DISCOVER_TIMEOUT_MS, value)
 
+## UPnP discovery time-to-live hop count.
 static var upnp_discover_ttl: int:
 	get:
 		return _get_int(_UPNP_DISCOVER_TTL, _DEFAULT_UPNP_DISCOVER_TTL)
 	set(value):
 		_set_setting(_UPNP_DISCOVER_TTL, value)
 
+## Mimic log output level. See [enum MimicLog.Level].
 static var log_level: int:
 	get:
 		return _get_int(_LOG_LEVEL, _DEFAULT_LOG_LEVEL)
@@ -308,6 +333,7 @@ static var log_level: int:
 static var _registered := false
 
 
+## Registers Mimic Project Settings and their editor hints.
 static func register() -> void:
 	if _registered:
 		return
@@ -318,6 +344,7 @@ static func register() -> void:
 	_registered = true
 
 
+## Marks settings as unregistered and optionally clears their current values.
 static func unregister(clear_values: bool = false) -> void:
 	_registered = false
 	if not clear_values:

@@ -6,13 +6,6 @@
 ## instances open as separate windows. Each run instance writes a short-lived
 ## marker file, discovers sibling instances from the same launch burst, then
 ## moves and resizes itself into a screen tile.
-
-##
-## This utility is intended for local multiplayer testing from the editor. Make
-## sure "Game > Embedding Options > Embed Game on Next Play" is disabled so run
-## instances open as separate windows. Each run instance writes a short-lived
-## marker file, discovers sibling instances from the same launch burst, then
-## moves and resizes itself into a screen tile.
 extends Node
 
 const _DIR := "user://mimic/run_grid"

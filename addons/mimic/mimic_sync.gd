@@ -1,16 +1,22 @@
 class_name MimicSync extends MultiplayerSynchronizer
+## Visible per-entity synchronization component for Mimic networked scenes.
+##
+## MimicSync intentionally subclasses [MultiplayerSynchronizer] so developers
+## can keep using Godot's native [SceneReplicationConfig] workflow.
 
 
+## Returns the node resolved by this synchronizer's inherited [member root_path].
 func get_network_root() -> Node:
 	return _resolve_network_root()
 
 
-static func find_in(node: Node):
+## Finds the first MimicSync in [param node] or any of its descendants.
+static func find_in(node: Node) -> MimicSync:
 	if node is MimicSync:
 		return node
 
 	for child in node.get_children():
-		var found = find_in(child)
+		var found := find_in(child)
 		if found:
 			return found
 

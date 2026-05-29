@@ -1,20 +1,66 @@
 extends Node
+## Runtime singleton for Mimic connection setup and network state.
+##
+## The Mimic autoload owns the active [MultiplayerPeer], starts and stops
+## server/client connections, and emits connection lifecycle signals for game
+## code and UI.
 
+## Emitted when Mimic changes connection state.
 signal state_changed(state: int, previous_state: int)
+## Emitted when a server or client start attempt fails before reaching its target state.
 signal start_failed(attempted_state: int, error: int, message: String)
+## Emitted after a server peer starts listening.
 signal server_started(port: int)
+## Emitted after a client peer begins connecting.
 signal client_started(address: String, port: int)
+## Emitted after the local client connects to a server.
 signal client_connected()
+## Emitted after the local client fails to connect to a server.
 signal client_connection_failed(message: String)
+## Emitted on clients when the server disconnects.
 signal server_disconnected()
+## Re-emitted from [MultiplayerAPI.peer_connected].
 signal peer_connected(peer_id: int)
+## Re-emitted from [MultiplayerAPI.peer_disconnected].
 signal peer_disconnected(peer_id: int)
+## Emitted after Mimic stops networking and returns to offline state.
 signal stopped()
+## Emitted after a UPnP port mapping attempt succeeds or fails.
 signal port_mapping_finished(result: int, external_address: String)
 
-enum TransportType { OFFLINE, ENET, WEBSOCKET, WEBRTC }
-enum NetworkState { OFFLINE, SERVER_LISTENING, CLIENT_CONNECTING, CLIENT_CONNECTED }
-enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
+## Transport backends Mimic can start.
+enum TransportType {
+	## No network transport.
+	OFFLINE,
+	## Godot's ENet transport.
+	ENET,
+	## Godot's WebSocket transport.
+	WEBSOCKET,
+	## Reserved for future WebRTC signaling support.
+	WEBRTC,
+}
+## Coarse connection lifecycle state for the local peer.
+enum NetworkState {
+	## No active network peer.
+	OFFLINE,
+	## Server peer is listening for clients.
+	SERVER_LISTENING,
+	## Client peer has started connecting but is not connected yet.
+	CLIENT_CONNECTING,
+	## Client peer is connected to a server.
+	CLIENT_CONNECTED,
+}
+## Protocol selection for UPnP port mappings.
+enum PortMappingProtocol {
+	## Use UDP for ENet and TCP for WebSocket.
+	TRANSPORT_DEFAULT,
+	## Map TCP only.
+	TCP,
+	## Map UDP only.
+	UDP,
+	## Map both TCP and UDP.
+	TCP_AND_UDP,
+}
 
 var _state: NetworkState = NetworkState.OFFLINE
 var _mapped_port := 0
@@ -28,10 +74,18 @@ func _ready() -> void:
 	_connect_multiplayer_signals()
 
 
+## Starts a server with the configured transport.
+##
+## Pass [param port_override] or [param bind_address_override] to override the
+## matching Project Settings value for this call only.
 func start_server(port_override: int = -1, bind_address_override: String = "") -> Error:
 	return _start_server(port_override, bind_address_override)
 
 
+## Starts a client connection with the configured transport.
+##
+## Pass [param address_override] or [param port_override] to override the
+## matching Project Settings value for this call only.
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
@@ -84,6 +138,7 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 	return OK
 
 
+## Tries to start a server, then falls back to client mode if the server port is already in use.
 func start_server_if_first_else_client() -> Error:
 	var server_error := _start_server(-1, "", true)
 	if server_error == OK:
@@ -94,6 +149,7 @@ func start_server_if_first_else_client() -> Error:
 	return start_client()
 
 
+## Stops the active peer, removes owned UPnP mappings, and returns to offline state.
 func stop() -> void:
 	_delete_port_mappings()
 	_close_peer()
@@ -104,19 +160,23 @@ func stop() -> void:
 	stopped.emit()
 
 
+## Cancels an in-progress client connection.
 func cancel_connection() -> void:
 	if _state == NetworkState.CLIENT_CONNECTING:
 		stop()
 
 
+## Returns the current [enum NetworkState].
 func get_state() -> int:
 	return _state
 
 
+## Returns the last external address reported by UPnP port forwarding.
 func get_external_address() -> String:
 	return _external_address
 
 
+## Returns the local multiplayer peer ID, or [code]0[/code] when no connected peer has one.
 func get_local_peer_id() -> int:
 	if _state == NetworkState.OFFLINE or _state == NetworkState.CLIENT_CONNECTING:
 		return 0
@@ -125,24 +185,29 @@ func get_local_peer_id() -> int:
 	return multiplayer.get_unique_id()
 
 
+## Returns connected remote peer IDs, or an empty array while offline.
 func get_peer_ids() -> PackedInt32Array:
 	if _state == NetworkState.OFFLINE or not multiplayer.has_multiplayer_peer():
 		return PackedInt32Array()
 	return multiplayer.get_peers()
 
 
+## Returns [code]true[/code] while the local peer is listening as a server.
 func is_server() -> bool:
 	return _state == NetworkState.SERVER_LISTENING
 
 
+## Returns [code]true[/code] after the local peer has connected as a client.
 func is_client() -> bool:
 	return _state == NetworkState.CLIENT_CONNECTED
 
 
+## Returns [code]true[/code] while a client connection attempt is in progress.
 func is_connecting() -> bool:
 	return _state == NetworkState.CLIENT_CONNECTING
 
 
+## Returns [code]true[/code] when Mimic has no active network peer.
 func is_offline() -> bool:
 	return _state == NetworkState.OFFLINE
 

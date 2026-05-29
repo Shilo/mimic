@@ -1,8 +1,23 @@
 class_name MimicLog extends Object
+## Small logging wrapper used by Mimic connection helpers.
+##
+## Messages are filtered by [member MimicProjectSettings.log_level] and include
+## a compact timestamp plus the local multiplayer ID when available.
 
-enum Level { ALL, WARNING, ERROR, NONE }
+## Output levels available for Mimic logs.
+enum Level {
+	## Print all Mimic log, warning, and error messages.
+	ALL,
+	## Print warnings and errors.
+	WARNING,
+	## Print only errors.
+	ERROR,
+	## Disable Mimic log output.
+	NONE,
+}
 
 
+## Prints an informational Mimic log message when the current log level allows it.
 static func log(...objects: Array) -> void:
 	if not _should_log(Level.ALL):
 		return
@@ -10,6 +25,7 @@ static func log(...objects: Array) -> void:
 	prints(_line(objects))
 
 
+## Pushes a Mimic warning when the current log level allows it.
 static func warning(...objects: Array) -> void:
 	if not _should_log(Level.WARNING):
 		return
@@ -17,6 +33,7 @@ static func warning(...objects: Array) -> void:
 	push_warning(_line(objects))
 
 
+## Pushes a Mimic error when the current log level allows it.
 static func error(...objects: Array) -> void:
 	if not _should_log(Level.ERROR):
 		return

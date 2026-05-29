@@ -60,13 +60,15 @@ When enabled, the plugin adds a `Mimic` singleton so your scripts can call `Mimi
 
 Open Project > Project Settings and search for `Mimic Multiplayer`.
 
+Godot does not currently expose a description field for custom Project Settings added through `ProjectSettings.add_property_info()`, so Mimic documents setting meanings here instead of relying on tooltips.
+
 Connection:
 
 ```text
 mimic_multiplayer/connection/transport: Offline, ENet, WebSocket, or WebRTC (Unsupported)
 mimic_multiplayer/connection/address: Client address, default 127.0.0.1
 mimic_multiplayer/connection/port: Server/client port, default 8910
-mimic_multiplayer/connection/max_clients: Max server clients, default 32
+mimic_multiplayer/connection/max_clients: Max ENet server clients, default 32
 ```
 
 WebSocket:
@@ -86,34 +88,34 @@ Advanced settings are hidden unless Advanced Settings is enabled in Project Sett
 Advanced connection settings:
 
 ```text
-mimic_multiplayer/connection/bind_address
+mimic_multiplayer/connection/bind_address: Local bind address for server sockets and ENet client local binding
 ```
 
 Advanced ENet settings:
 
 ```text
-mimic_multiplayer/enet/channel_count
-mimic_multiplayer/enet/in_bandwidth
-mimic_multiplayer/enet/out_bandwidth
-mimic_multiplayer/enet/client_local_port
+mimic_multiplayer/enet/channel_count: ENet channel count, default 0
+mimic_multiplayer/enet/in_bandwidth: Incoming bandwidth limit in bytes per second, 0 for unlimited
+mimic_multiplayer/enet/out_bandwidth: Outgoing bandwidth limit in bytes per second, 0 for unlimited
+mimic_multiplayer/enet/client_local_port: Local ENet client port, 0 for ephemeral
 ```
 
 Advanced WebSocket settings:
 
 ```text
-mimic_multiplayer/websocket/path
-mimic_multiplayer/websocket/handshake_timeout
+mimic_multiplayer/websocket/path: Optional path appended to WebSocket client URLs
+mimic_multiplayer/websocket/handshake_timeout: WebSocket handshake timeout in seconds
 ```
 
 Advanced port forwarding settings:
 
 ```text
-mimic_multiplayer/port_forwarding/delete_mapping_on_stop
-mimic_multiplayer/port_forwarding/query_external_address
-mimic_multiplayer/port_forwarding/protocol
-mimic_multiplayer/port_forwarding/duration
-mimic_multiplayer/port_forwarding/discover_timeout_ms
-mimic_multiplayer/port_forwarding/discover_ttl
+mimic_multiplayer/port_forwarding/delete_mapping_on_stop: Delete owned UPnP mappings when networking stops
+mimic_multiplayer/port_forwarding/query_external_address: Query the gateway external address after mapping
+mimic_multiplayer/port_forwarding/protocol: TCP/UDP mapping protocol selection
+mimic_multiplayer/port_forwarding/duration: UPnP mapping lease duration in seconds, 0 for permanent
+mimic_multiplayer/port_forwarding/discover_timeout_ms: UPnP discovery timeout in milliseconds
+mimic_multiplayer/port_forwarding/discover_ttl: UPnP discovery time-to-live hop count
 ```
 
 Debug:
