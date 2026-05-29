@@ -19,6 +19,11 @@ config/icon="res://icon.svg"
 [autoload]
 
 MimicRunInstanceGrid="*uid://crtmtjqc58nuo"
+Mimic="*uid://cfxdmksnokbik"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/mimic/plugin.cfg")
 
 [physics]
 

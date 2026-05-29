@@ -4,7 +4,7 @@ extends EditorPlugin
 const _AUTOLOAD_NAME := "Mimic"
 
 
-func _enter_tree() -> void:
+func _enable_plugin() -> void:
 	var autoload_status := _has_autoload()
 	if autoload_status == OK:
 		return
@@ -16,7 +16,7 @@ func _enter_tree() -> void:
 	add_autoload_singleton(_AUTOLOAD_NAME, _get_autoload_path())
 
 
-func _exit_tree() -> void:
+func _disable_plugin() -> void:
 	if _has_autoload() == OK:
 		remove_autoload_singleton(_AUTOLOAD_NAME)
 
@@ -28,7 +28,7 @@ func _has_autoload() -> Error:
 	var autoload_path := String(ProjectSettings.get_setting("autoload/" + _AUTOLOAD_NAME))
 	if autoload_path.begins_with("*"):
 		autoload_path = autoload_path.substr(1)
-	
+	autoload_path = ResourceUID.ensure_path(autoload_path)
 	if autoload_path != _get_autoload_path():
 		return ERR_ALREADY_EXISTS
 
