@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://fq7tkvwqe1ub"]
+
+[ext_resource type="Script" uid="uid://c7hslsep23kef" path="res://examples/single_to_multiplayer/single_to_multiplayer.gd" id="1_anqd6"]
+
+[node name="Single To Multiplayer" type="Node2D" unique_id=945951482]
+script = ExtResource("1_anqd6")
