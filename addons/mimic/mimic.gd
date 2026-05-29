@@ -1,399 +1,488 @@
 extends Node
 
-const MIMIC_SYNC_SCRIPT := preload("res://addons/mimic/mimic_sync.gd")
+signal state_changed(state: int, previous_state: int)
+signal start_failed(attempted_state: int, error: int, message: String)
+signal server_started(port: int)
+signal client_started(address: String, port: int)
+signal client_connected()
+signal client_connection_failed(message: String)
+signal server_disconnected()
+signal peer_connected(peer_id: int)
+signal peer_disconnected(peer_id: int)
+signal stopped()
+signal port_mapping_finished(result: int, external_address: String)
 
-var _next_dynamic_id := 1
-var _nodes_by_id := {}
-var _ids_by_instance := {}
-var _active_spawn_payloads := {}
-var _pending_spawn_payloads := []
-var _remote_spawning := false
-var _remote_spawn_id := ""
-var _remote_spawn_root_instance_id := 0
+enum TransportType { OFFLINE, ENET, WEBSOCKET, WEBRTC }
+enum NetworkState { OFFLINE, SERVER_LISTENING, CLIENT_CONNECTING, CLIENT_CONNECTED }
+enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
+
+const SETTING_TRANSPORT_TYPE := "mimic/connection/transport_type"
+const SETTING_ADDRESS := "mimic/connection/address"
+const SETTING_PORT := "mimic/connection/port"
+const SETTING_BIND_ADDRESS := "mimic/connection/bind_address"
+const SETTING_MAX_CLIENTS := "mimic/connection/max_clients"
+const SETTING_REPLACE_EXISTING_PEER := "mimic/connection/replace_existing_peer"
+const SETTING_REFUSE_NEW_CONNECTIONS := "mimic/connection/refuse_new_connections"
+const SETTING_ENET_CHANNEL_COUNT := "mimic/enet/channel_count"
+const SETTING_ENET_IN_BANDWIDTH := "mimic/enet/in_bandwidth"
+const SETTING_ENET_OUT_BANDWIDTH := "mimic/enet/out_bandwidth"
+const SETTING_ENET_CLIENT_LOCAL_PORT := "mimic/enet/client_local_port"
+const SETTING_WEBSOCKET_CLIENT_USE_TLS := "mimic/websocket/client_use_tls"
+const SETTING_WEBSOCKET_PATH := "mimic/websocket/path"
+const SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic/websocket/handshake_timeout"
+const SETTING_PORT_FORWARDING_ENABLED := "mimic/port_forwarding/enabled"
+const SETTING_PORT_MAPPING_DELETE_ON_STOP := "mimic/port_forwarding/delete_mapping_on_stop"
+const SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic/port_forwarding/query_external_address"
+const SETTING_PORT_MAPPING_PROTOCOL := "mimic/port_forwarding/protocol"
+const SETTING_PORT_MAPPING_DURATION := "mimic/port_forwarding/duration"
+const SETTING_UPNP_DISCOVER_TIMEOUT_MS := "mimic/port_forwarding/upnp_discover_timeout_ms"
+const SETTING_UPNP_DISCOVER_TTL := "mimic/port_forwarding/upnp_discover_ttl"
+const SETTING_UPNP_DESCRIPTION := "mimic/port_forwarding/description"
+
+const DEFAULT_TRANSPORT_TYPE := TransportType.ENET
+const DEFAULT_ADDRESS := "127.0.0.1"
+const DEFAULT_PORT := 8910
+const DEFAULT_BIND_ADDRESS := "*"
+const DEFAULT_MAX_CLIENTS := 32
+const DEFAULT_REPLACE_EXISTING_PEER := true
+const DEFAULT_REFUSE_NEW_CONNECTIONS := false
+const DEFAULT_ENET_CHANNEL_COUNT := 0
+const DEFAULT_ENET_IN_BANDWIDTH := 0
+const DEFAULT_ENET_OUT_BANDWIDTH := 0
+const DEFAULT_ENET_CLIENT_LOCAL_PORT := 0
+const DEFAULT_WEBSOCKET_CLIENT_USE_TLS := false
+const DEFAULT_WEBSOCKET_PATH := ""
+const DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT := 3.0
+const DEFAULT_PORT_FORWARDING_ENABLED := false
+const DEFAULT_PORT_MAPPING_DELETE_ON_STOP := true
+const DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := true
+const DEFAULT_PORT_MAPPING_PROTOCOL := PortMappingProtocol.TRANSPORT_DEFAULT
+const DEFAULT_PORT_MAPPING_DURATION := 7200
+const DEFAULT_UPNP_DISCOVER_TIMEOUT_MS := 2000
+const DEFAULT_UPNP_DISCOVER_TTL := 2
+const DEFAULT_UPNP_DESCRIPTION := "Mimic"
+
+var _state: NetworkState = NetworkState.OFFLINE
+var _mapped_port := 0
+var _mapped_protocols := PackedStringArray()
+var _external_address := ""
+var _last_client_address := ""
+var _last_client_port := 0
 
 
 func _ready() -> void:
+	_connect_multiplayer_signals()
+
+
+func start_server(port_override: int = -1, bind_address_override: String = "") -> Error:
+	return _start_server(port_override, bind_address_override)
+
+
+func start_client(address_override: String = "", port_override: int = -1) -> Error:
+	_connect_multiplayer_signals()
+
+	var address := address_override.strip_edges() if not address_override.is_empty() else _get_string_setting(SETTING_ADDRESS, DEFAULT_ADDRESS).strip_edges()
+	var port := port_override if port_override > 0 else _get_int_setting(SETTING_PORT, DEFAULT_PORT)
+	if address.is_empty():
+		return _fail_start(NetworkState.CLIENT_CONNECTING, ERR_INVALID_PARAMETER, "Client address is empty.")
+
+	var error := _validate_start(NetworkState.CLIENT_CONNECTING, port)
+	if error != OK:
+		return error
+
+	var peer: MultiplayerPeer = null
+	match _get_transport_type():
+		TransportType.ENET:
+			var enet_peer := ENetMultiplayerPeer.new()
+			var bind_address := _get_string_setting(SETTING_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
+			if not bind_address.is_empty() and bind_address != "*":
+				enet_peer.set_bind_ip(bind_address)
+			error = enet_peer.create_client(
+				address,
+				port,
+				_get_int_setting(SETTING_ENET_CHANNEL_COUNT, DEFAULT_ENET_CHANNEL_COUNT),
+				_get_int_setting(SETTING_ENET_IN_BANDWIDTH, DEFAULT_ENET_IN_BANDWIDTH),
+				_get_int_setting(SETTING_ENET_OUT_BANDWIDTH, DEFAULT_ENET_OUT_BANDWIDTH),
+				_get_int_setting(SETTING_ENET_CLIENT_LOCAL_PORT, DEFAULT_ENET_CLIENT_LOCAL_PORT)
+			)
+			peer = enet_peer
+		TransportType.WEBSOCKET:
+			var websocket_peer := WebSocketMultiplayerPeer.new()
+			websocket_peer.handshake_timeout = _get_float_setting(SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			error = websocket_peer.create_client(_get_websocket_url(address, port))
+			peer = websocket_peer
+		TransportType.OFFLINE, TransportType.WEBRTC:
+			return _fail_unavailable_transport(NetworkState.CLIENT_CONNECTING)
+		_:
+			return _fail_start(NetworkState.CLIENT_CONNECTING, ERR_UNAVAILABLE, "Unsupported transport.")
+
+	if error != OK:
+		peer.close()
+		return _fail_start(NetworkState.CLIENT_CONNECTING, error, "Unable to start client: %s." % error_string(error))
+
+	_last_client_address = address
+	_last_client_port = port
+	multiplayer.multiplayer_peer = peer
+	_change_state(NetworkState.CLIENT_CONNECTING)
+	client_started.emit(address, port)
+	return OK
+
+
+func start_server_if_first_else_client() -> Error:
+	var server_error := _start_server(-1, "", true)
+	if server_error == OK:
+		return OK
+	if not _can_fallback_to_client_after_server_failure(server_error):
+		return server_error
+
+	return start_client()
+
+
+func stop() -> void:
+	_delete_port_mappings()
+	_close_peer()
+	_last_client_address = ""
+	_last_client_port = 0
+	_change_state(NetworkState.OFFLINE)
+	stopped.emit()
+
+
+func cancel_connection() -> void:
+	if _state == NetworkState.CLIENT_CONNECTING:
+		stop()
+
+
+func get_state() -> int:
+	return _state
+
+
+func get_external_address() -> String:
+	return _external_address
+
+
+func get_local_peer_id() -> int:
+	if _state == NetworkState.OFFLINE or _state == NetworkState.CLIENT_CONNECTING:
+		return 0
+	if not multiplayer.has_multiplayer_peer():
+		return 0
+	return multiplayer.get_unique_id()
+
+
+func get_peer_ids() -> PackedInt32Array:
+	if _state == NetworkState.OFFLINE or not multiplayer.has_multiplayer_peer():
+		return PackedInt32Array()
+	return multiplayer.get_peers()
+
+
+func is_server() -> bool:
+	return _state == NetworkState.SERVER_LISTENING
+
+
+func is_client() -> bool:
+	return _state == NetworkState.CLIENT_CONNECTED
+
+
+func is_connecting() -> bool:
+	return _state == NetworkState.CLIENT_CONNECTING
+
+
+func is_offline() -> bool:
+	return _state == NetworkState.OFFLINE
+
+
+func _start_server(port_override: int = -1, bind_address_override: String = "", quiet_expected_failure: bool = false) -> Error:
+	_connect_multiplayer_signals()
+
+	var port := port_override if port_override > 0 else _get_int_setting(SETTING_PORT, DEFAULT_PORT)
+	var error := _validate_start(NetworkState.SERVER_LISTENING, port)
+	if error != OK:
+		return error
+
+	var peer: MultiplayerPeer = null
+	match _get_transport_type():
+		TransportType.ENET:
+			var enet_peer := ENetMultiplayerPeer.new()
+			var bind_address := _get_bind_address(bind_address_override)
+			if not bind_address.is_empty() and bind_address != "*":
+				enet_peer.set_bind_ip(bind_address)
+			error = enet_peer.create_server(
+				port,
+				_get_int_setting(SETTING_MAX_CLIENTS, DEFAULT_MAX_CLIENTS),
+				_get_int_setting(SETTING_ENET_CHANNEL_COUNT, DEFAULT_ENET_CHANNEL_COUNT),
+				_get_int_setting(SETTING_ENET_IN_BANDWIDTH, DEFAULT_ENET_IN_BANDWIDTH),
+				_get_int_setting(SETTING_ENET_OUT_BANDWIDTH, DEFAULT_ENET_OUT_BANDWIDTH)
+			)
+			peer = enet_peer
+		TransportType.WEBSOCKET:
+			var websocket_peer := WebSocketMultiplayerPeer.new()
+			websocket_peer.handshake_timeout = _get_float_setting(SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			error = websocket_peer.create_server(port, _get_bind_address(bind_address_override))
+			peer = websocket_peer
+		TransportType.OFFLINE, TransportType.WEBRTC:
+			return _fail_unavailable_transport(NetworkState.SERVER_LISTENING)
+		_:
+			return _fail_start(NetworkState.SERVER_LISTENING, ERR_UNAVAILABLE, "Unsupported transport.")
+
+	if error != OK:
+		peer.close()
+		if quiet_expected_failure and _should_fallback_to_client(error):
+			return error
+		return _fail_start(NetworkState.SERVER_LISTENING, error, "Unable to start server: %s." % error_string(error))
+
+	peer.refuse_new_connections = _get_bool_setting(SETTING_REFUSE_NEW_CONNECTIONS, DEFAULT_REFUSE_NEW_CONNECTIONS)
+	multiplayer.multiplayer_peer = peer
+	_change_state(NetworkState.SERVER_LISTENING)
+	_add_port_mapping(port)
+	server_started.emit(port)
+	return OK
+
+
+func _validate_start(state: NetworkState, port: int) -> Error:
+	if port < 1 or port > 65535:
+		return _fail_start(state, ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
+
+	if _get_transport_type() == TransportType.ENET and OS.has_feature("web"):
+		return _fail_start(state, ERR_UNAVAILABLE, "ENet is not available on web exports. Use WebSocket instead.")
+
+	if _get_transport_type() == TransportType.OFFLINE or _get_transport_type() == TransportType.WEBRTC:
+		return _fail_unavailable_transport(state)
+
+	if _has_active_peer():
+		if not _get_bool_setting(SETTING_REPLACE_EXISTING_PEER, DEFAULT_REPLACE_EXISTING_PEER):
+			return _fail_start(state, ERR_ALREADY_IN_USE, "A multiplayer peer is already active.")
+		stop()
+
+	return OK
+
+
+func _connect_multiplayer_signals() -> void:
 	if not multiplayer.peer_connected.is_connected(_on_peer_connected):
 		multiplayer.peer_connected.connect(_on_peer_connected)
-	set_process(false)
-
-
-func register_sync(sync) -> void:
-	var root: Node = sync.get_network_root()
-	if root == null:
-		return
-
-	if _remote_spawning:
-		if not _remote_spawn_id.is_empty() and root.get_instance_id() == _remote_spawn_root_instance_id:
-			_track(root, _remote_spawn_id)
-		return
-
-	if _ids_by_instance.has(root.get_instance_id()):
-		return
-	if _has_tracked_ancestor(root):
-		return
-	if not _is_server():
-		return
-
-	if not root.is_node_ready():
-		root.ready.connect(_register_when_ready.bind(sync, root), CONNECT_ONE_SHOT)
-		return
-
-	_register_later(sync, root)
-
-
-func unregister_sync(_sync, root: Node) -> void:
-	if root == null or (root.is_inside_tree() and not root.is_queued_for_deletion()):
-		return
-
-	_unregister_tracked_instance(root.get_instance_id())
-
-
-func _register_when_ready(sync, root: Node) -> void:
-	if not is_instance_valid(sync) or not is_instance_valid(root):
-		return
-	if not sync.is_inside_tree() or not root.is_inside_tree():
-		return
-	if sync.get_network_root() != root:
-		return
-	_register_later(sync, root)
-
-
-func _register_later(sync, root: Node) -> void:
-	call_deferred("_register_if_valid", sync, root)
-
-
-func _register_if_valid(sync, root: Node) -> void:
-	if not is_instance_valid(sync) or not is_instance_valid(root):
-		return
-	if not sync.is_inside_tree() or not root.is_inside_tree():
-		return
-	if sync.get_network_root() != root:
-		return
-	if _ids_by_instance.has(root.get_instance_id()):
-		return
-	if _has_tracked_ancestor(root):
-		return
-	if _is_server():
-		_register_dynamic(sync, root)
-
-
-func _register_dynamic(sync, root: Node) -> void:
-	var payload := _make_spawn_payload(str(_next_dynamic_id), sync, root)
-	if payload.is_empty():
-		return
-
-	var mimic_id := String(payload["id"])
-	_next_dynamic_id += 1
-	_track(root, mimic_id)
-	_active_spawn_payloads[mimic_id] = payload
-
-	if multiplayer.has_multiplayer_peer():
-		rpc("_spawn_remote", payload)
-
-
-func _make_spawn_payload(mimic_id: String, sync, root: Node) -> Dictionary:
-	var scene_path := root.scene_file_path
-	if scene_path.is_empty() or not scene_path.ends_with(".tscn"):
-		push_warning("MimicSync root must be an instanced .tscn scene root.")
-		return {}
-
-	var parent := root.get_parent()
-	if parent == null:
-		push_warning("MimicSync root needs a parent that also exists on remote peers.")
-		return {}
-
-	return {
-		"id": mimic_id,
-		"scene_path": scene_path,
-		"parent_path": String(parent.get_path()),
-		"name": String(root.name),
-		"spawn_state": _collect_spawn_state(sync, root),
-	}
-
-
-func _collect_spawn_state(sync, root: Node) -> Array:
-	var state := []
-	var config: SceneReplicationConfig = sync.replication_config
-	if config == null:
-		return state
-
-	for raw_path in config.get_properties():
-		var path := NodePath(raw_path)
-		if not config.property_get_spawn(path):
-			continue
-
-		var resolved := _resolve_property(root, path)
-		if resolved.is_empty():
-			continue
-
-		var target: Object = resolved["target"]
-		state.append({
-			"path": String(path),
-			"value": target.get_indexed(resolved["property_path"]),
-		})
-
-	return state
-
-
-func _apply_spawn_state(root: Node, state: Array) -> void:
-	for item in state:
-		if typeof(item) != TYPE_DICTIONARY or not item.has("path") or not item.has("value"):
-			continue
-
-		var path := NodePath(String(item["path"]))
-		var resolved := _resolve_property(root, path)
-		if resolved.is_empty():
-			continue
-
-		var target: Object = resolved["target"]
-		target.set_indexed(resolved["property_path"], item["value"])
-
-
-func _resolve_property(root: Node, path: NodePath) -> Dictionary:
-	if path.is_empty():
-		return {}
-
-	if path.get_subname_count() == 0:
-		return {
-			"target": root,
-			"property_path": path.get_as_property_path(),
-		}
-
-	if path.get_name_count() == 0:
-		return {
-			"target": root,
-			"property_path": _subnames_as_property_path(path),
-		}
-
-	if path.get_name_count() == 1 and String(path.get_name(0)) == ".":
-		return {
-			"target": root,
-			"property_path": _subnames_as_property_path(path),
-		}
-
-	var target := root.get_node_or_null(path)
-	if target:
-		return {
-			"target": target,
-			"property_path": _subnames_as_property_path(path),
-		}
-
-	return {}
-
-
-func _subnames_as_property_path(path: NodePath) -> NodePath:
-	var parts := PackedStringArray()
-	for i in path.get_subname_count():
-		parts.append(String(path.get_subname(i)))
-	return NodePath(":" + ":".join(parts))
-
-
-func _process(_delta: float) -> void:
-	var waiting := []
-	for payload in _pending_spawn_payloads:
-		var mimic_id := String(payload.get("id", ""))
-		if mimic_id.is_empty() or _nodes_by_id.has(mimic_id):
-			continue
-
-		var parent := _get_spawn_parent(payload)
-		if parent == null:
-			waiting.append(payload)
-			continue
-
-		_spawn_remote_under_parent(payload, parent)
-
-	_pending_spawn_payloads = waiting
-	set_process(not _pending_spawn_payloads.is_empty())
+	if not multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
+		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	if not multiplayer.connected_to_server.is_connected(_on_connected_to_server):
+		multiplayer.connected_to_server.connect(_on_connected_to_server)
+	if not multiplayer.connection_failed.is_connected(_on_connection_failed):
+		multiplayer.connection_failed.connect(_on_connection_failed)
+	if not multiplayer.server_disconnected.is_connected(_on_server_disconnected):
+		multiplayer.server_disconnected.connect(_on_server_disconnected)
 
 
 func _on_peer_connected(peer_id: int) -> void:
-	if not _is_server():
+	peer_connected.emit(peer_id)
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	peer_disconnected.emit(peer_id)
+
+
+func _on_connected_to_server() -> void:
+	_change_state(NetworkState.CLIENT_CONNECTED)
+	client_connected.emit()
+
+
+func _on_connection_failed() -> void:
+	var message := "Unable to connect to %s:%d." % [_last_client_address, _last_client_port]
+	_close_peer()
+	_change_state(NetworkState.OFFLINE)
+	client_connection_failed.emit(message)
+
+
+func _on_server_disconnected() -> void:
+	_close_peer()
+	_change_state(NetworkState.OFFLINE)
+	server_disconnected.emit()
+
+
+func _change_state(state: NetworkState) -> void:
+	if _state == state:
 		return
 
-	for mimic_id in _active_spawn_payloads.keys():
-		var payload := _get_current_spawn_payload(mimic_id)
-		if payload.is_empty():
-			continue
-
-		_active_spawn_payloads[mimic_id] = payload
-		rpc_id(peer_id, "_spawn_remote", payload)
+	var previous_state := _state
+	_state = state
+	state_changed.emit(_state, previous_state)
 
 
-func _get_current_spawn_payload(mimic_id: String) -> Dictionary:
-	if not _nodes_by_id.has(mimic_id):
-		return {}
-
-	var root: Node = _nodes_by_id[mimic_id]
-	if not is_instance_valid(root):
-		return {}
-
-	var sync = _find_sync_in(root)
-	if sync == null:
-		return _active_spawn_payloads.get(mimic_id, {})
-
-	return _make_spawn_payload(mimic_id, sync, root)
+func _fail_start(state: NetworkState, error: int, message: String) -> Error:
+	push_warning(message)
+	start_failed.emit(state, error, message)
+	return error
 
 
-func _find_sync_in(root: Node):
-	if _uses_sync_script(root) and root.get_network_root() == root:
-		return root
-
-	for child in root.get_children():
-		var found = _find_sync_in(child)
-		if found:
-			return found
-
-	return null
+func _fail_unavailable_transport(state: NetworkState) -> Error:
+	match _get_transport_type():
+		TransportType.OFFLINE:
+			return _fail_start(state, ERR_UNAVAILABLE, "Offline transport cannot start network connections.")
+		TransportType.WEBRTC:
+			return _fail_start(state, ERR_UNAVAILABLE, "WebRTC transport needs signaling and is not implemented yet.")
+		_:
+			return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
 
 
-func _uses_sync_script(node: Node) -> bool:
-	var script = node.get_script()
-	while script is Script:
-		if script == MIMIC_SYNC_SCRIPT:
-			return true
-		script = script.get_base_script()
-	return false
+func _should_fallback_to_client(error: Error) -> bool:
+	return error == ERR_ALREADY_IN_USE or error == ERR_CANT_CREATE or error == ERR_CANT_OPEN
 
 
-@rpc("authority", "call_remote", "reliable")
-func _spawn_remote(payload: Dictionary) -> void:
-	var mimic_id := String(payload.get("id", ""))
-	if mimic_id.is_empty() or _nodes_by_id.has(mimic_id):
+func _can_fallback_to_client_after_server_failure(error: Error) -> bool:
+	if not _should_fallback_to_client(error):
+		return false
+	if _has_active_peer():
+		return false
+	if OS.has_feature("dedicated_server") or OS.has_feature("server"):
+		return false
+	return true
+
+
+func _has_active_peer() -> bool:
+	if _state != NetworkState.OFFLINE:
+		return true
+	if not multiplayer.has_multiplayer_peer():
+		return false
+
+	var current_peer := multiplayer.multiplayer_peer
+	if current_peer == null or current_peer is OfflineMultiplayerPeer:
+		return false
+
+	return current_peer.get_connection_status() != MultiplayerPeer.CONNECTION_DISCONNECTED
+
+
+func _close_peer() -> void:
+	var old_peer := multiplayer.multiplayer_peer if multiplayer.has_multiplayer_peer() else null
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	if old_peer != null:
+		old_peer.close()
+
+
+func _get_transport_type() -> int:
+	return _get_int_setting(SETTING_TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE)
+
+
+func _get_bind_address(bind_address_override: String = "") -> String:
+	if not bind_address_override.is_empty():
+		return bind_address_override
+	var bind_address := _get_string_setting(SETTING_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
+	return "*" if bind_address.is_empty() else bind_address
+
+
+func _get_websocket_url(address: String, port: int) -> String:
+	if address.begins_with("ws://") or address.begins_with("wss://"):
+		return address
+
+	if address.split(":").size() > 2 and not address.begins_with("["):
+		address = "[%s]" % address
+
+	var path := _get_string_setting(SETTING_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH).strip_edges()
+	if not path.is_empty() and not path.begins_with("/"):
+		path = "/" + path
+
+	var scheme := "wss" if _get_bool_setting(SETTING_WEBSOCKET_CLIENT_USE_TLS, DEFAULT_WEBSOCKET_CLIENT_USE_TLS) else "ws"
+	return "%s://%s:%d%s" % [scheme, address, port, path]
+
+
+func _add_port_mapping(port: int) -> void:
+	_external_address = ""
+	_mapped_port = 0
+	_mapped_protocols.clear()
+
+	if not _get_bool_setting(SETTING_PORT_FORWARDING_ENABLED, DEFAULT_PORT_FORWARDING_ENABLED):
 		return
 
-	var parent := _get_spawn_parent(payload)
-	if parent == null:
-		_queue_spawn_payload(payload)
+	var upnp := UPNP.new()
+	var discover_error := upnp.discover(
+		_get_int_setting(SETTING_UPNP_DISCOVER_TIMEOUT_MS, DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
+		_get_int_setting(SETTING_UPNP_DISCOVER_TTL, DEFAULT_UPNP_DISCOVER_TTL)
+	)
+	if discover_error != UPNP.UPNP_RESULT_SUCCESS:
+		_finish_port_mapping(discover_error, "")
 		return
 
-	_spawn_remote_under_parent(payload, parent)
+	var gateway := upnp.get_gateway()
+	if gateway == null or not gateway.is_valid_gateway():
+		_finish_port_mapping(UPNP.UPNP_RESULT_NO_GATEWAY, "")
+		return
 
-
-func _get_spawn_parent(payload: Dictionary) -> Node:
-	return get_node_or_null(NodePath(String(payload.get("parent_path", ""))))
-
-
-func _queue_spawn_payload(payload: Dictionary) -> void:
-	var mimic_id := String(payload.get("id", ""))
-	for i in _pending_spawn_payloads.size():
-		if String(_pending_spawn_payloads[i].get("id", "")) == mimic_id:
-			_pending_spawn_payloads[i] = payload
+	for protocol in _get_port_mapping_protocols():
+		var mapping_error := upnp.add_port_mapping(
+			port,
+			port,
+			_get_string_setting(SETTING_UPNP_DESCRIPTION, DEFAULT_UPNP_DESCRIPTION),
+			protocol,
+			_get_int_setting(SETTING_PORT_MAPPING_DURATION, DEFAULT_PORT_MAPPING_DURATION)
+		)
+		if mapping_error != UPNP.UPNP_RESULT_SUCCESS:
+			for mapped_protocol in _mapped_protocols:
+				upnp.delete_port_mapping(port, mapped_protocol)
+			_mapped_protocols.clear()
+			_finish_port_mapping(mapping_error, "")
 			return
 
-	_pending_spawn_payloads.append(payload)
-	set_process(true)
-	push_warning("Mimic is waiting for spawn parent: %s" % payload.get("parent_path", ""))
+		_mapped_protocols.append(protocol)
+
+	_mapped_port = port
+	if _get_bool_setting(SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS):
+		_external_address = upnp.query_external_address()
+
+	_finish_port_mapping(UPNP.UPNP_RESULT_SUCCESS, _external_address)
 
 
-func _spawn_remote_under_parent(payload: Dictionary, parent: Node) -> void:
-	var mimic_id := String(payload.get("id", ""))
-	if mimic_id.is_empty() or _nodes_by_id.has(mimic_id):
+func _finish_port_mapping(error: int, external_address: String) -> void:
+	if error != UPNP.UPNP_RESULT_SUCCESS:
+		push_warning("UPnP port forwarding failed: %s." % str(error))
+	port_mapping_finished.emit(error, external_address)
+
+
+func _delete_port_mappings() -> void:
+	if not _get_bool_setting(SETTING_PORT_MAPPING_DELETE_ON_STOP, DEFAULT_PORT_MAPPING_DELETE_ON_STOP):
+		return
+	if _mapped_port <= 0 or _mapped_protocols.is_empty():
 		return
 
-	var node_name := String(payload.get("name", ""))
-	if node_name.is_empty():
-		return
-	if parent.has_node(node_name):
-		push_warning("Mimic spawn skipped because parent already has child: %s" % node_name)
-		return
+	var upnp := UPNP.new()
+	var discover_error := upnp.discover(
+		_get_int_setting(SETTING_UPNP_DISCOVER_TIMEOUT_MS, DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
+		_get_int_setting(SETTING_UPNP_DISCOVER_TTL, DEFAULT_UPNP_DISCOVER_TTL)
+	)
+	if discover_error == UPNP.UPNP_RESULT_SUCCESS:
+		for protocol in _mapped_protocols:
+			upnp.delete_port_mapping(_mapped_port, protocol)
 
-	var packed := load(String(payload.get("scene_path", ""))) as PackedScene
-	if packed == null:
-		push_warning("Mimic could not load spawn scene: %s" % payload.get("scene_path", ""))
-		return
-
-	var root := packed.instantiate() as Node
-	if root == null:
-		return
-
-	root.name = node_name
-	_apply_spawn_state(root, payload.get("spawn_state", []))
-
-	_remote_spawning = true
-	_remote_spawn_id = mimic_id
-	_remote_spawn_root_instance_id = root.get_instance_id()
-	parent.add_child(root)
-	_remote_spawning = false
-	_remote_spawn_id = ""
-	_remote_spawn_root_instance_id = 0
-
-	_track(root, mimic_id)
+	_mapped_port = 0
+	_mapped_protocols.clear()
+	_external_address = ""
 
 
-@rpc("authority", "call_remote", "reliable")
-func _despawn_remote(mimic_id: String) -> void:
-	_remove_pending_spawn_payload(mimic_id)
-	if not _nodes_by_id.has(mimic_id):
-		return
-
-	var root: Node = _nodes_by_id[mimic_id]
-	_untrack_id(mimic_id)
-
-	if is_instance_valid(root):
-		root.queue_free()
-
-
-func _track(root: Node, mimic_id: String) -> void:
-	if root == null or mimic_id.is_empty():
-		return
-	if _nodes_by_id.has(mimic_id) or _ids_by_instance.has(root.get_instance_id()):
-		return
-
-	_nodes_by_id[mimic_id] = root
-	_ids_by_instance[root.get_instance_id()] = mimic_id
-	root.tree_exiting.connect(_root_tree_exiting.bind(root.get_instance_id()), CONNECT_ONE_SHOT)
+func _get_port_mapping_protocols() -> PackedStringArray:
+	var protocols := PackedStringArray()
+	match _get_int_setting(SETTING_PORT_MAPPING_PROTOCOL, DEFAULT_PORT_MAPPING_PROTOCOL):
+		PortMappingProtocol.TRANSPORT_DEFAULT:
+			protocols.append("TCP" if _get_transport_type() == TransportType.WEBSOCKET else "UDP")
+		PortMappingProtocol.TCP:
+			protocols.append("TCP")
+		PortMappingProtocol.UDP:
+			protocols.append("UDP")
+		PortMappingProtocol.TCP_AND_UDP:
+			protocols.append("TCP")
+			protocols.append("UDP")
+	return protocols
 
 
-func _has_tracked_ancestor(root: Node) -> bool:
-	var node := root.get_parent()
-	while node:
-		if _ids_by_instance.has(node.get_instance_id()):
-			return true
-		node = node.get_parent()
-	return false
+func _get_setting(name: String, default_value: Variant) -> Variant:
+	if ProjectSettings.has_setting(name):
+		return ProjectSettings.get_setting(name)
+	return default_value
 
 
-func _remove_pending_spawn_payload(mimic_id: String) -> void:
-	if mimic_id.is_empty():
-		return
-
-	var waiting := []
-	for payload in _pending_spawn_payloads:
-		if String(payload.get("id", "")) != mimic_id:
-			waiting.append(payload)
-
-	_pending_spawn_payloads = waiting
-	set_process(not _pending_spawn_payloads.is_empty())
+func _get_string_setting(name: String, default_value: String) -> String:
+	return String(_get_setting(name, default_value))
 
 
-func _untrack_id(mimic_id: String) -> void:
-	if not _nodes_by_id.has(mimic_id):
-		return
-
-	var root: Node = _nodes_by_id[mimic_id]
-	_nodes_by_id.erase(mimic_id)
-
-	if is_instance_valid(root):
-		_ids_by_instance.erase(root.get_instance_id())
+func _get_int_setting(name: String, default_value: int) -> int:
+	return int(_get_setting(name, default_value))
 
 
-func _root_tree_exiting(instance_id: int) -> void:
-	_unregister_tracked_instance(instance_id)
+func _get_float_setting(name: String, default_value: float) -> float:
+	return float(_get_setting(name, default_value))
 
 
-func _unregister_tracked_instance(instance_id: int) -> void:
-	if not _ids_by_instance.has(instance_id):
-		return
-
-	var mimic_id: String = _ids_by_instance[instance_id]
-	_untrack_id(mimic_id)
-
-	if _is_server():
-		_active_spawn_payloads.erase(mimic_id)
-		if multiplayer.has_multiplayer_peer():
-			rpc("_despawn_remote", mimic_id)
-
-
-func _is_server() -> bool:
-	return multiplayer.has_multiplayer_peer() and multiplayer.is_server()
+func _get_bool_setting(name: String, default_value: bool) -> bool:
+	return bool(_get_setting(name, default_value))

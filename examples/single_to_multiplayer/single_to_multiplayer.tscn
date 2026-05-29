@@ -1,16 +1,11 @@
 [gd_scene format=3 uid="uid://fq7tkvwqe1ub"]
 
 [ext_resource type="Script" uid="uid://c7hslsep23kef" path="res://examples/single_to_multiplayer/single_to_multiplayer.gd" id="1_anqd6"]
-[ext_resource type="Script" uid="uid://cdcb4gpt3dlg" path="res://addons/mimic/mimic_manager.gd" id="3_h1ccd"]
+[ext_resource type="Script" uid="uid://cdcb4gpt3dlg" path="res://addons/mimic/mimic_connector.gd" id="3_h1ccd"]
 
 [node name="Single To Multiplayer" type="Node2D" unique_id=945951482]
 script = ExtResource("1_anqd6")
 
-[node name="MimicManager" type="CanvasLayer" parent="." unique_id=120544771]
-physics_interpolation_mode = 2
+[node name="MimicConnector" type="CanvasLayer" parent="." unique_id=120544771]
 script = ExtResource("3_h1ccd")
-auto_start_mode = 3
-
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1335989673]
-_spawnable_scenes = PackedStringArray("uid://fq7tkvwqe1ub")
-spawn_path = NodePath("..")
+auto_connect_mode = 3
