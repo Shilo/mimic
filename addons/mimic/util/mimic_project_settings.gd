@@ -1,29 +1,29 @@
 @tool
-class_name MimicProjectSettings
+class_name MimicProjectSettings extends Object
 
-const _SETTING_LOG_LEVEL := "mimic/logging/log_level"
-const _SETTING_TRANSPORT_TYPE := "mimic/connection/transport_type"
-const _SETTING_ADDRESS := "mimic/connection/address"
-const _SETTING_PORT := "mimic/connection/port"
-const _SETTING_BIND_ADDRESS := "mimic/connection/bind_address"
-const _SETTING_MAX_CLIENTS := "mimic/connection/max_clients"
-const _SETTING_REPLACE_EXISTING_PEER := "mimic/connection/replace_existing_peer"
-const _SETTING_REFUSE_NEW_CONNECTIONS := "mimic/connection/refuse_new_connections"
-const _SETTING_ENET_CHANNEL_COUNT := "mimic/enet/channel_count"
-const _SETTING_ENET_IN_BANDWIDTH := "mimic/enet/in_bandwidth"
-const _SETTING_ENET_OUT_BANDWIDTH := "mimic/enet/out_bandwidth"
-const _SETTING_ENET_CLIENT_LOCAL_PORT := "mimic/enet/client_local_port"
-const _SETTING_WEBSOCKET_CLIENT_USE_TLS := "mimic/websocket/client_use_tls"
-const _SETTING_WEBSOCKET_PATH := "mimic/websocket/path"
-const _SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic/websocket/handshake_timeout"
-const _SETTING_PORT_FORWARDING_ENABLED := "mimic/port_forwarding/enabled"
-const _SETTING_PORT_MAPPING_DELETE_ON_STOP := "mimic/port_forwarding/delete_mapping_on_stop"
-const _SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic/port_forwarding/query_external_address"
-const _SETTING_PORT_MAPPING_PROTOCOL := "mimic/port_forwarding/protocol"
-const _SETTING_PORT_MAPPING_DURATION := "mimic/port_forwarding/duration"
-const _SETTING_UPNP_DISCOVER_TIMEOUT_MS := "mimic/port_forwarding/upnp_discover_timeout_ms"
-const _SETTING_UPNP_DISCOVER_TTL := "mimic/port_forwarding/upnp_discover_ttl"
-const _SETTING_UPNP_DESCRIPTION := "mimic/port_forwarding/description"
+const _LOG_LEVEL := "mimic/logging/log_level"
+const _TRANSPORT_TYPE := "mimic/connection/transport_type"
+const _ADDRESS := "mimic/connection/address"
+const _PORT := "mimic/connection/port"
+const _BIND_ADDRESS := "mimic/connection/bind_address"
+const _MAX_CLIENTS := "mimic/connection/max_clients"
+const _REPLACE_EXISTING_PEER := "mimic/connection/replace_existing_peer"
+const _REFUSE_NEW_CONNECTIONS := "mimic/connection/refuse_new_connections"
+const _ENET_CHANNEL_COUNT := "mimic/enet/channel_count"
+const _ENET_IN_BANDWIDTH := "mimic/enet/in_bandwidth"
+const _ENET_OUT_BANDWIDTH := "mimic/enet/out_bandwidth"
+const _ENET_CLIENT_LOCAL_PORT := "mimic/enet/client_local_port"
+const _WEBSOCKET_CLIENT_USE_TLS := "mimic/websocket/client_use_tls"
+const _WEBSOCKET_PATH := "mimic/websocket/path"
+const _WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic/websocket/handshake_timeout"
+const _PORT_FORWARDING_ENABLED := "mimic/port_forwarding/enabled"
+const _PORT_MAPPING_DELETE_ON_STOP := "mimic/port_forwarding/delete_mapping_on_stop"
+const _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic/port_forwarding/query_external_address"
+const _PORT_MAPPING_PROTOCOL := "mimic/port_forwarding/protocol"
+const _PORT_MAPPING_DURATION := "mimic/port_forwarding/duration"
+const _UPNP_DISCOVER_TIMEOUT_MS := "mimic/port_forwarding/upnp_discover_timeout_ms"
+const _UPNP_DISCOVER_TTL := "mimic/port_forwarding/upnp_discover_ttl"
+const _UPNP_DESCRIPTION := "mimic/port_forwarding/description"
 
 const _DEFAULT_LOG_LEVEL := 1
 const _DEFAULT_TRANSPORT_TYPE := 1
@@ -51,143 +51,143 @@ const _DEFAULT_UPNP_DESCRIPTION := "Mimic"
 
 const _SETTINGS := [
 	{
-		"name": _SETTING_LOG_LEVEL,
+		"name": _LOG_LEVEL,
 		"default": _DEFAULT_LOG_LEVEL,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": "All,Warning,Error,None",
 	},
 	{
-		"name": _SETTING_TRANSPORT_TYPE,
+		"name": _TRANSPORT_TYPE,
 		"default": _DEFAULT_TRANSPORT_TYPE,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": "Offline,ENet,WebSocket,WebRTC (Unsupported)",
 	},
 	{
-		"name": _SETTING_ADDRESS,
+		"name": _ADDRESS,
 		"default": _DEFAULT_ADDRESS,
 		"type": TYPE_STRING,
 	},
 	{
-		"name": _SETTING_PORT,
+		"name": _PORT,
 		"default": _DEFAULT_PORT,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "1,65535,1",
 	},
 	{
-		"name": _SETTING_BIND_ADDRESS,
+		"name": _BIND_ADDRESS,
 		"default": _DEFAULT_BIND_ADDRESS,
 		"type": TYPE_STRING,
 	},
 	{
-		"name": _SETTING_MAX_CLIENTS,
+		"name": _MAX_CLIENTS,
 		"default": _DEFAULT_MAX_CLIENTS,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "1,4095,1",
 	},
 	{
-		"name": _SETTING_REPLACE_EXISTING_PEER,
+		"name": _REPLACE_EXISTING_PEER,
 		"default": _DEFAULT_REPLACE_EXISTING_PEER,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_REFUSE_NEW_CONNECTIONS,
+		"name": _REFUSE_NEW_CONNECTIONS,
 		"default": _DEFAULT_REFUSE_NEW_CONNECTIONS,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_ENET_CHANNEL_COUNT,
+		"name": _ENET_CHANNEL_COUNT,
 		"default": _DEFAULT_ENET_CHANNEL_COUNT,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,255,1",
 	},
 	{
-		"name": _SETTING_ENET_IN_BANDWIDTH,
+		"name": _ENET_IN_BANDWIDTH,
 		"default": _DEFAULT_ENET_IN_BANDWIDTH,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,2147483647,1",
 	},
 	{
-		"name": _SETTING_ENET_OUT_BANDWIDTH,
+		"name": _ENET_OUT_BANDWIDTH,
 		"default": _DEFAULT_ENET_OUT_BANDWIDTH,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,2147483647,1",
 	},
 	{
-		"name": _SETTING_ENET_CLIENT_LOCAL_PORT,
+		"name": _ENET_CLIENT_LOCAL_PORT,
 		"default": _DEFAULT_ENET_CLIENT_LOCAL_PORT,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,65535,1",
 	},
 	{
-		"name": _SETTING_WEBSOCKET_CLIENT_USE_TLS,
+		"name": _WEBSOCKET_CLIENT_USE_TLS,
 		"default": _DEFAULT_WEBSOCKET_CLIENT_USE_TLS,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_WEBSOCKET_PATH,
+		"name": _WEBSOCKET_PATH,
 		"default": _DEFAULT_WEBSOCKET_PATH,
 		"type": TYPE_STRING,
 	},
 	{
-		"name": _SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT,
+		"name": _WEBSOCKET_HANDSHAKE_TIMEOUT,
 		"default": _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT,
 		"type": TYPE_FLOAT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,60,0.1,or_greater",
 	},
 	{
-		"name": _SETTING_PORT_FORWARDING_ENABLED,
+		"name": _PORT_FORWARDING_ENABLED,
 		"default": _DEFAULT_PORT_FORWARDING_ENABLED,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_PORT_MAPPING_DELETE_ON_STOP,
+		"name": _PORT_MAPPING_DELETE_ON_STOP,
 		"default": _DEFAULT_PORT_MAPPING_DELETE_ON_STOP,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
+		"name": _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
 		"default": _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
 		"type": TYPE_BOOL,
 	},
 	{
-		"name": _SETTING_PORT_MAPPING_PROTOCOL,
+		"name": _PORT_MAPPING_PROTOCOL,
 		"default": _DEFAULT_PORT_MAPPING_PROTOCOL,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": "Transport Default,TCP,UDP,TCP and UDP",
 	},
 	{
-		"name": _SETTING_PORT_MAPPING_DURATION,
+		"name": _PORT_MAPPING_DURATION,
 		"default": _DEFAULT_PORT_MAPPING_DURATION,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,86400,1,or_greater",
 	},
 	{
-		"name": _SETTING_UPNP_DISCOVER_TIMEOUT_MS,
+		"name": _UPNP_DISCOVER_TIMEOUT_MS,
 		"default": _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,60000,1,or_greater",
 	},
 	{
-		"name": _SETTING_UPNP_DISCOVER_TTL,
+		"name": _UPNP_DISCOVER_TTL,
 		"default": _DEFAULT_UPNP_DISCOVER_TTL,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "1,255,1",
 	},
 	{
-		"name": _SETTING_UPNP_DESCRIPTION,
+		"name": _UPNP_DESCRIPTION,
 		"default": _DEFAULT_UPNP_DESCRIPTION,
 		"type": TYPE_STRING,
 	},
@@ -195,146 +195,146 @@ const _SETTINGS := [
 
 static var log_level: int:
 	get:
-		return _get_int(_SETTING_LOG_LEVEL, _DEFAULT_LOG_LEVEL)
+		return _get_int(_LOG_LEVEL, _DEFAULT_LOG_LEVEL)
 	set(value):
-		_set_setting(_SETTING_LOG_LEVEL, value)
+		_set_setting(_LOG_LEVEL, value)
 
 static var transport_type: int:
 	get:
-		return _get_int(_SETTING_TRANSPORT_TYPE, _DEFAULT_TRANSPORT_TYPE)
+		return _get_int(_TRANSPORT_TYPE, _DEFAULT_TRANSPORT_TYPE)
 	set(value):
-		_set_setting(_SETTING_TRANSPORT_TYPE, value)
+		_set_setting(_TRANSPORT_TYPE, value)
 
 static var address: String:
 	get:
-		return _get_string(_SETTING_ADDRESS, _DEFAULT_ADDRESS)
+		return _get_string(_ADDRESS, _DEFAULT_ADDRESS)
 	set(value):
-		_set_setting(_SETTING_ADDRESS, value)
+		_set_setting(_ADDRESS, value)
 
 static var port: int:
 	get:
-		return _get_int(_SETTING_PORT, _DEFAULT_PORT)
+		return _get_int(_PORT, _DEFAULT_PORT)
 	set(value):
-		_set_setting(_SETTING_PORT, value)
+		_set_setting(_PORT, value)
 
 static var bind_address: String:
 	get:
-		return _get_string(_SETTING_BIND_ADDRESS, _DEFAULT_BIND_ADDRESS)
+		return _get_string(_BIND_ADDRESS, _DEFAULT_BIND_ADDRESS)
 	set(value):
-		_set_setting(_SETTING_BIND_ADDRESS, value)
+		_set_setting(_BIND_ADDRESS, value)
 
 static var max_clients: int:
 	get:
-		return _get_int(_SETTING_MAX_CLIENTS, _DEFAULT_MAX_CLIENTS)
+		return _get_int(_MAX_CLIENTS, _DEFAULT_MAX_CLIENTS)
 	set(value):
-		_set_setting(_SETTING_MAX_CLIENTS, value)
+		_set_setting(_MAX_CLIENTS, value)
 
 static var replace_existing_peer: bool:
 	get:
-		return _get_bool(_SETTING_REPLACE_EXISTING_PEER, _DEFAULT_REPLACE_EXISTING_PEER)
+		return _get_bool(_REPLACE_EXISTING_PEER, _DEFAULT_REPLACE_EXISTING_PEER)
 	set(value):
-		_set_setting(_SETTING_REPLACE_EXISTING_PEER, value)
+		_set_setting(_REPLACE_EXISTING_PEER, value)
 
 static var refuse_new_connections: bool:
 	get:
-		return _get_bool(_SETTING_REFUSE_NEW_CONNECTIONS, _DEFAULT_REFUSE_NEW_CONNECTIONS)
+		return _get_bool(_REFUSE_NEW_CONNECTIONS, _DEFAULT_REFUSE_NEW_CONNECTIONS)
 	set(value):
-		_set_setting(_SETTING_REFUSE_NEW_CONNECTIONS, value)
+		_set_setting(_REFUSE_NEW_CONNECTIONS, value)
 
 static var enet_channel_count: int:
 	get:
-		return _get_int(_SETTING_ENET_CHANNEL_COUNT, _DEFAULT_ENET_CHANNEL_COUNT)
+		return _get_int(_ENET_CHANNEL_COUNT, _DEFAULT_ENET_CHANNEL_COUNT)
 	set(value):
-		_set_setting(_SETTING_ENET_CHANNEL_COUNT, value)
+		_set_setting(_ENET_CHANNEL_COUNT, value)
 
 static var enet_in_bandwidth: int:
 	get:
-		return _get_int(_SETTING_ENET_IN_BANDWIDTH, _DEFAULT_ENET_IN_BANDWIDTH)
+		return _get_int(_ENET_IN_BANDWIDTH, _DEFAULT_ENET_IN_BANDWIDTH)
 	set(value):
-		_set_setting(_SETTING_ENET_IN_BANDWIDTH, value)
+		_set_setting(_ENET_IN_BANDWIDTH, value)
 
 static var enet_out_bandwidth: int:
 	get:
-		return _get_int(_SETTING_ENET_OUT_BANDWIDTH, _DEFAULT_ENET_OUT_BANDWIDTH)
+		return _get_int(_ENET_OUT_BANDWIDTH, _DEFAULT_ENET_OUT_BANDWIDTH)
 	set(value):
-		_set_setting(_SETTING_ENET_OUT_BANDWIDTH, value)
+		_set_setting(_ENET_OUT_BANDWIDTH, value)
 
 static var enet_client_local_port: int:
 	get:
-		return _get_int(_SETTING_ENET_CLIENT_LOCAL_PORT, _DEFAULT_ENET_CLIENT_LOCAL_PORT)
+		return _get_int(_ENET_CLIENT_LOCAL_PORT, _DEFAULT_ENET_CLIENT_LOCAL_PORT)
 	set(value):
-		_set_setting(_SETTING_ENET_CLIENT_LOCAL_PORT, value)
+		_set_setting(_ENET_CLIENT_LOCAL_PORT, value)
 
 static var websocket_client_use_tls: bool:
 	get:
-		return _get_bool(_SETTING_WEBSOCKET_CLIENT_USE_TLS, _DEFAULT_WEBSOCKET_CLIENT_USE_TLS)
+		return _get_bool(_WEBSOCKET_CLIENT_USE_TLS, _DEFAULT_WEBSOCKET_CLIENT_USE_TLS)
 	set(value):
-		_set_setting(_SETTING_WEBSOCKET_CLIENT_USE_TLS, value)
+		_set_setting(_WEBSOCKET_CLIENT_USE_TLS, value)
 
 static var websocket_path: String:
 	get:
-		return _get_string(_SETTING_WEBSOCKET_PATH, _DEFAULT_WEBSOCKET_PATH)
+		return _get_string(_WEBSOCKET_PATH, _DEFAULT_WEBSOCKET_PATH)
 	set(value):
-		_set_setting(_SETTING_WEBSOCKET_PATH, value)
+		_set_setting(_WEBSOCKET_PATH, value)
 
 static var websocket_handshake_timeout: float:
 	get:
-		return _get_float(_SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+		return _get_float(_WEBSOCKET_HANDSHAKE_TIMEOUT, _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
 	set(value):
-		_set_setting(_SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, value)
+		_set_setting(_WEBSOCKET_HANDSHAKE_TIMEOUT, value)
 
 static var port_forwarding_enabled: bool:
 	get:
-		return _get_bool(_SETTING_PORT_FORWARDING_ENABLED, _DEFAULT_PORT_FORWARDING_ENABLED)
+		return _get_bool(_PORT_FORWARDING_ENABLED, _DEFAULT_PORT_FORWARDING_ENABLED)
 	set(value):
-		_set_setting(_SETTING_PORT_FORWARDING_ENABLED, value)
+		_set_setting(_PORT_FORWARDING_ENABLED, value)
 
 static var port_mapping_delete_on_stop: bool:
 	get:
-		return _get_bool(_SETTING_PORT_MAPPING_DELETE_ON_STOP, _DEFAULT_PORT_MAPPING_DELETE_ON_STOP)
+		return _get_bool(_PORT_MAPPING_DELETE_ON_STOP, _DEFAULT_PORT_MAPPING_DELETE_ON_STOP)
 	set(value):
-		_set_setting(_SETTING_PORT_MAPPING_DELETE_ON_STOP, value)
+		_set_setting(_PORT_MAPPING_DELETE_ON_STOP, value)
 
 static var port_mapping_query_external_address: bool:
 	get:
-		return _get_bool(_SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS)
+		return _get_bool(_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS)
 	set(value):
-		_set_setting(_SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, value)
+		_set_setting(_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, value)
 
 static var port_mapping_protocol: int:
 	get:
-		return _get_int(_SETTING_PORT_MAPPING_PROTOCOL, _DEFAULT_PORT_MAPPING_PROTOCOL)
+		return _get_int(_PORT_MAPPING_PROTOCOL, _DEFAULT_PORT_MAPPING_PROTOCOL)
 	set(value):
-		_set_setting(_SETTING_PORT_MAPPING_PROTOCOL, value)
+		_set_setting(_PORT_MAPPING_PROTOCOL, value)
 
 static var port_mapping_duration: int:
 	get:
-		return _get_int(_SETTING_PORT_MAPPING_DURATION, _DEFAULT_PORT_MAPPING_DURATION)
+		return _get_int(_PORT_MAPPING_DURATION, _DEFAULT_PORT_MAPPING_DURATION)
 	set(value):
-		_set_setting(_SETTING_PORT_MAPPING_DURATION, value)
+		_set_setting(_PORT_MAPPING_DURATION, value)
 
 static var upnp_discover_timeout_ms: int:
 	get:
-		return _get_int(_SETTING_UPNP_DISCOVER_TIMEOUT_MS, _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS)
+		return _get_int(_UPNP_DISCOVER_TIMEOUT_MS, _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS)
 	set(value):
-		_set_setting(_SETTING_UPNP_DISCOVER_TIMEOUT_MS, value)
+		_set_setting(_UPNP_DISCOVER_TIMEOUT_MS, value)
 
 static var upnp_discover_ttl: int:
 	get:
-		return _get_int(_SETTING_UPNP_DISCOVER_TTL, _DEFAULT_UPNP_DISCOVER_TTL)
+		return _get_int(_UPNP_DISCOVER_TTL, _DEFAULT_UPNP_DISCOVER_TTL)
 	set(value):
-		_set_setting(_SETTING_UPNP_DISCOVER_TTL, value)
+		_set_setting(_UPNP_DISCOVER_TTL, value)
 
 static var upnp_description: String:
 	get:
-		return _get_string(_SETTING_UPNP_DESCRIPTION, _DEFAULT_UPNP_DESCRIPTION)
+		return _get_string(_UPNP_DESCRIPTION, _DEFAULT_UPNP_DESCRIPTION)
 	set(value):
-		_set_setting(_SETTING_UPNP_DESCRIPTION, value)
+		_set_setting(_UPNP_DESCRIPTION, value)
 
 static var _registered := false
 
 
-static func register_settings() -> void:
+static func register() -> void:
 	if _registered:
 		return
 
@@ -344,7 +344,7 @@ static func register_settings() -> void:
 	_registered = true
 
 
-static func unregister_settings(clear_values: bool = false) -> void:
+static func unregister(clear_values: bool = false) -> void:
 	_registered = false
 	if not clear_values:
 		return

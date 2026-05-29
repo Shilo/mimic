@@ -5,11 +5,11 @@ const _AUTOLOAD_NAME := "Mimic"
 
 
 func _enter_tree() -> void:
-	MimicProjectSettings.register_settings()
+	MimicProjectSettings.register()
 
 
 func _exit_tree() -> void:
-	MimicProjectSettings.unregister_settings()
+	MimicProjectSettings.unregister()
 
 
 func _enable_plugin() -> void:
