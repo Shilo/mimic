@@ -16,51 +16,7 @@ enum TransportType { OFFLINE, ENET, WEBSOCKET, WEBRTC }
 enum NetworkState { OFFLINE, SERVER_LISTENING, CLIENT_CONNECTING, CLIENT_CONNECTED }
 enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 
-const SETTING_TRANSPORT_TYPE := "mimic/connection/transport_type"
-const SETTING_ADDRESS := "mimic/connection/address"
-const SETTING_PORT := "mimic/connection/port"
-const SETTING_BIND_ADDRESS := "mimic/connection/bind_address"
-const SETTING_MAX_CLIENTS := "mimic/connection/max_clients"
-const SETTING_REPLACE_EXISTING_PEER := "mimic/connection/replace_existing_peer"
-const SETTING_REFUSE_NEW_CONNECTIONS := "mimic/connection/refuse_new_connections"
-const SETTING_ENET_CHANNEL_COUNT := "mimic/enet/channel_count"
-const SETTING_ENET_IN_BANDWIDTH := "mimic/enet/in_bandwidth"
-const SETTING_ENET_OUT_BANDWIDTH := "mimic/enet/out_bandwidth"
-const SETTING_ENET_CLIENT_LOCAL_PORT := "mimic/enet/client_local_port"
-const SETTING_WEBSOCKET_CLIENT_USE_TLS := "mimic/websocket/client_use_tls"
-const SETTING_WEBSOCKET_PATH := "mimic/websocket/path"
-const SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic/websocket/handshake_timeout"
-const SETTING_PORT_FORWARDING_ENABLED := "mimic/port_forwarding/enabled"
-const SETTING_PORT_MAPPING_DELETE_ON_STOP := "mimic/port_forwarding/delete_mapping_on_stop"
-const SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic/port_forwarding/query_external_address"
-const SETTING_PORT_MAPPING_PROTOCOL := "mimic/port_forwarding/protocol"
-const SETTING_PORT_MAPPING_DURATION := "mimic/port_forwarding/duration"
-const SETTING_UPNP_DISCOVER_TIMEOUT_MS := "mimic/port_forwarding/upnp_discover_timeout_ms"
-const SETTING_UPNP_DISCOVER_TTL := "mimic/port_forwarding/upnp_discover_ttl"
-const SETTING_UPNP_DESCRIPTION := "mimic/port_forwarding/description"
-
-const DEFAULT_TRANSPORT_TYPE := TransportType.ENET
-const DEFAULT_ADDRESS := "127.0.0.1"
-const DEFAULT_PORT := 8910
-const DEFAULT_BIND_ADDRESS := "*"
-const DEFAULT_MAX_CLIENTS := 32
-const DEFAULT_REPLACE_EXISTING_PEER := true
-const DEFAULT_REFUSE_NEW_CONNECTIONS := false
-const DEFAULT_ENET_CHANNEL_COUNT := 0
-const DEFAULT_ENET_IN_BANDWIDTH := 0
-const DEFAULT_ENET_OUT_BANDWIDTH := 0
-const DEFAULT_ENET_CLIENT_LOCAL_PORT := 0
-const DEFAULT_WEBSOCKET_CLIENT_USE_TLS := false
-const DEFAULT_WEBSOCKET_PATH := ""
-const DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT := 3.0
-const DEFAULT_PORT_FORWARDING_ENABLED := false
-const DEFAULT_PORT_MAPPING_DELETE_ON_STOP := true
-const DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := true
-const DEFAULT_PORT_MAPPING_PROTOCOL := PortMappingProtocol.TRANSPORT_DEFAULT
-const DEFAULT_PORT_MAPPING_DURATION := 7200
-const DEFAULT_UPNP_DISCOVER_TIMEOUT_MS := 2000
-const DEFAULT_UPNP_DISCOVER_TTL := 2
-const DEFAULT_UPNP_DESCRIPTION := "Mimic"
+const Settings := preload("res://addons/mimic/internal/mimic_project_settings.gd")
 
 var _state: NetworkState = NetworkState.OFFLINE
 var _mapped_port := 0
@@ -81,8 +37,8 @@ func start_server(port_override: int = -1, bind_address_override: String = "") -
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
-	var address := address_override.strip_edges() if not address_override.is_empty() else _get_string_setting(SETTING_ADDRESS, DEFAULT_ADDRESS).strip_edges()
-	var port := port_override if port_override > 0 else _get_int_setting(SETTING_PORT, DEFAULT_PORT)
+	var address := address_override.strip_edges() if not address_override.is_empty() else Settings.get_string(Settings.SETTING_ADDRESS, Settings.DEFAULT_ADDRESS).strip_edges()
+	var port := port_override if port_override > 0 else Settings.get_int(Settings.SETTING_PORT, Settings.DEFAULT_PORT)
 	if address.is_empty():
 		return _fail_start(NetworkState.CLIENT_CONNECTING, ERR_INVALID_PARAMETER, "Client address is empty.")
 
@@ -94,21 +50,21 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 	match _get_transport_type():
 		TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
-			var bind_address := _get_string_setting(SETTING_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
+			var bind_address := Settings.get_string(Settings.SETTING_BIND_ADDRESS, Settings.DEFAULT_BIND_ADDRESS)
 			if not bind_address.is_empty() and bind_address != "*":
 				enet_peer.set_bind_ip(bind_address)
 			error = enet_peer.create_client(
 				address,
 				port,
-				_get_int_setting(SETTING_ENET_CHANNEL_COUNT, DEFAULT_ENET_CHANNEL_COUNT),
-				_get_int_setting(SETTING_ENET_IN_BANDWIDTH, DEFAULT_ENET_IN_BANDWIDTH),
-				_get_int_setting(SETTING_ENET_OUT_BANDWIDTH, DEFAULT_ENET_OUT_BANDWIDTH),
-				_get_int_setting(SETTING_ENET_CLIENT_LOCAL_PORT, DEFAULT_ENET_CLIENT_LOCAL_PORT)
+				Settings.get_int(Settings.SETTING_ENET_CHANNEL_COUNT, Settings.DEFAULT_ENET_CHANNEL_COUNT),
+				Settings.get_int(Settings.SETTING_ENET_IN_BANDWIDTH, Settings.DEFAULT_ENET_IN_BANDWIDTH),
+				Settings.get_int(Settings.SETTING_ENET_OUT_BANDWIDTH, Settings.DEFAULT_ENET_OUT_BANDWIDTH),
+				Settings.get_int(Settings.SETTING_ENET_CLIENT_LOCAL_PORT, Settings.DEFAULT_ENET_CLIENT_LOCAL_PORT)
 			)
 			peer = enet_peer
 		TransportType.WEBSOCKET:
 			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = _get_float_setting(SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			websocket_peer.handshake_timeout = Settings.get_float(Settings.SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, Settings.DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
 			error = websocket_peer.create_client(_get_websocket_url(address, port))
 			peer = websocket_peer
 		TransportType.OFFLINE, TransportType.WEBRTC:
@@ -193,7 +149,7 @@ func is_offline() -> bool:
 func _start_server(port_override: int = -1, bind_address_override: String = "", quiet_expected_failure: bool = false) -> Error:
 	_connect_multiplayer_signals()
 
-	var port := port_override if port_override > 0 else _get_int_setting(SETTING_PORT, DEFAULT_PORT)
+	var port := port_override if port_override > 0 else Settings.get_int(Settings.SETTING_PORT, Settings.DEFAULT_PORT)
 	var error := _validate_start(NetworkState.SERVER_LISTENING, port)
 	if error != OK:
 		return error
@@ -207,15 +163,15 @@ func _start_server(port_override: int = -1, bind_address_override: String = "", 
 				enet_peer.set_bind_ip(bind_address)
 			error = enet_peer.create_server(
 				port,
-				_get_int_setting(SETTING_MAX_CLIENTS, DEFAULT_MAX_CLIENTS),
-				_get_int_setting(SETTING_ENET_CHANNEL_COUNT, DEFAULT_ENET_CHANNEL_COUNT),
-				_get_int_setting(SETTING_ENET_IN_BANDWIDTH, DEFAULT_ENET_IN_BANDWIDTH),
-				_get_int_setting(SETTING_ENET_OUT_BANDWIDTH, DEFAULT_ENET_OUT_BANDWIDTH)
+				Settings.get_int(Settings.SETTING_MAX_CLIENTS, Settings.DEFAULT_MAX_CLIENTS),
+				Settings.get_int(Settings.SETTING_ENET_CHANNEL_COUNT, Settings.DEFAULT_ENET_CHANNEL_COUNT),
+				Settings.get_int(Settings.SETTING_ENET_IN_BANDWIDTH, Settings.DEFAULT_ENET_IN_BANDWIDTH),
+				Settings.get_int(Settings.SETTING_ENET_OUT_BANDWIDTH, Settings.DEFAULT_ENET_OUT_BANDWIDTH)
 			)
 			peer = enet_peer
 		TransportType.WEBSOCKET:
 			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = _get_float_setting(SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			websocket_peer.handshake_timeout = Settings.get_float(Settings.SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, Settings.DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
 			error = websocket_peer.create_server(port, _get_bind_address(bind_address_override))
 			peer = websocket_peer
 		TransportType.OFFLINE, TransportType.WEBRTC:
@@ -229,7 +185,7 @@ func _start_server(port_override: int = -1, bind_address_override: String = "", 
 			return error
 		return _fail_start(NetworkState.SERVER_LISTENING, error, "Unable to start server: %s." % error_string(error))
 
-	peer.refuse_new_connections = _get_bool_setting(SETTING_REFUSE_NEW_CONNECTIONS, DEFAULT_REFUSE_NEW_CONNECTIONS)
+	peer.refuse_new_connections = Settings.get_bool(Settings.SETTING_REFUSE_NEW_CONNECTIONS, Settings.DEFAULT_REFUSE_NEW_CONNECTIONS)
 	multiplayer.multiplayer_peer = peer
 	_change_state(NetworkState.SERVER_LISTENING)
 	_add_port_mapping(port)
@@ -248,7 +204,7 @@ func _validate_start(state: NetworkState, port: int) -> Error:
 		return _fail_unavailable_transport(state)
 
 	if _has_active_peer():
-		if not _get_bool_setting(SETTING_REPLACE_EXISTING_PEER, DEFAULT_REPLACE_EXISTING_PEER):
+		if not Settings.get_bool(Settings.SETTING_REPLACE_EXISTING_PEER, Settings.DEFAULT_REPLACE_EXISTING_PEER):
 			return _fail_start(state, ERR_ALREADY_IN_USE, "A multiplayer peer is already active.")
 		stop()
 
@@ -354,13 +310,13 @@ func _close_peer() -> void:
 
 
 func _get_transport_type() -> int:
-	return _get_int_setting(SETTING_TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE)
+	return Settings.get_int(Settings.SETTING_TRANSPORT_TYPE, Settings.DEFAULT_TRANSPORT_TYPE)
 
 
 func _get_bind_address(bind_address_override: String = "") -> String:
 	if not bind_address_override.is_empty():
 		return bind_address_override
-	var bind_address := _get_string_setting(SETTING_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
+	var bind_address := Settings.get_string(Settings.SETTING_BIND_ADDRESS, Settings.DEFAULT_BIND_ADDRESS)
 	return "*" if bind_address.is_empty() else bind_address
 
 
@@ -371,11 +327,11 @@ func _get_websocket_url(address: String, port: int) -> String:
 	if address.split(":").size() > 2 and not address.begins_with("["):
 		address = "[%s]" % address
 
-	var path := _get_string_setting(SETTING_WEBSOCKET_PATH, DEFAULT_WEBSOCKET_PATH).strip_edges()
+	var path := Settings.get_string(Settings.SETTING_WEBSOCKET_PATH, Settings.DEFAULT_WEBSOCKET_PATH).strip_edges()
 	if not path.is_empty() and not path.begins_with("/"):
 		path = "/" + path
 
-	var scheme := "wss" if _get_bool_setting(SETTING_WEBSOCKET_CLIENT_USE_TLS, DEFAULT_WEBSOCKET_CLIENT_USE_TLS) else "ws"
+	var scheme := "wss" if Settings.get_bool(Settings.SETTING_WEBSOCKET_CLIENT_USE_TLS, Settings.DEFAULT_WEBSOCKET_CLIENT_USE_TLS) else "ws"
 	return "%s://%s:%d%s" % [scheme, address, port, path]
 
 
@@ -384,13 +340,13 @@ func _add_port_mapping(port: int) -> void:
 	_mapped_port = 0
 	_mapped_protocols.clear()
 
-	if not _get_bool_setting(SETTING_PORT_FORWARDING_ENABLED, DEFAULT_PORT_FORWARDING_ENABLED):
+	if not Settings.get_bool(Settings.SETTING_PORT_FORWARDING_ENABLED, Settings.DEFAULT_PORT_FORWARDING_ENABLED):
 		return
 
 	var upnp := UPNP.new()
 	var discover_error := upnp.discover(
-		_get_int_setting(SETTING_UPNP_DISCOVER_TIMEOUT_MS, DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
-		_get_int_setting(SETTING_UPNP_DISCOVER_TTL, DEFAULT_UPNP_DISCOVER_TTL)
+		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TIMEOUT_MS, Settings.DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
+		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TTL, Settings.DEFAULT_UPNP_DISCOVER_TTL)
 	)
 	if discover_error != UPNP.UPNP_RESULT_SUCCESS:
 		_finish_port_mapping(discover_error, "")
@@ -405,9 +361,9 @@ func _add_port_mapping(port: int) -> void:
 		var mapping_error := upnp.add_port_mapping(
 			port,
 			port,
-			_get_string_setting(SETTING_UPNP_DESCRIPTION, DEFAULT_UPNP_DESCRIPTION),
+			Settings.get_string(Settings.SETTING_UPNP_DESCRIPTION, Settings.DEFAULT_UPNP_DESCRIPTION),
 			protocol,
-			_get_int_setting(SETTING_PORT_MAPPING_DURATION, DEFAULT_PORT_MAPPING_DURATION)
+			Settings.get_int(Settings.SETTING_PORT_MAPPING_DURATION, Settings.DEFAULT_PORT_MAPPING_DURATION)
 		)
 		if mapping_error != UPNP.UPNP_RESULT_SUCCESS:
 			for mapped_protocol in _mapped_protocols:
@@ -419,7 +375,7 @@ func _add_port_mapping(port: int) -> void:
 		_mapped_protocols.append(protocol)
 
 	_mapped_port = port
-	if _get_bool_setting(SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS):
+	if Settings.get_bool(Settings.SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, Settings.DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS):
 		_external_address = upnp.query_external_address()
 
 	_finish_port_mapping(UPNP.UPNP_RESULT_SUCCESS, _external_address)
@@ -432,15 +388,15 @@ func _finish_port_mapping(error: int, external_address: String) -> void:
 
 
 func _delete_port_mappings() -> void:
-	if not _get_bool_setting(SETTING_PORT_MAPPING_DELETE_ON_STOP, DEFAULT_PORT_MAPPING_DELETE_ON_STOP):
+	if not Settings.get_bool(Settings.SETTING_PORT_MAPPING_DELETE_ON_STOP, Settings.DEFAULT_PORT_MAPPING_DELETE_ON_STOP):
 		return
 	if _mapped_port <= 0 or _mapped_protocols.is_empty():
 		return
 
 	var upnp := UPNP.new()
 	var discover_error := upnp.discover(
-		_get_int_setting(SETTING_UPNP_DISCOVER_TIMEOUT_MS, DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
-		_get_int_setting(SETTING_UPNP_DISCOVER_TTL, DEFAULT_UPNP_DISCOVER_TTL)
+		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TIMEOUT_MS, Settings.DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
+		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TTL, Settings.DEFAULT_UPNP_DISCOVER_TTL)
 	)
 	if discover_error == UPNP.UPNP_RESULT_SUCCESS:
 		for protocol in _mapped_protocols:
@@ -453,7 +409,7 @@ func _delete_port_mappings() -> void:
 
 func _get_port_mapping_protocols() -> PackedStringArray:
 	var protocols := PackedStringArray()
-	match _get_int_setting(SETTING_PORT_MAPPING_PROTOCOL, DEFAULT_PORT_MAPPING_PROTOCOL):
+	match Settings.get_int(Settings.SETTING_PORT_MAPPING_PROTOCOL, Settings.DEFAULT_PORT_MAPPING_PROTOCOL):
 		PortMappingProtocol.TRANSPORT_DEFAULT:
 			protocols.append("TCP" if _get_transport_type() == TransportType.WEBSOCKET else "UDP")
 		PortMappingProtocol.TCP:
@@ -464,25 +420,3 @@ func _get_port_mapping_protocols() -> PackedStringArray:
 			protocols.append("TCP")
 			protocols.append("UDP")
 	return protocols
-
-
-func _get_setting(name: String, default_value: Variant) -> Variant:
-	if ProjectSettings.has_setting(name):
-		return ProjectSettings.get_setting(name)
-	return default_value
-
-
-func _get_string_setting(name: String, default_value: String) -> String:
-	return String(_get_setting(name, default_value))
-
-
-func _get_int_setting(name: String, default_value: int) -> int:
-	return int(_get_setting(name, default_value))
-
-
-func _get_float_setting(name: String, default_value: float) -> float:
-	return float(_get_setting(name, default_value))
-
-
-func _get_bool_setting(name: String, default_value: bool) -> bool:
-	return bool(_get_setting(name, default_value))
