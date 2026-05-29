@@ -1,5 +1,4 @@
-extends MultiplayerSynchronizer
-class_name MimicSync
+class_name MimicSync extends MultiplayerSynchronizer
 
 
 func get_network_root() -> Node:

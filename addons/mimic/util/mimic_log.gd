@@ -1,4 +1,4 @@
-class_name MimicLog
+class_name MimicLog extends Object
 
 enum Level { ALL, WARNING, ERROR, NONE }
 
