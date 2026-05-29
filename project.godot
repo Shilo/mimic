@@ -16,6 +16,10 @@ run/main_scene="uid://fq7tkvwqe1ub"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+MimicRunInstanceGrid="*uid://crtmtjqc58nuo"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
