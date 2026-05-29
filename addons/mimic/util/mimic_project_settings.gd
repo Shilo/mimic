@@ -3,8 +3,6 @@ class_name MimicProjectSettings extends Object
 ## Typed accessors and registration helpers for Mimic Project Settings.
 ##
 ## Settings are registered by the editor plugin and read by the Mimic runtime.
-## ProjectSettings itself does not currently expose a description field for
-## custom setting tooltips, so user-facing descriptions live in the README.
 
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
 const _ADDRESS := "mimic_multiplayer/connection/address"
@@ -260,7 +258,8 @@ static var websocket_client_use_tls: bool:
 	set(value):
 		_set_setting(_WEBSOCKET_CLIENT_USE_TLS, value)
 
-## Optional WebSocket URL path appended to client connection URLs.
+## Optional WebSocket URL path appended when Mimic builds a client URL from an address and port.
+## Ignored when the address already starts with [code]ws://[/code] or [code]wss://[/code].
 static var websocket_path: String:
 	get:
 		return _get_string(_WEBSOCKET_PATH, _DEFAULT_WEBSOCKET_PATH)
@@ -344,7 +343,8 @@ static func register() -> void:
 	_registered = true
 
 
-## Marks settings as unregistered and optionally clears their current values.
+## Resets the internal registration flag so [method register] can run again.
+## Optionally clears current setting values; ProjectSettings property hints remain until editor restart.
 static func unregister(clear_values: bool = false) -> void:
 	_registered = false
 	if not clear_values:

@@ -12,11 +12,11 @@ enum AutoConnectMode {
 	SERVER,
 	## Start a client automatically.
 	CLIENT,
-	## Try server mode first, then join as a client if the server port is already used.
+	## Try server mode first, then join as a client on expected local hosting failures.
 	SERVER_IF_FIRST_ELSE_CLIENT,
 }
 
-## Optional connection action to run when this node enters the scene tree.
+## Connection action to run automatically when this node enters the scene tree.
 @export var auto_connect_mode: AutoConnectMode = AutoConnectMode.DISABLED
 
 
@@ -25,11 +25,13 @@ func _ready() -> void:
 
 
 ## Starts a server through the Mimic singleton.
+## Pass [code]-1[/code] and an empty bind address to use Project Settings.
 func host(port: int = -1, bind_address: String = "") -> Error:
 	return Mimic.start_server(port, bind_address)
 
 
 ## Starts a client connection through the Mimic singleton.
+## Pass an empty address and [code]-1[/code] to use Project Settings.
 func join(address: String = "", port: int = -1) -> Error:
 	return Mimic.start_client(address, port)
 

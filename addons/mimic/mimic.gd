@@ -6,8 +6,10 @@ extends Node
 ## code and UI.
 
 ## Emitted when Mimic changes connection state.
+## [param state] and [param previous_state] are [enum NetworkState] values.
 signal state_changed(state: int, previous_state: int)
 ## Emitted when a server or client start attempt fails before reaching its target state.
+## [param attempted_state] is a [enum NetworkState] value.
 signal start_failed(attempted_state: int, error: int, message: String)
 ## Emitted after a server peer starts listening.
 signal server_started(port: int)
@@ -23,9 +25,11 @@ signal server_disconnected()
 signal peer_connected(peer_id: int)
 ## Re-emitted from [MultiplayerAPI.peer_disconnected].
 signal peer_disconnected(peer_id: int)
-## Emitted after Mimic stops networking and returns to offline state.
+## Emitted after [method stop] finishes shutting down the active peer.
+## Use [signal state_changed], [signal server_disconnected], or
+## [signal client_connection_failed] to react to involuntary disconnects.
 signal stopped()
-## Emitted after a UPnP port mapping attempt succeeds or fails.
+## Emitted after a background UPnP port mapping attempt succeeds or fails.
 signal port_mapping_finished(result: int, external_address: String)
 
 ## Transport backends Mimic can start.
@@ -68,16 +72,26 @@ var _mapped_protocols := PackedStringArray()
 var _external_address := ""
 var _last_client_address := ""
 var _last_client_port := 0
+var _port_mapping_thread: Thread
+var _port_mapping_request_id := 0
+var _delete_mapping_after_thread := false
+var _queued_port_mapping_request := {}
 
 
 func _ready() -> void:
 	_connect_multiplayer_signals()
 
 
+func _exit_tree() -> void:
+	if _port_mapping_thread != null:
+		_port_mapping_thread.wait_to_finish()
+
+
 ## Starts a server with the configured transport.
 ##
 ## Pass [param port_override] or [param bind_address_override] to override the
-## matching Project Settings value for this call only.
+## matching Project Settings value for this call only. The default [code]-1[/code]
+## port and empty bind address use Project Settings.
 func start_server(port_override: int = -1, bind_address_override: String = "") -> Error:
 	return _start_server(port_override, bind_address_override)
 
@@ -85,7 +99,8 @@ func start_server(port_override: int = -1, bind_address_override: String = "") -
 ## Starts a client connection with the configured transport.
 ##
 ## Pass [param address_override] or [param port_override] to override the
-## matching Project Settings value for this call only.
+## matching Project Settings value for this call only. The default empty address
+## and [code]-1[/code] port use Project Settings.
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
@@ -138,7 +153,8 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 	return OK
 
 
-## Tries to start a server, then falls back to client mode if the server port is already in use.
+## Tries to start a server, then falls back to [method start_client] on expected local hosting failures.
+## Fallback is skipped on dedicated/server exports.
 func start_server_if_first_else_client() -> Error:
 	var server_error := _start_server(-1, "", true)
 	if server_error == OK:
@@ -149,7 +165,7 @@ func start_server_if_first_else_client() -> Error:
 	return start_client()
 
 
-## Stops the active peer, removes owned UPnP mappings, and returns to offline state.
+## Stops the active peer, requests owned UPnP mapping deletion when enabled, and returns to offline state.
 func stop() -> void:
 	_delete_port_mappings()
 	_close_peer()
@@ -176,7 +192,7 @@ func get_external_address() -> String:
 	return _external_address
 
 
-## Returns the local multiplayer peer ID, or [code]0[/code] when no connected peer has one.
+## Returns the local multiplayer peer ID, or [code]0[/code] while offline or connecting.
 func get_local_peer_id() -> int:
 	if _state == NetworkState.OFFLINE or _state == NetworkState.CLIENT_CONNECTING:
 		return 0
@@ -185,7 +201,7 @@ func get_local_peer_id() -> int:
 	return multiplayer.get_unique_id()
 
 
-## Returns connected remote peer IDs, or an empty array while offline.
+## Returns connected remote peer IDs, or an empty array when no multiplayer peer is active.
 func get_peer_ids() -> PackedInt32Array:
 	if _state == NetworkState.OFFLINE or not multiplayer.has_multiplayer_peer():
 		return PackedInt32Array()
@@ -426,42 +442,155 @@ func _add_port_mapping(port: int) -> void:
 	if not MimicProjectSettings.port_forwarding_enabled:
 		return
 
+	_start_port_mapping_thread({
+		"operation": "add",
+		"port": port,
+		"protocols": _get_port_mapping_protocols(),
+		"description": _get_port_mapping_description(),
+		"duration": MimicProjectSettings.port_mapping_duration,
+		"query_external_address": MimicProjectSettings.port_mapping_query_external_address,
+		"discover_timeout_ms": MimicProjectSettings.upnp_discover_timeout_ms,
+		"discover_ttl": MimicProjectSettings.upnp_discover_ttl,
+	})
+
+
+func _start_port_mapping_thread(request: Dictionary) -> void:
+	if _port_mapping_thread != null:
+		if String(request["operation"]) == "delete":
+			_delete_mapping_after_thread = true
+		else:
+			_queued_port_mapping_request = request
+		return
+
+	_port_mapping_request_id += 1
+	request["id"] = _port_mapping_request_id
+
+	_port_mapping_thread = Thread.new()
+	var error := _port_mapping_thread.start(_run_port_mapping_request.bind(request))
+	if error != OK:
+		_port_mapping_thread = null
+		if String(request["operation"]) == "add":
+			_finish_port_mapping(UPNP.UPNP_RESULT_UNKNOWN_ERROR, "")
+
+
+func _run_port_mapping_request(request: Dictionary) -> void:
+	var result := _execute_port_mapping_request(request)
+	call_deferred("_finish_port_mapping_request", int(request["id"]), result)
+
+
+func _execute_port_mapping_request(request: Dictionary) -> Dictionary:
 	var upnp := UPNP.new()
 	var discover_error := upnp.discover(
-		MimicProjectSettings.upnp_discover_timeout_ms,
-		MimicProjectSettings.upnp_discover_ttl
+		int(request["discover_timeout_ms"]),
+		int(request["discover_ttl"])
 	)
 	if discover_error != UPNP.UPNP_RESULT_SUCCESS:
-		_finish_port_mapping(discover_error, "")
-		return
+		return {
+			"operation": request["operation"],
+			"error": discover_error,
+			"external_address": "",
+			"mapped_port": 0,
+			"mapped_protocols": PackedStringArray(),
+		}
 
 	var gateway := upnp.get_gateway()
 	if gateway == null or not gateway.is_valid_gateway():
-		_finish_port_mapping(UPNP.UPNP_RESULT_NO_GATEWAY, "")
-		return
+		return {
+			"operation": request["operation"],
+			"error": UPNP.UPNP_RESULT_NO_GATEWAY,
+			"external_address": "",
+			"mapped_port": 0,
+			"mapped_protocols": PackedStringArray(),
+		}
 
-	for protocol in _get_port_mapping_protocols():
+	var port := int(request["port"])
+	var protocols := request["protocols"] as PackedStringArray
+	if String(request["operation"]) == "delete":
+		for protocol in protocols:
+			upnp.delete_port_mapping(port, protocol)
+		return {
+			"operation": request["operation"],
+			"error": UPNP.UPNP_RESULT_SUCCESS,
+			"external_address": "",
+			"mapped_port": 0,
+			"mapped_protocols": PackedStringArray(),
+		}
+
+	var mapped_protocols := PackedStringArray()
+	for protocol in protocols:
 		var mapping_error := upnp.add_port_mapping(
 			port,
 			port,
-			_get_port_mapping_description(),
+			String(request["description"]),
 			protocol,
-			MimicProjectSettings.port_mapping_duration
+			int(request["duration"])
 		)
 		if mapping_error != UPNP.UPNP_RESULT_SUCCESS:
-			for mapped_protocol in _mapped_protocols:
+			for mapped_protocol in mapped_protocols:
 				upnp.delete_port_mapping(port, mapped_protocol)
-			_mapped_protocols.clear()
-			_finish_port_mapping(mapping_error, "")
+			return {
+				"operation": request["operation"],
+				"error": mapping_error,
+				"external_address": "",
+				"mapped_port": 0,
+				"mapped_protocols": PackedStringArray(),
+			}
+
+		mapped_protocols.append(protocol)
+
+	var external_address := ""
+	if bool(request["query_external_address"]):
+		external_address = upnp.query_external_address()
+
+	return {
+		"operation": request["operation"],
+		"error": UPNP.UPNP_RESULT_SUCCESS,
+		"external_address": external_address,
+		"mapped_port": port,
+		"mapped_protocols": mapped_protocols,
+	}
+
+
+func _finish_port_mapping_request(request_id: int, result: Dictionary) -> void:
+	if _port_mapping_thread == null:
+		return
+
+	_port_mapping_thread.wait_to_finish()
+	_port_mapping_thread = null
+
+	if request_id != _port_mapping_request_id:
+		return
+
+	if String(result["operation"]) == "delete":
+		_mapped_port = 0
+		_mapped_protocols.clear()
+		_external_address = ""
+		_start_queued_port_mapping_request()
+		return
+
+	var error := int(result["error"])
+	if error == UPNP.UPNP_RESULT_SUCCESS:
+		_mapped_port = int(result["mapped_port"])
+		_mapped_protocols = result["mapped_protocols"] as PackedStringArray
+		_external_address = String(result["external_address"])
+
+	if _delete_mapping_after_thread:
+		_delete_mapping_after_thread = false
+		if error == UPNP.UPNP_RESULT_SUCCESS:
+			_delete_port_mappings()
 			return
 
-		_mapped_protocols.append(protocol)
+	_finish_port_mapping(error, _external_address)
+	_start_queued_port_mapping_request()
 
-	_mapped_port = port
-	if MimicProjectSettings.port_mapping_query_external_address:
-		_external_address = upnp.query_external_address()
 
-	_finish_port_mapping(UPNP.UPNP_RESULT_SUCCESS, _external_address)
+func _start_queued_port_mapping_request() -> void:
+	if _queued_port_mapping_request.is_empty():
+		return
+
+	var request := _queued_port_mapping_request
+	_queued_port_mapping_request = {}
+	_start_port_mapping_thread(request)
 
 
 func _finish_port_mapping(error: int, external_address: String) -> void:
@@ -475,21 +604,28 @@ func _finish_port_mapping(error: int, external_address: String) -> void:
 func _delete_port_mappings() -> void:
 	if not MimicProjectSettings.port_mapping_delete_on_stop:
 		return
+
+	if _port_mapping_thread != null:
+		_delete_mapping_after_thread = true
+		return
+
 	if _mapped_port <= 0 or _mapped_protocols.is_empty():
 		return
 
-	var upnp := UPNP.new()
-	var discover_error := upnp.discover(
-		MimicProjectSettings.upnp_discover_timeout_ms,
-		MimicProjectSettings.upnp_discover_ttl
-	)
-	if discover_error == UPNP.UPNP_RESULT_SUCCESS:
-		for protocol in _mapped_protocols:
-			upnp.delete_port_mapping(_mapped_port, protocol)
+	var mapped_port := _mapped_port
+	var mapped_protocols := _mapped_protocols.duplicate()
 
 	_mapped_port = 0
 	_mapped_protocols.clear()
 	_external_address = ""
+
+	_start_port_mapping_thread({
+		"operation": "delete",
+		"port": mapped_port,
+		"protocols": mapped_protocols,
+		"discover_timeout_ms": MimicProjectSettings.upnp_discover_timeout_ms,
+		"discover_ttl": MimicProjectSettings.upnp_discover_ttl,
+	})
 
 
 func _get_port_mapping_protocols() -> PackedStringArray:

@@ -124,6 +124,8 @@ Debug:
 mimic_multiplayer/debug/log_level: All, Warning, Error, or None
 ```
 
+UPnP discovery and port mapping run in a background thread so hosting does not block the main thread while the router responds.
+
 Port forwarding depends on the user's router, network, and platform. Treat it as a convenience for local testing, not a guaranteed matchmaking or NAT traversal solution.
 
 ## Start Networking From Code
@@ -284,7 +286,7 @@ Example log line:
 05-29 22:14:03 [Mimic 2] Connected to server.
 ```
 
-The number inside the Mimic tag appears only when a connected multiplayer peer has a valid local peer ID.
+The number inside the Mimic tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID.
 
 ## Mimic Or NetFox?
 

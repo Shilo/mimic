@@ -2,7 +2,8 @@ class_name MimicLog extends Object
 ## Small logging wrapper used by Mimic connection helpers.
 ##
 ## Messages are filtered by [member MimicProjectSettings.log_level] and include
-## a compact timestamp plus the local multiplayer ID when available.
+## a compact timestamp. Editor-launched runs also include the local multiplayer
+## ID when available so multi-instance logs are easier to distinguish.
 
 ## Output levels available for Mimic logs.
 enum Level {
@@ -15,6 +16,8 @@ enum Level {
 	## Disable Mimic log output.
 	NONE,
 }
+
+static var _is_editor_feature := OS.has_feature("editor")
 
 
 ## Prints an informational Mimic log message when the current log level allows it.
@@ -57,6 +60,9 @@ static func _line(objects: Array) -> String:
 
 static func _get_name_tag() -> String:
 	const NAME := "Mimic"
+
+	if not _is_editor_feature:
+		return "[%s]" % NAME
 
 	var peer_id := _get_local_peer_id()
 	if peer_id <= 0:

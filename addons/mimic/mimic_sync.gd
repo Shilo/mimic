@@ -5,7 +5,8 @@ class_name MimicSync extends MultiplayerSynchronizer
 ## can keep using Godot's native [SceneReplicationConfig] workflow.
 
 
-## Returns the node resolved by this synchronizer's inherited [member root_path].
+## Returns the node resolved by this synchronizer's inherited [member root_path],
+## or [code]null[/code] when [member root_path] is empty or fails to resolve.
 func get_network_root() -> Node:
 	return _resolve_network_root()
 

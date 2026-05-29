@@ -1,4 +1,7 @@
-## RunInstanceGrid AutoLoad
+## MimicRunInstanceGrid optional editor-only AutoLoad.
+##
+## Not registered automatically by the plugin; add this script as an AutoLoad
+## to enable window tiling.
 ## Automatically tiles multiple Godot run-instance windows into a shared grid.
 ##
 ## This utility is intended for local multiplayer testing from the editor. Make
