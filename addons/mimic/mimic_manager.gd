@@ -61,12 +61,6 @@ enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 @export_range(1, 10, 1) var upnp_discover_ttl := 2
 @export var upnp_description := "Mimic"
 
-@export_group("Runtime Controls")
-@export_tool_button("Host") var host_button: Callable = _inspector_host
-@export_tool_button("Join") var join_button: Callable = _inspector_join
-@export_tool_button("Cancel Connection") var cancel_connection_button: Callable = _inspector_cancel_connection
-@export_tool_button("Stop") var stop_button: Callable = _inspector_stop
-
 var _state: NetworkState = NetworkState.OFFLINE
 var _peer: MultiplayerPeer = null
 var _connected_peers := {}
@@ -444,9 +438,6 @@ func _get_bind_address() -> String:
 
 
 func _should_hide_property(property_name: String) -> bool:
-	if _is_runtime_button(property_name):
-		return Engine.is_editor_hint() or _should_hide_runtime_button(property_name)
-
 	if property_name in ["max_clients", "enet_channel_count", "enet_in_bandwidth", "enet_out_bandwidth", "enet_client_local_port"]:
 		return transport_type != TransportType.ENET
 
@@ -465,55 +456,12 @@ func _should_hide_property(property_name: String) -> bool:
 	return false
 
 
-func _is_runtime_button(property_name: String) -> bool:
-	return property_name in ["host_button", "join_button", "cancel_connection_button", "stop_button"]
-
-
-func _should_hide_runtime_button(property_name: String) -> bool:
-	if not is_inside_tree():
-		return true
-
-	match property_name:
-		"host_button", "join_button":
-			return _state != NetworkState.OFFLINE
-		"cancel_connection_button":
-			return _state != NetworkState.CLIENT_CONNECTING
-		"stop_button":
-			return _state == NetworkState.OFFLINE
-		_:
-			return true
-
-
 func _uses_listening_transport() -> bool:
 	return transport_type == TransportType.ENET or transport_type == TransportType.WEBSOCKET
 
 
 func _refresh_property_list() -> void:
 	notify_property_list_changed()
-
-
-func _inspector_host() -> void:
-	if Engine.is_editor_hint():
-		return
-	host()
-
-
-func _inspector_join() -> void:
-	if Engine.is_editor_hint():
-		return
-	start_client()
-
-
-func _inspector_cancel_connection() -> void:
-	if Engine.is_editor_hint():
-		return
-	cancel_connection()
-
-
-func _inspector_stop() -> void:
-	if Engine.is_editor_hint():
-		return
-	stop()
 
 
 func _start_port_forwarding() -> void:

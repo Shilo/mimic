@@ -13,3 +13,4 @@ position = Vector2(640, 360)
 [node name="MimicManager" type="CanvasLayer" parent="." unique_id=120544771]
 physics_interpolation_mode = 2
 script = ExtResource("3_h1ccd")
+auto_start_mode = 3
