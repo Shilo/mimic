@@ -2,9 +2,17 @@
 
 [ext_resource type="Script" uid="uid://c7hslsep23kef" path="res://examples/single_to_multiplayer/single_to_multiplayer.gd" id="1_anqd6"]
 [ext_resource type="PackedScene" uid="uid://bjyt4h4mdar5y" path="res://examples/single_to_multiplayer/player/player.tscn" id="2_n8a0a"]
+[ext_resource type="Script" uid="uid://cdcb4gpt3dlg" path="res://addons/mimic/mimic_manager.gd" id="3_h1ccd"]
 
 [node name="Single To Multiplayer" type="Node2D" unique_id=945951482]
 script = ExtResource("1_anqd6")
 
 [node name="Player" parent="." unique_id=522806135 instance=ExtResource("2_n8a0a")]
 position = Vector2(640, 360)
+
+[node name="MimicManager" type="PanelContainer" parent="." unique_id=748005446]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("3_h1ccd")
+auto_start_mode = 1
+metadata/_custom_type_script = "uid://cdcb4gpt3dlg"
