@@ -1,3 +1,4 @@
+@tool
 class_name MimicManager extends CanvasLayer
 
 signal state_changed(state: int, previous_state: int)
@@ -13,7 +14,7 @@ signal stopped()
 signal port_mapping_finished(result: int, external_address: String)
 
 enum TransportType { OFFLINE, ENET, WEBSOCKET, WEBRTC }
-enum AutoStartMode { DISABLED, SERVER, CLIENT }
+enum AutoStartMode { DISABLED, SERVER, CLIENT, SERVER_IF_FIRST_ELSE_CLIENT }
 enum NetworkState { OFFLINE, SERVER_LISTENING, CLIENT_CONNECTING, CLIENT_CONNECTED }
 enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 
@@ -22,13 +23,19 @@ enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 @export_range(1, 65535, 1) var port := 8910
 @export var bind_address := "*"
 @export_range(1, 4095, 1) var max_clients := 32
-@export var transport_type: TransportType = TransportType.ENET
+@export var transport_type: TransportType = TransportType.ENET:
+	set(value):
+		transport_type = value
+		_refresh_property_list()
 @export var replace_existing_peer := true
 @export var stop_on_exit := true
 @export var refuse_new_connections := false
 
 @export_group("Auto Start")
-@export var auto_start_mode: AutoStartMode = AutoStartMode.DISABLED
+@export var auto_start_mode: AutoStartMode = AutoStartMode.DISABLED:
+	set(value):
+		auto_start_mode = value
+		_refresh_property_list()
 
 @export_group("ENet")
 @export_range(0, 255, 1) var enet_channel_count := 0
@@ -42,7 +49,10 @@ enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 @export_range(0.1, 60.0, 0.1) var websocket_handshake_timeout := 3.0
 
 @export_group("Port Forwarding")
-@export var enable_port_forwarding := false
+@export_custom(PROPERTY_HINT_GROUP_ENABLE, "") var enable_port_forwarding := false:
+	set(value):
+		enable_port_forwarding = value
+		_refresh_property_list()
 @export var delete_port_mapping_on_stop := true
 @export var query_external_address := true
 @export var port_mapping_protocol: PortMappingProtocol = PortMappingProtocol.TRANSPORT_DEFAULT
@@ -50,6 +60,12 @@ enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 @export_range(100, 10000, 100) var upnp_discover_timeout_ms := 2000
 @export_range(1, 10, 1) var upnp_discover_ttl := 2
 @export var upnp_description := "Mimic"
+
+@export_group("Runtime Controls")
+@export_tool_button("Host") var host_button: Callable = _inspector_host
+@export_tool_button("Join") var join_button: Callable = _inspector_join
+@export_tool_button("Cancel Connection") var cancel_connection_button: Callable = _inspector_cancel_connection
+@export_tool_button("Stop") var stop_button: Callable = _inspector_stop
 
 var _state: NetworkState = NetworkState.OFFLINE
 var _peer: MultiplayerPeer = null
@@ -63,11 +79,18 @@ var _last_client_port := 0
 
 
 func _ready() -> void:
+	_refresh_property_list()
+	if Engine.is_editor_hint():
+		return
+
 	_connect_multiplayer_signals()
 	_run_auto_start.call_deferred()
 
 
 func _exit_tree() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	if stop_on_exit:
 		stop()
 	elif _upnp_thread != null:
@@ -85,6 +108,16 @@ func join(address_override: String = "", port_override: int = -1) -> Error:
 
 func start_server() -> Error:
 	return _start_server()
+
+
+func start_server_if_first_else_client() -> Error:
+	var server_error := _start_server(true)
+	if server_error == OK:
+		return OK
+	if not _can_fallback_to_client_after_server_failure(server_error):
+		return server_error
+
+	return start_client()
 
 
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
@@ -129,6 +162,9 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 
 
 func stop() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	_finish_port_forwarding_thread(false)
 	_delete_port_mappings()
 	_close_peer()
@@ -184,7 +220,13 @@ func is_offline() -> bool:
 	return _state == NetworkState.OFFLINE
 
 
-func _start_server() -> Error:
+func _validate_property(property: Dictionary) -> void:
+	var property_name := String(property.name)
+	if _should_hide_property(property_name):
+		property.usage = int(property.usage) & ~PROPERTY_USAGE_EDITOR
+
+
+func _start_server(quiet_expected_failure := false) -> Error:
 	_connect_multiplayer_signals()
 	var error := _validate_start(NetworkState.SERVER_LISTENING, port)
 	if error != OK:
@@ -211,6 +253,8 @@ func _start_server() -> Error:
 
 	if error != OK:
 		peer.close()
+		if quiet_expected_failure and _should_fallback_to_client(error):
+			return error
 		return _fail_start(NetworkState.SERVER_LISTENING, error, "Unable to start server: %s." % error_string(error))
 
 	_peer = peer
@@ -225,6 +269,9 @@ func _start_server() -> Error:
 
 
 func _validate_start(state: NetworkState, target_port: int) -> Error:
+	if Engine.is_editor_hint():
+		return _fail_start(state, ERR_UNAVAILABLE, "MimicManager can only start networking while the game is running.")
+
 	if _get_multiplayer_api() == null:
 		return _fail_start(state, ERR_UNCONFIGURED, "MimicManager must be inside the scene tree before starting.")
 
@@ -271,6 +318,8 @@ func _run_auto_start() -> void:
 			start_server()
 		AutoStartMode.CLIENT:
 			start_client()
+		AutoStartMode.SERVER_IF_FIRST_ELSE_CLIENT:
+			start_server_if_first_else_client()
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -309,6 +358,7 @@ func _change_state(state: NetworkState) -> void:
 
 	var previous_state := _state
 	_state = state
+	_refresh_property_list()
 	state_changed.emit(_state, previous_state)
 
 
@@ -326,6 +376,20 @@ func _fail_unavailable_transport(state: NetworkState) -> Error:
 			return _fail_start(state, ERR_UNAVAILABLE, "WebRTC transport needs signaling and is not implemented in MimicManager yet.")
 		_:
 			return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
+
+
+func _should_fallback_to_client(error: Error) -> bool:
+	return error == ERR_ALREADY_IN_USE or error == ERR_CANT_CREATE or error == ERR_CANT_OPEN
+
+
+func _can_fallback_to_client_after_server_failure(error: Error) -> bool:
+	if not _should_fallback_to_client(error):
+		return false
+	if _has_active_peer():
+		return false
+	if OS.has_feature("dedicated_server") or OS.has_feature("server"):
+		return false
+	return true
 
 
 func _has_active_peer() -> bool:
@@ -377,6 +441,79 @@ func _get_websocket_url(connect_address: String, connect_port: int) -> String:
 
 func _get_bind_address() -> String:
 	return "*" if bind_address.is_empty() else bind_address
+
+
+func _should_hide_property(property_name: String) -> bool:
+	if _is_runtime_button(property_name):
+		return Engine.is_editor_hint() or _should_hide_runtime_button(property_name)
+
+	if property_name in ["max_clients", "enet_channel_count", "enet_in_bandwidth", "enet_out_bandwidth", "enet_client_local_port"]:
+		return transport_type != TransportType.ENET
+
+	if property_name in ["websocket_client_use_tls", "websocket_path", "websocket_handshake_timeout"]:
+		return transport_type != TransportType.WEBSOCKET
+
+	if property_name in ["bind_address", "refuse_new_connections"]:
+		return not _uses_listening_transport()
+
+	if property_name == "enable_port_forwarding":
+		return not _uses_listening_transport()
+
+	if property_name in ["delete_port_mapping_on_stop", "query_external_address", "port_mapping_protocol", "port_mapping_duration", "upnp_discover_timeout_ms", "upnp_discover_ttl", "upnp_description"]:
+		return not enable_port_forwarding or not _uses_listening_transport()
+
+	return false
+
+
+func _is_runtime_button(property_name: String) -> bool:
+	return property_name in ["host_button", "join_button", "cancel_connection_button", "stop_button"]
+
+
+func _should_hide_runtime_button(property_name: String) -> bool:
+	if not is_inside_tree():
+		return true
+
+	match property_name:
+		"host_button", "join_button":
+			return _state != NetworkState.OFFLINE
+		"cancel_connection_button":
+			return _state != NetworkState.CLIENT_CONNECTING
+		"stop_button":
+			return _state == NetworkState.OFFLINE
+		_:
+			return true
+
+
+func _uses_listening_transport() -> bool:
+	return transport_type == TransportType.ENET or transport_type == TransportType.WEBSOCKET
+
+
+func _refresh_property_list() -> void:
+	notify_property_list_changed()
+
+
+func _inspector_host() -> void:
+	if Engine.is_editor_hint():
+		return
+	host()
+
+
+func _inspector_join() -> void:
+	if Engine.is_editor_hint():
+		return
+	start_client()
+
+
+func _inspector_cancel_connection() -> void:
+	if Engine.is_editor_hint():
+		return
+	cancel_connection()
+
+
+func _inspector_stop() -> void:
+	if Engine.is_editor_hint():
+		return
+	stop()
 
 
 func _start_port_forwarding() -> void:
