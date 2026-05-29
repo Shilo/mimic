@@ -5,9 +5,6 @@ var _network_root: Node
 
 
 func _enter_tree() -> void:
-	if Engine.is_editor_hint():
-		return
-
 	_network_root = _resolve_network_root()
 	var mimic := get_node_or_null("/root/Mimic")
 	if mimic:
@@ -15,9 +12,6 @@ func _enter_tree() -> void:
 
 
 func _exit_tree() -> void:
-	if Engine.is_editor_hint():
-		return
-
 	var mimic := get_node_or_null("/root/Mimic")
 	if mimic:
 		mimic.unregister_sync(self, _network_root)

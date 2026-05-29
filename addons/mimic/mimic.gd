@@ -13,17 +13,12 @@ var _remote_spawn_root_instance_id := 0
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		return
 	if not multiplayer.peer_connected.is_connected(_on_peer_connected):
 		multiplayer.peer_connected.connect(_on_peer_connected)
 	set_process(false)
 
 
 func register_sync(sync) -> void:
-	if Engine.is_editor_hint():
-		return
-
 	var root: Node = sync.get_network_root()
 	if root == null:
 		return
@@ -48,9 +43,7 @@ func register_sync(sync) -> void:
 
 
 func unregister_sync(_sync, root: Node) -> void:
-	if Engine.is_editor_hint() or root == null:
-		return
-	if root.is_inside_tree() and not root.is_queued_for_deletion():
+	if root == null or (root.is_inside_tree() and not root.is_queued_for_deletion()):
 		return
 
 	_unregister_tracked_instance(root.get_instance_id())
