@@ -6,6 +6,10 @@ The long-term goal is simple authoring: add one `MimicSync` node to a networked 
 
 This project is intentionally smaller than full networking frameworks. Mimic is for developers who want a lightweight helper around Godot's built-in high-level multiplayer API, not a prediction, rollback, interpolation, lag compensation, relay, or full gameplay framework.
 
+## Compatibility Policy
+
+Mimic keeps the current project shape explicit instead of carrying compatibility layers for older names, behavior, files, scenes, or configuration. After updating Mimic, review your code, scenes, and Project Settings > Mimic Multiplayer against this README and update them to the current model.
+
 ## Current Status
 
 Mimic is currently focused on connection setup and project configuration.
@@ -56,20 +60,36 @@ When enabled, the plugin adds a `Mimic` singleton so your scripts can call `Mimi
 
 Open Project > Project Settings and search for `Mimic Multiplayer`.
 
-Common settings:
+Connection:
 
 ```text
-mimic_multiplayer/connection/transport_type: Offline, ENet, WebSocket, or WebRTC (Unsupported)
+mimic_multiplayer/connection/transport: Offline, ENet, WebSocket, or WebRTC (Unsupported)
 mimic_multiplayer/connection/address: Client address, default 127.0.0.1
 mimic_multiplayer/connection/port: Server/client port, default 8910
-mimic_multiplayer/connection/bind_address: Server bind address, default *
 mimic_multiplayer/connection/max_clients: Max server clients, default 32
-mimic_multiplayer/connection/replace_existing_peer: Stop existing peer before starting a new one
-mimic_multiplayer/connection/refuse_new_connections: Start server while refusing new peers
-mimic_multiplayer/logging/log_level: All, Warning, Error, or None
 ```
 
-ENet-specific settings:
+WebSocket:
+
+```text
+mimic_multiplayer/websocket/client_use_tls: Use wss:// when joining a WebSocket server
+```
+
+Port Forwarding:
+
+```text
+mimic_multiplayer/port_forwarding/enabled: Try UPnP port forwarding when hosting
+```
+
+Advanced settings are hidden unless Advanced Settings is enabled in Project Settings.
+
+Advanced connection settings:
+
+```text
+mimic_multiplayer/connection/bind_address
+```
+
+Advanced ENet settings:
 
 ```text
 mimic_multiplayer/enet/channel_count
@@ -78,25 +98,28 @@ mimic_multiplayer/enet/out_bandwidth
 mimic_multiplayer/enet/client_local_port
 ```
 
-WebSocket-specific settings:
+Advanced WebSocket settings:
 
 ```text
-mimic_multiplayer/websocket/client_use_tls
 mimic_multiplayer/websocket/path
 mimic_multiplayer/websocket/handshake_timeout
 ```
 
-Optional port forwarding settings:
+Advanced port forwarding settings:
 
 ```text
-mimic_multiplayer/port_forwarding/enabled
 mimic_multiplayer/port_forwarding/delete_mapping_on_stop
 mimic_multiplayer/port_forwarding/query_external_address
 mimic_multiplayer/port_forwarding/protocol
 mimic_multiplayer/port_forwarding/duration
-mimic_multiplayer/port_forwarding/upnp_discover_timeout_ms
-mimic_multiplayer/port_forwarding/upnp_discover_ttl
-mimic_multiplayer/port_forwarding/description
+mimic_multiplayer/port_forwarding/discover_timeout_ms
+mimic_multiplayer/port_forwarding/discover_ttl
+```
+
+Debug:
+
+```text
+mimic_multiplayer/debug/log_level: All, Warning, Error, or None
 ```
 
 Port forwarding depends on the user's router, network, and platform. Treat it as a convenience for local testing, not a guaranteed matchmaking or NAT traversal solution.
@@ -250,7 +273,7 @@ Mimic logs connection attempts, connection results, peer changes, stop events, a
 Set log output in Project Settings:
 
 ```text
-mimic_multiplayer/logging/log_level: All, Warning, Error, None
+mimic_multiplayer/debug/log_level: All, Warning, Error, None
 ```
 
 Example log line:
@@ -296,7 +319,7 @@ NetFox is the better fit when your game needs advanced netcode features. Mimic i
 
 ## Minimal Local Test
 
-1. Set `mimic_multiplayer/connection/transport_type` to `ENet`.
+1. Set `mimic_multiplayer/connection/transport` to `ENet`.
 2. Set `mimic_multiplayer/connection/address` to `127.0.0.1`.
 3. Set `mimic_multiplayer/connection/port` to `8910`.
 4. Add a `MimicConnector` node to your startup scene.

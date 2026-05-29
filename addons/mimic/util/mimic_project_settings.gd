@@ -1,14 +1,11 @@
 @tool
 class_name MimicProjectSettings extends Object
 
-const _LOG_LEVEL := "mimic_multiplayer/logging/log_level"
-const _TRANSPORT_TYPE := "mimic_multiplayer/connection/transport_type"
+const _TRANSPORT := "mimic_multiplayer/connection/transport"
 const _ADDRESS := "mimic_multiplayer/connection/address"
 const _PORT := "mimic_multiplayer/connection/port"
-const _BIND_ADDRESS := "mimic_multiplayer/connection/bind_address"
 const _MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
-const _REPLACE_EXISTING_PEER := "mimic_multiplayer/connection/replace_existing_peer"
-const _REFUSE_NEW_CONNECTIONS := "mimic_multiplayer/connection/refuse_new_connections"
+const _BIND_ADDRESS := "mimic_multiplayer/connection/bind_address"
 const _ENET_CHANNEL_COUNT := "mimic_multiplayer/enet/channel_count"
 const _ENET_IN_BANDWIDTH := "mimic_multiplayer/enet/in_bandwidth"
 const _ENET_OUT_BANDWIDTH := "mimic_multiplayer/enet/out_bandwidth"
@@ -21,18 +18,15 @@ const _PORT_MAPPING_DELETE_ON_STOP := "mimic_multiplayer/port_forwarding/delete_
 const _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic_multiplayer/port_forwarding/query_external_address"
 const _PORT_MAPPING_PROTOCOL := "mimic_multiplayer/port_forwarding/protocol"
 const _PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
-const _UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/upnp_discover_timeout_ms"
-const _UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/upnp_discover_ttl"
-const _UPNP_DESCRIPTION := "mimic_multiplayer/port_forwarding/description"
+const _UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_timeout_ms"
+const _UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
+const _LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 
-const _DEFAULT_LOG_LEVEL := 1
-const _DEFAULT_TRANSPORT_TYPE := 1
+const _DEFAULT_TRANSPORT := 1
 const _DEFAULT_ADDRESS := "127.0.0.1"
 const _DEFAULT_PORT := 8910
-const _DEFAULT_BIND_ADDRESS := "*"
 const _DEFAULT_MAX_CLIENTS := 32
-const _DEFAULT_REPLACE_EXISTING_PEER := true
-const _DEFAULT_REFUSE_NEW_CONNECTIONS := false
+const _DEFAULT_BIND_ADDRESS := "*"
 const _DEFAULT_ENET_CHANNEL_COUNT := 0
 const _DEFAULT_ENET_IN_BANDWIDTH := 0
 const _DEFAULT_ENET_OUT_BANDWIDTH := 0
@@ -47,19 +41,12 @@ const _DEFAULT_PORT_MAPPING_PROTOCOL := 0
 const _DEFAULT_PORT_MAPPING_DURATION := 7200
 const _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS := 2000
 const _DEFAULT_UPNP_DISCOVER_TTL := 2
-const _DEFAULT_UPNP_DESCRIPTION := "Mimic"
+const _DEFAULT_LOG_LEVEL := 1
 
 const _SETTINGS := [
 	{
-		"name": _LOG_LEVEL,
-		"default": _DEFAULT_LOG_LEVEL,
-		"type": TYPE_INT,
-		"hint": PROPERTY_HINT_ENUM,
-		"hint_string": "All,Warning,Error,None",
-	},
-	{
-		"name": _TRANSPORT_TYPE,
-		"default": _DEFAULT_TRANSPORT_TYPE,
+		"name": _TRANSPORT,
+		"default": _DEFAULT_TRANSPORT,
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": "Offline,ENet,WebSocket,WebRTC (Unsupported)",
@@ -77,11 +64,6 @@ const _SETTINGS := [
 		"hint_string": "1,65535,1",
 	},
 	{
-		"name": _BIND_ADDRESS,
-		"default": _DEFAULT_BIND_ADDRESS,
-		"type": TYPE_STRING,
-	},
-	{
 		"name": _MAX_CLIENTS,
 		"default": _DEFAULT_MAX_CLIENTS,
 		"type": TYPE_INT,
@@ -89,14 +71,10 @@ const _SETTINGS := [
 		"hint_string": "1,4095,1",
 	},
 	{
-		"name": _REPLACE_EXISTING_PEER,
-		"default": _DEFAULT_REPLACE_EXISTING_PEER,
-		"type": TYPE_BOOL,
-	},
-	{
-		"name": _REFUSE_NEW_CONNECTIONS,
-		"default": _DEFAULT_REFUSE_NEW_CONNECTIONS,
-		"type": TYPE_BOOL,
+		"name": _BIND_ADDRESS,
+		"default": _DEFAULT_BIND_ADDRESS,
+		"type": TYPE_STRING,
+		"advanced": true,
 	},
 	{
 		"name": _ENET_CHANNEL_COUNT,
@@ -104,6 +82,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,255,1",
+		"advanced": true,
 	},
 	{
 		"name": _ENET_IN_BANDWIDTH,
@@ -111,6 +90,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,2147483647,1",
+		"advanced": true,
 	},
 	{
 		"name": _ENET_OUT_BANDWIDTH,
@@ -118,6 +98,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,2147483647,1",
+		"advanced": true,
 	},
 	{
 		"name": _ENET_CLIENT_LOCAL_PORT,
@@ -125,6 +106,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,65535,1",
+		"advanced": true,
 	},
 	{
 		"name": _WEBSOCKET_CLIENT_USE_TLS,
@@ -135,6 +117,7 @@ const _SETTINGS := [
 		"name": _WEBSOCKET_PATH,
 		"default": _DEFAULT_WEBSOCKET_PATH,
 		"type": TYPE_STRING,
+		"advanced": true,
 	},
 	{
 		"name": _WEBSOCKET_HANDSHAKE_TIMEOUT,
@@ -142,6 +125,7 @@ const _SETTINGS := [
 		"type": TYPE_FLOAT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,60,0.1,or_greater",
+		"advanced": true,
 	},
 	{
 		"name": _PORT_FORWARDING_ENABLED,
@@ -152,11 +136,13 @@ const _SETTINGS := [
 		"name": _PORT_MAPPING_DELETE_ON_STOP,
 		"default": _DEFAULT_PORT_MAPPING_DELETE_ON_STOP,
 		"type": TYPE_BOOL,
+		"advanced": true,
 	},
 	{
 		"name": _PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
 		"default": _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
 		"type": TYPE_BOOL,
+		"advanced": true,
 	},
 	{
 		"name": _PORT_MAPPING_PROTOCOL,
@@ -164,6 +150,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": "Transport Default,TCP,UDP,TCP and UDP",
+		"advanced": true,
 	},
 	{
 		"name": _PORT_MAPPING_DURATION,
@@ -171,6 +158,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,86400,1,or_greater",
+		"advanced": true,
 	},
 	{
 		"name": _UPNP_DISCOVER_TIMEOUT_MS,
@@ -178,6 +166,7 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,60000,1,or_greater",
+		"advanced": true,
 	},
 	{
 		"name": _UPNP_DISCOVER_TTL,
@@ -185,25 +174,22 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "1,255,1",
+		"advanced": true,
 	},
 	{
-		"name": _UPNP_DESCRIPTION,
-		"default": _DEFAULT_UPNP_DESCRIPTION,
-		"type": TYPE_STRING,
+		"name": _LOG_LEVEL,
+		"default": _DEFAULT_LOG_LEVEL,
+		"type": TYPE_INT,
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": "All,Warning,Error,None",
 	},
 ]
 
-static var log_level: int:
+static var transport: int:
 	get:
-		return _get_int(_LOG_LEVEL, _DEFAULT_LOG_LEVEL)
+		return _get_int(_TRANSPORT, _DEFAULT_TRANSPORT)
 	set(value):
-		_set_setting(_LOG_LEVEL, value)
-
-static var transport_type: int:
-	get:
-		return _get_int(_TRANSPORT_TYPE, _DEFAULT_TRANSPORT_TYPE)
-	set(value):
-		_set_setting(_TRANSPORT_TYPE, value)
+		_set_setting(_TRANSPORT, value)
 
 static var address: String:
 	get:
@@ -217,29 +203,17 @@ static var port: int:
 	set(value):
 		_set_setting(_PORT, value)
 
-static var bind_address: String:
-	get:
-		return _get_string(_BIND_ADDRESS, _DEFAULT_BIND_ADDRESS)
-	set(value):
-		_set_setting(_BIND_ADDRESS, value)
-
 static var max_clients: int:
 	get:
 		return _get_int(_MAX_CLIENTS, _DEFAULT_MAX_CLIENTS)
 	set(value):
 		_set_setting(_MAX_CLIENTS, value)
 
-static var replace_existing_peer: bool:
+static var bind_address: String:
 	get:
-		return _get_bool(_REPLACE_EXISTING_PEER, _DEFAULT_REPLACE_EXISTING_PEER)
+		return _get_string(_BIND_ADDRESS, _DEFAULT_BIND_ADDRESS)
 	set(value):
-		_set_setting(_REPLACE_EXISTING_PEER, value)
-
-static var refuse_new_connections: bool:
-	get:
-		return _get_bool(_REFUSE_NEW_CONNECTIONS, _DEFAULT_REFUSE_NEW_CONNECTIONS)
-	set(value):
-		_set_setting(_REFUSE_NEW_CONNECTIONS, value)
+		_set_setting(_BIND_ADDRESS, value)
 
 static var enet_channel_count: int:
 	get:
@@ -325,11 +299,11 @@ static var upnp_discover_ttl: int:
 	set(value):
 		_set_setting(_UPNP_DISCOVER_TTL, value)
 
-static var upnp_description: String:
+static var log_level: int:
 	get:
-		return _get_string(_UPNP_DESCRIPTION, _DEFAULT_UPNP_DESCRIPTION)
+		return _get_int(_LOG_LEVEL, _DEFAULT_LOG_LEVEL)
 	set(value):
-		_set_setting(_UPNP_DESCRIPTION, value)
+		_set_setting(_LOG_LEVEL, value)
 
 static var _registered := false
 
@@ -338,7 +312,6 @@ static func register() -> void:
 	if _registered:
 		return
 
-	_migrate_legacy_settings()
 	for setting in _SETTINGS:
 		_register_setting(setting)
 
@@ -390,7 +363,7 @@ static func _register_setting(setting: Dictionary) -> void:
 		ProjectSettings.set_setting(name, default_value)
 
 	ProjectSettings.set_initial_value(name, default_value)
-	ProjectSettings.set_as_basic(name, true)
+	ProjectSettings.set_as_basic(name, not bool(setting.get("advanced", false)))
 
 	var property_info := {
 		"name": name,
@@ -402,13 +375,3 @@ static func _register_setting(setting: Dictionary) -> void:
 		property_info["hint_string"] = String(setting["hint_string"])
 
 	ProjectSettings.add_property_info(property_info)
-
-
-static func _migrate_legacy_settings() -> void:
-	for setting in _SETTINGS:
-		var name := String(setting["name"])
-		var legacy_name := name.replace("mimic_multiplayer/", "mimic/")
-		if ProjectSettings.has_setting(legacy_name):
-			if not ProjectSettings.has_setting(name):
-				ProjectSettings.set_setting(name, ProjectSettings.get_setting(legacy_name))
-			ProjectSettings.clear(legacy_name)

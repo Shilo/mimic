@@ -187,7 +187,6 @@ func _start_server(port_override: int = -1, bind_address_override: String = "", 
 			return error
 		return _fail_start(NetworkState.SERVER_LISTENING, error, "Unable to start server: %s." % error_string(error))
 
-	peer.refuse_new_connections = MimicProjectSettings.refuse_new_connections
 	multiplayer.multiplayer_peer = peer
 	_change_state(NetworkState.SERVER_LISTENING)
 	_add_port_mapping(port)
@@ -207,8 +206,6 @@ func _validate_start(state: NetworkState, port: int) -> Error:
 		return _fail_unavailable_transport(state)
 
 	if _has_active_peer():
-		if not MimicProjectSettings.replace_existing_peer:
-			return _fail_start(state, ERR_ALREADY_IN_USE, "A multiplayer peer is already active.")
 		stop()
 
 	return OK
@@ -318,7 +315,7 @@ func _close_peer() -> void:
 
 
 func _get_transport_type() -> int:
-	return MimicProjectSettings.transport_type
+	return MimicProjectSettings.transport
 
 
 func _get_transport_name(type: int) -> String:
@@ -382,7 +379,7 @@ func _add_port_mapping(port: int) -> void:
 		var mapping_error := upnp.add_port_mapping(
 			port,
 			port,
-			MimicProjectSettings.upnp_description,
+			_get_port_mapping_description(),
 			protocol,
 			MimicProjectSettings.port_mapping_duration
 		)
@@ -443,3 +440,8 @@ func _get_port_mapping_protocols() -> PackedStringArray:
 			protocols.append("TCP")
 			protocols.append("UDP")
 	return protocols
+
+
+func _get_port_mapping_description() -> String:
+	var project_name := String(ProjectSettings.get_setting("application/config/name", "Mimic"))
+	return "Mimic" if project_name.is_empty() else project_name
