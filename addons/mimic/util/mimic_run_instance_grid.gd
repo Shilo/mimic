@@ -33,6 +33,7 @@ func _ready() -> void:
 	if index < 0 or markers.size() < 2:
 		return
 
+	get_window().title += " [%d/%d]" % [index + 1, markers.size()]
 	_tile(index, markers.size())
 
 
