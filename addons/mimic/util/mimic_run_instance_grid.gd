@@ -6,18 +6,32 @@
 ## instances open as separate windows. Each run instance writes a short-lived
 ## marker file, discovers sibling instances from the same launch burst, then
 ## moves and resizes itself into a screen tile.
+
+##
+## This utility is intended for local multiplayer testing from the editor. Make
+## sure "Game > Embedding Options > Embed Game on Next Play" is disabled so run
+## instances open as separate windows. Each run instance writes a short-lived
+## marker file, discovers sibling instances from the same launch burst, then
+## moves and resizes itself into a screen tile.
 extends Node
 
 const _DIR := "user://mimic/run_grid"
-const _WAIT := 0.5
 const _GROUP_MS := 3000
 const _STALE_MS := 15000
+const _SETTLE_TIMEOUT := 2.0
+const _SETTLE_STEP := 0.15
+const _STABLE_SCANS := 3
 const _MIN_SIZE := Vector2i(96, 96)
+const _APPEND_WINDOW_INDEX := true
+
+var _base_title := ""
 
 
 func _ready() -> void:
 	if not OS.has_feature("editor") or OS.has_feature("dedicated_server"):
 		return
+
+	_base_title = get_window().title
 
 	DirAccess.make_dir_recursive_absolute(_DIR)
 
@@ -25,16 +39,40 @@ func _ready() -> void:
 	var marker := "%d_%d" % [started_at, OS.get_process_id()]
 	FileAccess.open("%s/%s" % [_DIR, marker], FileAccess.WRITE)
 
-	await get_tree().create_timer(_WAIT).timeout
-
-	var markers := _get_markers(started_at)
+	var markers := await _wait_for_markers(started_at)
 	var index := markers.find(marker)
 
 	if index < 0 or markers.size() < 2:
 		return
 
-	get_window().title += " [%d/%d]" % [index + 1, markers.size()]
+	if _APPEND_WINDOW_INDEX:
+		get_window().title = "%s [%d/%d]" % [_base_title, index + 1, markers.size()]
+
 	_tile(index, markers.size())
+
+
+func _wait_for_markers(started_at: int) -> Array[String]:
+	var markers: Array[String] = []
+	var previous_count := -1
+	var stable_scans := 0
+	var elapsed := 0.0
+
+	while elapsed < _SETTLE_TIMEOUT:
+		markers = _get_markers(started_at)
+
+		if markers.size() == previous_count:
+			stable_scans += 1
+		else:
+			stable_scans = 0
+			previous_count = markers.size()
+
+		if stable_scans >= _STABLE_SCANS:
+			break
+
+		await get_tree().create_timer(_SETTLE_STEP).timeout
+		elapsed += _SETTLE_STEP
+
+	return markers
 
 
 func _get_markers(started_at: int) -> Array[String]:
