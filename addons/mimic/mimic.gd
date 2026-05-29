@@ -16,8 +16,6 @@ enum TransportType { OFFLINE, ENET, WEBSOCKET, WEBRTC }
 enum NetworkState { OFFLINE, SERVER_LISTENING, CLIENT_CONNECTING, CLIENT_CONNECTED }
 enum PortMappingProtocol { TRANSPORT_DEFAULT, TCP, UDP, TCP_AND_UDP }
 
-const Settings := preload("res://addons/mimic/internal/mimic_project_settings.gd")
-
 var _state: NetworkState = NetworkState.OFFLINE
 var _mapped_port := 0
 var _mapped_protocols := PackedStringArray()
@@ -37,8 +35,8 @@ func start_server(port_override: int = -1, bind_address_override: String = "") -
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
-	var address := address_override.strip_edges() if not address_override.is_empty() else Settings.get_string(Settings.SETTING_ADDRESS, Settings.DEFAULT_ADDRESS).strip_edges()
-	var port := port_override if port_override > 0 else Settings.get_int(Settings.SETTING_PORT, Settings.DEFAULT_PORT)
+	var address := address_override.strip_edges() if not address_override.is_empty() else MimicProjectSettings.address.strip_edges()
+	var port := port_override if port_override > 0 else MimicProjectSettings.port
 	if address.is_empty():
 		return _fail_start(NetworkState.CLIENT_CONNECTING, ERR_INVALID_PARAMETER, "Client address is empty.")
 
@@ -47,24 +45,25 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 		return error
 
 	var peer: MultiplayerPeer = null
+	MimicLog.log("Connecting to", address, "port", port, "using", _get_transport_name(_get_transport_type()))
 	match _get_transport_type():
 		TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
-			var bind_address := Settings.get_string(Settings.SETTING_BIND_ADDRESS, Settings.DEFAULT_BIND_ADDRESS)
+			var bind_address := MimicProjectSettings.bind_address
 			if not bind_address.is_empty() and bind_address != "*":
 				enet_peer.set_bind_ip(bind_address)
 			error = enet_peer.create_client(
 				address,
 				port,
-				Settings.get_int(Settings.SETTING_ENET_CHANNEL_COUNT, Settings.DEFAULT_ENET_CHANNEL_COUNT),
-				Settings.get_int(Settings.SETTING_ENET_IN_BANDWIDTH, Settings.DEFAULT_ENET_IN_BANDWIDTH),
-				Settings.get_int(Settings.SETTING_ENET_OUT_BANDWIDTH, Settings.DEFAULT_ENET_OUT_BANDWIDTH),
-				Settings.get_int(Settings.SETTING_ENET_CLIENT_LOCAL_PORT, Settings.DEFAULT_ENET_CLIENT_LOCAL_PORT)
+				MimicProjectSettings.enet_channel_count,
+				MimicProjectSettings.enet_in_bandwidth,
+				MimicProjectSettings.enet_out_bandwidth,
+				MimicProjectSettings.enet_client_local_port
 			)
 			peer = enet_peer
 		TransportType.WEBSOCKET:
 			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = Settings.get_float(Settings.SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, Settings.DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			websocket_peer.handshake_timeout = MimicProjectSettings.websocket_handshake_timeout
 			error = websocket_peer.create_client(_get_websocket_url(address, port))
 			peer = websocket_peer
 		TransportType.OFFLINE, TransportType.WEBRTC:
@@ -80,6 +79,7 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 	_last_client_port = port
 	multiplayer.multiplayer_peer = peer
 	_change_state(NetworkState.CLIENT_CONNECTING)
+	MimicLog.log("Client connection started.")
 	client_started.emit(address, port)
 	return OK
 
@@ -100,6 +100,7 @@ func stop() -> void:
 	_last_client_address = ""
 	_last_client_port = 0
 	_change_state(NetworkState.OFFLINE)
+	MimicLog.log("Network stopped.")
 	stopped.emit()
 
 
@@ -149,12 +150,13 @@ func is_offline() -> bool:
 func _start_server(port_override: int = -1, bind_address_override: String = "", quiet_expected_failure: bool = false) -> Error:
 	_connect_multiplayer_signals()
 
-	var port := port_override if port_override > 0 else Settings.get_int(Settings.SETTING_PORT, Settings.DEFAULT_PORT)
+	var port := port_override if port_override > 0 else MimicProjectSettings.port
 	var error := _validate_start(NetworkState.SERVER_LISTENING, port)
 	if error != OK:
 		return error
 
 	var peer: MultiplayerPeer = null
+	MimicLog.log("Starting server on port", port, "using", _get_transport_name(_get_transport_type()))
 	match _get_transport_type():
 		TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
@@ -163,15 +165,15 @@ func _start_server(port_override: int = -1, bind_address_override: String = "", 
 				enet_peer.set_bind_ip(bind_address)
 			error = enet_peer.create_server(
 				port,
-				Settings.get_int(Settings.SETTING_MAX_CLIENTS, Settings.DEFAULT_MAX_CLIENTS),
-				Settings.get_int(Settings.SETTING_ENET_CHANNEL_COUNT, Settings.DEFAULT_ENET_CHANNEL_COUNT),
-				Settings.get_int(Settings.SETTING_ENET_IN_BANDWIDTH, Settings.DEFAULT_ENET_IN_BANDWIDTH),
-				Settings.get_int(Settings.SETTING_ENET_OUT_BANDWIDTH, Settings.DEFAULT_ENET_OUT_BANDWIDTH)
+				MimicProjectSettings.max_clients,
+				MimicProjectSettings.enet_channel_count,
+				MimicProjectSettings.enet_in_bandwidth,
+				MimicProjectSettings.enet_out_bandwidth
 			)
 			peer = enet_peer
 		TransportType.WEBSOCKET:
 			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = Settings.get_float(Settings.SETTING_WEBSOCKET_HANDSHAKE_TIMEOUT, Settings.DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT)
+			websocket_peer.handshake_timeout = MimicProjectSettings.websocket_handshake_timeout
 			error = websocket_peer.create_server(port, _get_bind_address(bind_address_override))
 			peer = websocket_peer
 		TransportType.OFFLINE, TransportType.WEBRTC:
@@ -185,10 +187,11 @@ func _start_server(port_override: int = -1, bind_address_override: String = "", 
 			return error
 		return _fail_start(NetworkState.SERVER_LISTENING, error, "Unable to start server: %s." % error_string(error))
 
-	peer.refuse_new_connections = Settings.get_bool(Settings.SETTING_REFUSE_NEW_CONNECTIONS, Settings.DEFAULT_REFUSE_NEW_CONNECTIONS)
+	peer.refuse_new_connections = MimicProjectSettings.refuse_new_connections
 	multiplayer.multiplayer_peer = peer
 	_change_state(NetworkState.SERVER_LISTENING)
 	_add_port_mapping(port)
+	MimicLog.log("Server listening on port", port)
 	server_started.emit(port)
 	return OK
 
@@ -204,7 +207,7 @@ func _validate_start(state: NetworkState, port: int) -> Error:
 		return _fail_unavailable_transport(state)
 
 	if _has_active_peer():
-		if not Settings.get_bool(Settings.SETTING_REPLACE_EXISTING_PEER, Settings.DEFAULT_REPLACE_EXISTING_PEER):
+		if not MimicProjectSettings.replace_existing_peer:
 			return _fail_start(state, ERR_ALREADY_IN_USE, "A multiplayer peer is already active.")
 		stop()
 
@@ -225,15 +228,18 @@ func _connect_multiplayer_signals() -> void:
 
 
 func _on_peer_connected(peer_id: int) -> void:
+	MimicLog.log("Peer connected:", peer_id)
 	peer_connected.emit(peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
+	MimicLog.log("Peer disconnected:", peer_id)
 	peer_disconnected.emit(peer_id)
 
 
 func _on_connected_to_server() -> void:
 	_change_state(NetworkState.CLIENT_CONNECTED)
+	MimicLog.log("Connected to server.")
 	client_connected.emit()
 
 
@@ -241,12 +247,14 @@ func _on_connection_failed() -> void:
 	var message := "Unable to connect to %s:%d." % [_last_client_address, _last_client_port]
 	_close_peer()
 	_change_state(NetworkState.OFFLINE)
+	MimicLog.warning(message)
 	client_connection_failed.emit(message)
 
 
 func _on_server_disconnected() -> void:
 	_close_peer()
 	_change_state(NetworkState.OFFLINE)
+	MimicLog.warning("Disconnected from server.")
 	server_disconnected.emit()
 
 
@@ -260,7 +268,7 @@ func _change_state(state: NetworkState) -> void:
 
 
 func _fail_start(state: NetworkState, error: int, message: String) -> Error:
-	push_warning(message)
+	MimicLog.warning(message)
 	start_failed.emit(state, error, message)
 	return error
 
@@ -310,13 +318,26 @@ func _close_peer() -> void:
 
 
 func _get_transport_type() -> int:
-	return Settings.get_int(Settings.SETTING_TRANSPORT_TYPE, Settings.DEFAULT_TRANSPORT_TYPE)
+	return MimicProjectSettings.transport_type
+
+
+func _get_transport_name(type: int) -> String:
+	match type:
+		TransportType.OFFLINE:
+			return "Offline"
+		TransportType.ENET:
+			return "ENet"
+		TransportType.WEBSOCKET:
+			return "WebSocket"
+		TransportType.WEBRTC:
+			return "WebRTC"
+	return "Unknown"
 
 
 func _get_bind_address(bind_address_override: String = "") -> String:
 	if not bind_address_override.is_empty():
 		return bind_address_override
-	var bind_address := Settings.get_string(Settings.SETTING_BIND_ADDRESS, Settings.DEFAULT_BIND_ADDRESS)
+	var bind_address := MimicProjectSettings.bind_address
 	return "*" if bind_address.is_empty() else bind_address
 
 
@@ -327,11 +348,11 @@ func _get_websocket_url(address: String, port: int) -> String:
 	if address.split(":").size() > 2 and not address.begins_with("["):
 		address = "[%s]" % address
 
-	var path := Settings.get_string(Settings.SETTING_WEBSOCKET_PATH, Settings.DEFAULT_WEBSOCKET_PATH).strip_edges()
+	var path := MimicProjectSettings.websocket_path.strip_edges()
 	if not path.is_empty() and not path.begins_with("/"):
 		path = "/" + path
 
-	var scheme := "wss" if Settings.get_bool(Settings.SETTING_WEBSOCKET_CLIENT_USE_TLS, Settings.DEFAULT_WEBSOCKET_CLIENT_USE_TLS) else "ws"
+	var scheme := "wss" if MimicProjectSettings.websocket_client_use_tls else "ws"
 	return "%s://%s:%d%s" % [scheme, address, port, path]
 
 
@@ -340,13 +361,13 @@ func _add_port_mapping(port: int) -> void:
 	_mapped_port = 0
 	_mapped_protocols.clear()
 
-	if not Settings.get_bool(Settings.SETTING_PORT_FORWARDING_ENABLED, Settings.DEFAULT_PORT_FORWARDING_ENABLED):
+	if not MimicProjectSettings.port_forwarding_enabled:
 		return
 
 	var upnp := UPNP.new()
 	var discover_error := upnp.discover(
-		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TIMEOUT_MS, Settings.DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
-		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TTL, Settings.DEFAULT_UPNP_DISCOVER_TTL)
+		MimicProjectSettings.upnp_discover_timeout_ms,
+		MimicProjectSettings.upnp_discover_ttl
 	)
 	if discover_error != UPNP.UPNP_RESULT_SUCCESS:
 		_finish_port_mapping(discover_error, "")
@@ -361,9 +382,9 @@ func _add_port_mapping(port: int) -> void:
 		var mapping_error := upnp.add_port_mapping(
 			port,
 			port,
-			Settings.get_string(Settings.SETTING_UPNP_DESCRIPTION, Settings.DEFAULT_UPNP_DESCRIPTION),
+			MimicProjectSettings.upnp_description,
 			protocol,
-			Settings.get_int(Settings.SETTING_PORT_MAPPING_DURATION, Settings.DEFAULT_PORT_MAPPING_DURATION)
+			MimicProjectSettings.port_mapping_duration
 		)
 		if mapping_error != UPNP.UPNP_RESULT_SUCCESS:
 			for mapped_protocol in _mapped_protocols:
@@ -375,7 +396,7 @@ func _add_port_mapping(port: int) -> void:
 		_mapped_protocols.append(protocol)
 
 	_mapped_port = port
-	if Settings.get_bool(Settings.SETTING_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, Settings.DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS):
+	if MimicProjectSettings.port_mapping_query_external_address:
 		_external_address = upnp.query_external_address()
 
 	_finish_port_mapping(UPNP.UPNP_RESULT_SUCCESS, _external_address)
@@ -383,20 +404,22 @@ func _add_port_mapping(port: int) -> void:
 
 func _finish_port_mapping(error: int, external_address: String) -> void:
 	if error != UPNP.UPNP_RESULT_SUCCESS:
-		push_warning("UPnP port forwarding failed: %s." % str(error))
+		MimicLog.warning("UPnP port forwarding failed:", error)
+	else:
+		MimicLog.log("UPnP port forwarding ready.", external_address)
 	port_mapping_finished.emit(error, external_address)
 
 
 func _delete_port_mappings() -> void:
-	if not Settings.get_bool(Settings.SETTING_PORT_MAPPING_DELETE_ON_STOP, Settings.DEFAULT_PORT_MAPPING_DELETE_ON_STOP):
+	if not MimicProjectSettings.port_mapping_delete_on_stop:
 		return
 	if _mapped_port <= 0 or _mapped_protocols.is_empty():
 		return
 
 	var upnp := UPNP.new()
 	var discover_error := upnp.discover(
-		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TIMEOUT_MS, Settings.DEFAULT_UPNP_DISCOVER_TIMEOUT_MS),
-		Settings.get_int(Settings.SETTING_UPNP_DISCOVER_TTL, Settings.DEFAULT_UPNP_DISCOVER_TTL)
+		MimicProjectSettings.upnp_discover_timeout_ms,
+		MimicProjectSettings.upnp_discover_ttl
 	)
 	if discover_error == UPNP.UPNP_RESULT_SUCCESS:
 		for protocol in _mapped_protocols:
@@ -409,7 +432,7 @@ func _delete_port_mappings() -> void:
 
 func _get_port_mapping_protocols() -> PackedStringArray:
 	var protocols := PackedStringArray()
-	match Settings.get_int(Settings.SETTING_PORT_MAPPING_PROTOCOL, Settings.DEFAULT_PORT_MAPPING_PROTOCOL):
+	match MimicProjectSettings.port_mapping_protocol:
 		PortMappingProtocol.TRANSPORT_DEFAULT:
 			protocols.append("TCP" if _get_transport_type() == TransportType.WEBSOCKET else "UDP")
 		PortMappingProtocol.TCP:

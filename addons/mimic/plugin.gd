@@ -2,20 +2,17 @@
 extends EditorPlugin
 
 const _AUTOLOAD_NAME := "Mimic"
-const _MIMIC_PROJECT_SETTINGS := preload("res://addons/mimic/internal/mimic_project_settings.gd")
 
 
 func _enter_tree() -> void:
-	_MIMIC_PROJECT_SETTINGS.register_settings()
+	MimicProjectSettings.register_settings()
 
 
 func _exit_tree() -> void:
-	_MIMIC_PROJECT_SETTINGS.unregister_settings()
+	MimicProjectSettings.unregister_settings()
 
 
 func _enable_plugin() -> void:
-	_MIMIC_PROJECT_SETTINGS.register_settings()
-
 	var autoload_status := _has_autoload()
 	if autoload_status == OK:
 		return
@@ -30,8 +27,6 @@ func _enable_plugin() -> void:
 func _disable_plugin() -> void:
 	if _has_autoload() == OK:
 		remove_autoload_singleton(_AUTOLOAD_NAME)
-
-	_MIMIC_PROJECT_SETTINGS.unregister_settings()
 
 
 func _has_autoload() -> Error:
