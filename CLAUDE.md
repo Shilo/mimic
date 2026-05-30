@@ -14,7 +14,7 @@ Discovery: Prioritize progressive discovery over token usage. Read only the file
 
 Source references: Use `C:\Programming_Files\Godot\godot-master` as the local Godot engine source reference when implementing or improving behavior that depends on Godot multiplayer internals, editor/plugin behavior, GDScript APIs, CLI behavior, project settings, or testing hooks. Use `C:\Programming_Files\Godot\netfox-main` as an inspiration/reference point for multiplayer library architecture, tests, and tradeoffs, while preserving Mimic's different vision: a small helper around Godot's native high-level multiplayer rather than a prediction/rollback/netcode framework.
 
-Documentation: User-facing docs live in docs/. Keep docs phrased for Mimic users.
+Documentation: User-facing docs live in docs/. Keep docs phrased for Mimic users. Use `brand/logo/mimic_m_multiplayer.svg` as the preferred full-logo asset, with `brand/logo/mimic_m_multiplayer.png` as the fallback when SVG is not supported. Documentation pages that reference Mimo should show the primary product icon from `brand/icon/mimic.svg`, with `brand/icon/mimic.png` as the fallback when SVG is not supported. When the icon appears on a Mimic Mint surface, use the inverted icon from `brand/icon/mimic_invert.svg`, with `brand/icon/mimic_invert.png` as the fallback.
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
@@ -34,9 +34,21 @@ C:\Programming_Files\Godot\netfox-main: Local Netfox multiplayer library referen
 project.godot: Godot project configuration, autoloads, plugin enablement, input actions, and main scene.
 icon.svg: Default Godot project icon.
 icon.svg.import: Godot import metadata for the project icon.
+brand/: Source brand assets for icons, logos, and generated image imports.
+brand/icon/: Product icon assets. Plain `mimic` files are the primary network-shaped icon; `_m` files are the secondary M-shaped icon.
+brand/icon/mimic.svg: Primary two-color product icon used when documentation references Mimo.
+brand/icon/mimic_invert.svg: Inverted primary product icon for Mimic Mint surfaces such as documentation chrome.
+brand/logo/: Product wordmark and lockup assets. Plain `mimic` files are the primary network-shaped logo; `_m` files are secondary M-shaped logo variants.
+brand/logo/mimic_m_multiplayer.svg: Preferred full Mimic Multiplayer logo for README and documentation surfaces.
+mkdocs.yml: MkDocs Material configuration for the documentation site, navigation, API generation, and styling.
+requirements-docs.txt: Python requirements for building the documentation site.
 AGENTS.md: Agent-facing project guidance.
 CLAUDE.md: Claude-facing project guidance, kept aligned with AGENTS.md.
 README.md: User-facing developer guide for installing, configuring, and using Mimic.
+docs/: User-facing documentation source for the MkDocs site.
+docs/index.md: Documentation landing page using the preferred Mimic Multiplayer logo.
+docs/about/brand.md: Brand asset, naming, color, and typography guidance.
+docs/styles/brand.css: Custom documentation site theme styles.
 addons/: Godot addon root.
 addons/gut/: Vendored GUT test framework used only for regression tests.
 addons/mimic/: Mimic addon source folder.
@@ -71,4 +83,5 @@ tools/: Local PowerShell automation entry points.
 tools/godot.ps1: Repo-local Godot CLI wrapper with Godot 4.6.3 fallback.
 tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, and two-instance connection smoke.
 tools/run_two_instances.ps1: Explicit ENet server/client smoke test runner.
+tools/mkdocs_hooks.py: MkDocs hook that generates API docs and copies SVG/PNG brand assets into the built documentation site.
 ```

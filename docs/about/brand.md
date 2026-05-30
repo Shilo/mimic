@@ -1,5 +1,16 @@
 # Brand
 
+<div class="mimic-icon-preview">
+  <picture>
+    <source srcset="../../brand/icon/mimic.svg" type="image/svg+xml">
+    <img src="../../brand/icon/mimic.png" alt="Mimic network-shaped product icon" width="160">
+  </picture>
+  <picture>
+    <source srcset="../../brand/icon/mimic_m.svg" type="image/svg+xml">
+    <img src="../../brand/icon/mimic_m.png" alt="Mimic M-shaped product icon" width="160">
+  </picture>
+</div>
+
 Mimic Multiplayer's mascot is **Mimo**, a small shapeshifting character that can morph between playful logo shapes. Mimo gives the project a friendlier face for a topic that often feels intimidating: multiplayer.
 
 The mascot idea matches the product idea. Mimic helps a Godot scene adapt into a network-aware scene while staying close to Godot's built-in multiplayer tools.
@@ -23,21 +34,27 @@ Brand assets live in two folders:
 | Asset | Use |
 | --- | --- |
 | `icon/mimic.svg` | Scalable primary product icon |
+| `icon/mimic_invert.svg` | Scalable primary product icon for Mimic Mint surfaces |
 | `icon/mimic_m.svg` | Scalable secondary M-shaped product icon |
 | `icon/mimic.png` | SVG-derived primary icon PNG |
+| `icon/mimic_invert.png` | SVG-derived primary icon PNG for Mimic Mint surfaces |
 | `icon/mimic_m.png` | SVG-derived secondary M-shaped icon PNG |
-| `logo/mimic.svg` | Primary wordmark |
-| `logo/mimic_flat.svg` | Restrained primary fallback wordmark |
-| `logo/mimic_multiplayer.svg` | Large primary full-name lockup |
-| `logo/mimic_m.svg` | Secondary M-shaped wordmark |
+| `logo/mimic_m_multiplayer.svg` | Preferred full Mimic Multiplayer logo |
+| `logo/mimic.svg` | Primary network-shaped wordmark |
+| `logo/mimic_flat.svg` | Restrained primary network-shaped fallback wordmark |
+| `logo/mimic_multiplayer.svg` | Large network-shaped full-name lockup |
+| `logo/mimic_m.svg` | M-shaped wordmark |
 | `logo/mimic_m_flat.svg` | Restrained secondary M-shaped fallback wordmark |
-| `logo/mimic_m_multiplayer.svg` | Large secondary M-shaped full-name lockup |
 
 Each icon and logo SVG has a matching `.png` export in the same folder for tools that do not read SVG reliably.
 
 Plain `mimic` filenames use the primary network-shaped mark. `_m` filenames use the secondary M-shaped mark.
 
-The icon SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both icon SVGs share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
+Use `logo/mimic_m_multiplayer.svg` for full-logo surfaces like the README and documentation landing page. Use `icon/mimic.svg` for smaller mascot references so users see the original network-shaped Mimo alongside the M-shaped full logo.
+
+For documentation chrome on a Mimic Mint background, use `icon/mimic_invert.svg`. It keeps the same silhouette and border geometry but inverts the treatment to a Midnight Ink body with a Mimic Mint border and face details, so the icon has strong contrast without adding a badge or a separate background shape.
+
+The icon SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. The normal icon files use Mimic Mint fill plus Midnight Ink outline and face details; the `invert` icon uses the same two colors with Midnight Ink as the body and Mimic Mint as the border and face. Both icon shapes share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The normal body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
 
 The logo SVGs use outlined Fredoka wordmark shapes, so they do not depend on local font installation. Network-shaped logos keep the full `MIMIC` word. M-shaped logos replace the first `M`, so the visible wordmark text is `IMIC`.
 

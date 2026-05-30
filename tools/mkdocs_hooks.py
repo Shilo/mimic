@@ -56,6 +56,28 @@ def on_pre_build(config, **kwargs):
 	)
 
 
+def on_post_build(config, **kwargs):
+	root = Path(config.config_file_path).resolve().parent
+	site_dir = Path(config["site_dir"]).resolve()
+	_copy_brand_assets(root, site_dir)
+
+
+def _copy_brand_assets(root: Path, site_dir: Path) -> None:
+	source_dir = root / "brand"
+	target_dir = site_dir / "brand"
+
+	if target_dir.exists():
+		shutil.rmtree(target_dir)
+
+	for source_path in source_dir.rglob("*"):
+		if not source_path.is_file() or source_path.suffix.lower() not in {".svg", ".png"}:
+			continue
+		relative_path = source_path.relative_to(source_dir)
+		target_path = target_dir / relative_path
+		target_path.parent.mkdir(parents=True, exist_ok=True)
+		shutil.copy2(source_path, target_path)
+
+
 def _get_godot_command(root: Path) -> list[str]:
 	command_override = os.environ.get("MIMIC_GODOT_COMMAND", "").strip()
 	if command_override:

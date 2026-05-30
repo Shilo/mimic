@@ -201,11 +201,6 @@
 	font-weight: 700;
 }
 
-.md-header__button.md-logo svg,
-.md-header__button.md-logo img {
-	color: var(--mimic-ink);
-}
-
 .md-header__button,
 .md-header__button.md-icon,
 .md-header__button.md-icon svg,
@@ -599,6 +594,38 @@ label.md-nav__title {
 	margin: 1.2rem 0;
 }
 
+.mimic-hero-logo,
+.mimic-icon-preview {
+	display: block;
+	margin: 0 0 1.1rem;
+}
+
+.mimic-icon-preview {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+
+.mimic-hero-logo img {
+	display: block;
+	height: auto;
+	max-width: 32rem;
+	width: 100%;
+}
+
+@media screen and (max-width: 44em) {
+	.mimic-hero-logo img {
+		width: 92%;
+	}
+}
+
+.mimic-icon-preview img {
+	display: block;
+	height: auto;
+	max-width: 8rem;
+}
+
 .mimic-hero-actions > p {
 	display: grid;
 	gap: 0.85rem 0.75rem;
@@ -654,16 +681,24 @@ label.md-nav__title {
 }
 
 .netfox-intro {
-	align-items: center;
-	display: flex;
-	gap: 1rem;
 	margin: 1rem 0 1.4rem;
 }
 
+.netfox-intro p:first-child {
+	margin-bottom: 0.85rem;
+}
+
 .netfox-logo {
-	flex: 0 0 auto;
+	display: block;
 	height: 72px;
 	width: 72px;
+}
+
+.netfox-disclaimer {
+	color: var(--md-default-fg-color--light);
+	font-size: 0.6rem;
+	line-height: 1.35;
+	margin-top: 2rem;
 }
 
 .md-footer,

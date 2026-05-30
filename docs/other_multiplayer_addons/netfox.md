@@ -1,7 +1,7 @@
 # Netfox
 
 <div class="netfox-intro" markdown>
-[![Netfox logo](https://foxssake.github.io/netfox/assets/press-kit/netfox-icon.svg){ .netfox-logo }](https://foxssake.github.io/netfox/)
+[![Netfox logo](../assets/netfox_icon.svg){ .netfox-logo }](https://foxssake.github.io/netfox/)
 
 Netfox is a larger Godot multiplayer addon family for responsive online games. It focuses on timing, rollback, prediction, interpolation, lag compensation, and related networking systems.
 </div>
@@ -33,3 +33,5 @@ Mimic and Netfox can both help Godot multiplayer projects, but they serve differ
 - Your project needs Noray-style connection support or the extra reusable systems Netfox provides.
 
 Mimic is intentionally smaller. Netfox is the better fit when the networking model itself is a central part of the game.
+
+<p class="netfox-disclaimer">The Netfox icon belongs to the Netfox project and is shown here only to identify the linked project.</p>

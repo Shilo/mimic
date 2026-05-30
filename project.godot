@@ -14,7 +14,7 @@ config/name="Mimic Multiplayer"
 config/description="Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay."
 run/main_scene="res://examples/single_to_multiplayer/single_to_multiplayer.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="uid://cp8lbeowfabp5"
 
 [autoload]
 

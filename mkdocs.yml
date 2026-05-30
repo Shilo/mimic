@@ -5,9 +5,14 @@ site_dir: build/site
 repo_url: !ENV [MIMIC_DOCS_REPO_URL, "https://github.com/Shilo/mimic"]
 repo_name: !ENV [MIMIC_DOCS_REPO_NAME, "Shilo/mimic"]
 
+watch:
+  - brand
+
 theme:
   name: material
   language: en
+  logo: brand/icon/mimic_invert.svg
+  favicon: brand/icon/mimic.png
   font: false
   palette:
     - scheme: slate
