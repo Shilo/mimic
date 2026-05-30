@@ -1,6 +1,6 @@
 class_name MimicConnector extends CanvasLayer
 ## Scene component that starts and stops Mimic connections.
-##
+## [br][br]
 ## Add this to a startup scene when you want inspector-driven auto-connect or a
 ## simple script target for host/join/stop UI buttons.
 

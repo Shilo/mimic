@@ -1,5 +1,6 @@
 @tool
 extends EditorPlugin
+## Editor plugin that registers Mimic Project Settings and manages the Mimic autoload.
 
 const _AUTOLOAD_NAME := "Mimic"
 

@@ -8,11 +8,11 @@ Current focus: The current implementation has pivoted toward a small connection 
 
 Boundaries: Avoid adding gameplay scenes, player scenes, resources, input maps, art, custom inspectors, docks, debug UI, prediction, rollback, interpolation, time sync, command/event systems, client spawn requests, authority transfer, or raw packet protocols unless explicitly requested. Ask before adding files outside the addon/example structure or changing the core design away from the Mimic autoload plus MimicSync component direction. Do not add migration shims, deprecated-name aliases, compatibility wrappers, or fallback behavior anywhere in the project unless explicitly requested; update callers, scenes, docs, and settings to the current Mimic model instead.
 
-Discovery: Prioritize progressive discovery over token usage. Read only the files needed for the current task, then expand outward when the code path requires it. Challenge and verify important ideas before changing the codebase, especially when a request affects architecture, public API, project settings, networking behavior, editor behavior, or file structure. Check local Godot docs/source when behavior depends on MultiplayerAPI, MultiplayerPeer, SceneMultiplayer, MultiplayerSynchronizer, MultiplayerSpawner, or SceneReplicationConfig details.
+Discovery: Prioritize progressive discovery over token usage. Read only the files needed for the current task, then expand outward when the code path requires it. Challenge and verify important ideas before changing the codebase, especially when a request affects architecture, public API, project settings, networking behavior, editor behavior, or file structure. Check local Godot docs/source when behavior depends on MultiplayerAPI, MultiplayerPeer, SceneMultiplayer, MultiplayerSynchronizer, MultiplayerSpawner, SceneReplicationConfig, GDScript syntax, or Godot 4 API style details.
 
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
 
-Code style: Follow the Godot GDScript style guide at https://docs.godotengine.org/en/4.4/tutorials/scripting/gdscript/gdscript_styleguide.html; since GDScript is close to Python, the guide is inspired by Python's PEP 8 programming style guide. Use tabs for indentation, UTF-8 text, snake_case for files/functions/variables/signals, PascalCase for class_name values and enum names, UPPER_CASE for constants, and \_private_name for private helpers or backing fields. Prefer explicit typed public API, guard clauses, small functions, minimal comments, and no unrelated formatting churn. Document every public class, signal, enum, enum value, exported property, public variable, and public method with GDScript `##` documentation comments; do not document private API with `##`. For public documentation formatting, keep a blank `##` after a class summary when separating the brief from the longer description, and use `## [br][br]` for method/member paragraph breaks so comments stay readable in code and render correctly in Godot tooltips.
+Code style: Follow the Godot GDScript style guide at https://docs.godotengine.org/en/4.4/tutorials/scripting/gdscript/gdscript_styleguide.html; since GDScript is close to Python, the guide is inspired by Python's PEP 8 programming style guide. Use tabs for indentation, UTF-8 text, snake_case for files/functions/variables/signals, PascalCase for class_name values and enum names, UPPER_CASE for constants, and \_private_name for private helpers or backing fields. Prefer explicit typed public API, guard clauses, small functions, minimal comments, and no unrelated formatting churn. Use current Godot 4, GDScript 2 patterns; do not use outdated Godot 3 or GDScript 1 habits. Prefer typed Callable usage such as `some_method.call_deferred(args)` over string-based `call_deferred("some_method", args)` for local methods. Prefer `class_name` scripts over `preload()` for addon script dependencies unless there is a concrete reason to avoid a global class. Document every public class, signal, enum, enum value, exported property, public variable, and public method with GDScript `##` documentation comments; do not document private API with `##`. Use `## [br][br]` for public documentation paragraph breaks so comments stay readable in code and render correctly in Godot tooltips.
 
 Files:
 
@@ -29,18 +29,23 @@ addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and 
 addons/mimic/plugin.gd.uid: Godot UID metadata for plugin.gd.
 addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
 addons/mimic/mimic.gd.uid: Godot UID metadata for mimic.gd.
-addons/mimic/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
-addons/mimic/mimic_sync.gd.uid: Godot UID metadata for mimic_sync.gd.
-addons/mimic/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports auto-connect modes.
-addons/mimic/mimic_connector.gd.uid: Godot UID metadata for mimic_connector.gd.
-addons/mimic/util/: Shared utility scripts for settings, logging, and local run-instance helpers.
-addons/mimic/util/mimic_project_settings.gd: Static ProjectSettings helper with typed property accessors for Mimic settings.
-addons/mimic/util/mimic_project_settings.gd.uid: Godot UID metadata for mimic_project_settings.gd.
-addons/mimic/util/mimic_log.gd: Static logging helper for Mimic connection, warning, and error output.
-addons/mimic/util/mimic_log.gd.uid: Godot UID metadata for mimic_log.gd.
-addons/mimic/util/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
-addons/mimic/util/mimic_run_instance_grid.gd: Utility for tiling multiple editor-launched game windows during local multiplayer testing.
-addons/mimic/util/mimic_run_instance_grid.gd.uid: Godot UID metadata for mimic_run_instance_grid.gd.
+addons/mimic/nodes/: Public user-facing scene-tree nodes developers add to scenes.
+addons/mimic/nodes/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports auto-connect modes.
+addons/mimic/nodes/mimic_connector.gd.uid: Godot UID metadata for mimic_connector.gd.
+addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
+addons/mimic/nodes/mimic_sync.gd.uid: Godot UID metadata for mimic_sync.gd.
+addons/mimic/connection/: Internal connection infrastructure and transport helpers.
+addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
+addons/mimic/connection/mimic_port_mapper.gd.uid: Godot UID metadata for mimic_port_mapper.gd.
+addons/mimic/settings/: Project settings registration and typed settings access.
+addons/mimic/settings/mimic_project_settings.gd: Static ProjectSettings helper with typed property accessors for Mimic settings.
+addons/mimic/settings/mimic_project_settings.gd.uid: Godot UID metadata for mimic_project_settings.gd.
+addons/mimic/debug/: Logging and debug-facing support scripts.
+addons/mimic/debug/mimic_log.gd: Static logging helper for Mimic connection, warning, and error output.
+addons/mimic/debug/mimic_log.gd.uid: Godot UID metadata for mimic_log.gd.
+addons/mimic/testing/: Optional local testing helpers.
+addons/mimic/testing/mimic_run_instance_grid.gd: Utility for tiling multiple editor-launched game windows during local multiplayer testing.
+addons/mimic/testing/mimic_run_instance_grid.gd.uid: Godot UID metadata for mimic_run_instance_grid.gd.
 examples/: Example projects and scenes.
 examples/single_to_multiplayer/: Current sample showing a single-player scene adapted toward Mimic networking.
 examples/single_to_multiplayer/single_to_multiplayer.tscn: Example scene.

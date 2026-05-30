@@ -48,6 +48,12 @@ Copy the addon into your project:
 res://addons/mimic/
 ```
 
+The scripts developers usually add to scenes live in:
+
+```text
+res://addons/mimic/nodes/
+```
+
 Enable the plugin:
 
 1. Open Project > Project Settings.

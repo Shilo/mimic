@@ -1,6 +1,6 @@
 class_name MimicLog extends Object
 ## Small logging wrapper used by Mimic connection helpers.
-##
+## [br][br]
 ## Messages are filtered by [member MimicProjectSettings.log_level] and include
 ## a compact timestamp. Editor-launched runs also include the local multiplayer
 ## ID when available so multi-instance logs are easier to distinguish.

@@ -1,11 +1,9 @@
 extends Node
 ## Runtime singleton for Mimic connection setup and network state.
-##
+## [br][br]
 ## The Mimic autoload owns the active [MultiplayerPeer], starts and stops
 ## server/client connections, and emits connection lifecycle signals for game
 ## code and UI.
-
-const MIMIC_PORT_MAPPER_SCRIPT := preload("res://addons/mimic/util/mimic_port_mapper.gd")
 
 ## Emitted when Mimic changes connection state.
 ## [param state] and [param previous_state] are [enum NetworkState] values.
@@ -71,7 +69,7 @@ enum PortMappingProtocol {
 var _state: NetworkState = NetworkState.OFFLINE
 var _last_client_address := ""
 var _last_client_port := 0
-var _port_mapper := MIMIC_PORT_MAPPER_SCRIPT.new()
+var _port_mapper := _MimicPortMapper.new()
 
 
 func _ready() -> void:

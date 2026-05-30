@@ -1,4 +1,4 @@
-extends RefCounted
+class_name _MimicPortMapper extends RefCounted
 
 signal _finished(error: int, external_address: String)
 
@@ -37,6 +37,7 @@ func _delete_mapping() -> void:
 
 	if _thread != null:
 		_delete_after_thread = true
+		_queued_request = {}
 		return
 
 	if _mapped_port <= 0 or _mapped_protocols.is_empty():
@@ -88,7 +89,7 @@ func _start_thread(request: Dictionary) -> void:
 
 func _run_request(request: Dictionary) -> void:
 	var result := _execute_request(request)
-	call_deferred("_finish_request", int(request["id"]), result)
+	_finish_request.call_deferred(int(request["id"]), result)
 
 
 func _execute_request(request: Dictionary) -> Dictionary:

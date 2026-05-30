@@ -1,7 +1,7 @@
 @tool
 class_name MimicProjectSettings extends Object
 ## Typed accessors and registration helpers for Mimic Project Settings.
-##
+## [br][br]
 ## Settings are registered by the editor plugin and read by the Mimic runtime.
 
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
