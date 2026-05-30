@@ -14,6 +14,7 @@ func _exit_tree() -> void:
 
 
 func _enable_plugin() -> void:
+	# MimicRunInstanceGrid is optional for local testing and is not registered here.
 	var autoload_status := _has_autoload()
 	if autoload_status == OK:
 		return

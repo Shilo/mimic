@@ -1,6 +1,8 @@
 Project: Mimic Multiplayer
 
-Description: Mimic Multiplayer is a Godot 4 addon for making Godot's high-level multiplayer API easier to author. The long-term product direction is to reduce the usual MultiplayerSpawner, MultiplayerSynchronizer, SceneReplicationConfig, fixed spawn path, spawn configuration, and manual property-selection workflow into a smaller authoring model centered on one visible network component per entity plus one stable Mimic backend.
+Description: Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay.
+
+Technical description: Mimic Multiplayer is a Godot 4 addon for making Godot's high-level multiplayer API easier to author. The long-term product direction is to reduce the usual MultiplayerSpawner, MultiplayerSynchronizer, SceneReplicationConfig, fixed spawn path, spawn configuration, and manual property-selection workflow into a smaller authoring model centered on one visible network component per entity plus one stable Mimic backend.
 
 Goals: The intended authoring shape is that a user adds one MimicSync node to a networked scene/entity, while Mimic handles network lifecycle concerns that would otherwise require separate spawner setup. Dynamic synced objects should eventually be spawnable anywhere in the scene tree as long as the same parent path exists on each peer. Runtime property replication should continue to lean on Godot's native MultiplayerSynchronizer and SceneReplicationConfig wherever possible instead of replacing Godot's replication system.
 
@@ -28,7 +30,7 @@ addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
 addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
 addons/mimic/nodes/: Public user-facing scene-tree nodes developers add to scenes.
-addons/mimic/nodes/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports auto-connect modes.
+addons/mimic/nodes/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports future UI plus auto-connect modes.
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.

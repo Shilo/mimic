@@ -1,5 +1,6 @@
 extends CharacterBody2D
 
+## Movement speed in pixels per second.
 @export var speed: int = 300
 
 

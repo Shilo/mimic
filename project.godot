@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Mimic Multiplayer"
-config/description="Clone-and-play multiplayer for Godot. Drop in a MimicSync node and your scenes become network-aware, with automatic spawn, despawn, ownership, replication, and interpolation anywhere in the scene tree."
+config/description="Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay."
 run/main_scene="uid://fq7tkvwqe1ub"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"

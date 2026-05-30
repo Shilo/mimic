@@ -1,6 +1,12 @@
-class_name _MimicPortMapper extends RefCounted
+class_name MimicPortMapper extends RefCounted
+## Internal UPnP port mapping worker used by the Mimic autoload.
+## [br][br]
+## This class is globally named only so Mimic can avoid script preloads. Gameplay
+## code should use the public methods and signals on the [code]Mimic[/code]
+## singleton instead.
 
-signal _finished(error: int, external_address: String)
+## Emitted after a background UPnP add-mapping attempt succeeds or fails.
+signal finished(error: int, external_address: String)
 
 var _external_address := ""
 var _mapped_port := 0
@@ -11,13 +17,14 @@ var _delete_after_thread := false
 var _queued_request := {}
 
 
-func _add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+## Starts a background UPnP add-mapping request.
+func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+	if not MimicProjectSettings.port_forwarding_enabled:
+		return
+
 	_external_address = ""
 	_mapped_port = 0
 	_mapped_protocols.clear()
-
-	if not MimicProjectSettings.port_forwarding_enabled:
-		return
 
 	_start_thread({
 		"operation": "add",
@@ -31,7 +38,8 @@ func _add_mapping(port: int, protocols: PackedStringArray, description: String) 
 	})
 
 
-func _delete_mapping() -> void:
+## Requests deletion of the owned UPnP mapping when deletion is enabled.
+func delete_mapping() -> void:
 	if not MimicProjectSettings.port_mapping_delete_on_stop:
 		return
 
@@ -59,12 +67,14 @@ func _delete_mapping() -> void:
 	})
 
 
-func _wait_to_finish() -> void:
+## Waits for the active UPnP worker thread to finish.
+func wait_to_finish() -> void:
 	if _thread != null:
 		_thread.wait_to_finish()
 
 
-func _get_external_address() -> String:
+## Returns the last external address reported by UPnP.
+func get_external_address() -> String:
 	return _external_address
 
 
@@ -84,7 +94,7 @@ func _start_thread(request: Dictionary) -> void:
 	if error != OK:
 		_thread = null
 		if String(request["operation"]) == "add":
-			_finished.emit(UPNP.UPNP_RESULT_UNKNOWN_ERROR, "")
+			finished.emit(UPNP.UPNP_RESULT_UNKNOWN_ERROR, "")
 
 
 func _run_request(request: Dictionary) -> void:
@@ -165,10 +175,10 @@ func _finish_request(request_id: int, result: Dictionary) -> void:
 	if _delete_after_thread:
 		_delete_after_thread = false
 		if error == UPNP.UPNP_RESULT_SUCCESS:
-			_delete_mapping()
+			delete_mapping()
 			return
 
-	_finished.emit(error, _external_address)
+	finished.emit(error, _external_address)
 	_start_queued_request()
 
 

@@ -1,6 +1,6 @@
 # Mimic Multiplayer
 
-Mimic Multiplayer is an early Godot 4 addon for making multiplayer setup feel closer to "drop in a component and connect" than wiring every low-level Godot multiplayer piece by hand.
+Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay.
 
 The long-term goal is simple authoring: add one `MimicSync` node to a networked scene, keep using Godot's native `MultiplayerSynchronizer` and `SceneReplicationConfig` for property replication, and let Mimic handle the repetitive setup around networking, connection flow, and eventually dynamic spawn/despawn.
 
