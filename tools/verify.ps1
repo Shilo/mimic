@@ -1,0 +1,75 @@
+param(
+	[string] $GodotPath = "",
+	[int] $IntegrationPort = 18910
+)
+
+$ErrorActionPreference = "Stop"
+
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$godotWrapper = Join-Path $PSScriptRoot "godot.ps1"
+$resultsDir = Join-Path $repoRoot "test-results"
+$junitPath = Join-Path $resultsDir "gut-junit.xml"
+
+New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
+
+function Invoke-Godot {
+	param([string[]] $Arguments)
+
+	$wrapperArgs = @()
+	if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
+		$wrapperArgs += @("-GodotPath", $GodotPath)
+	}
+	$wrapperArgs += $Arguments
+
+	& $godotWrapper @wrapperArgs
+	if ($LASTEXITCODE -ne 0) {
+		exit $LASTEXITCODE
+	}
+}
+
+Write-Output "Importing Godot project resources..."
+Invoke-Godot @("--headless", "--import", "--path", $repoRoot)
+
+Write-Output "Running GUT unit regression tests..."
+Invoke-Godot @(
+	"--headless",
+	"--path",
+	$repoRoot,
+	"-s",
+	"res://addons/gut/gut_cmdln.gd",
+	"-gconfig=res://.gutconfig.json",
+	"-gjunit_xml_file=$junitPath",
+	"-gexit"
+)
+
+if (-not (Test-Path -LiteralPath $junitPath)) {
+	throw "GUT did not write the expected JUnit report at $junitPath."
+}
+
+[xml] $gutReport = Get-Content -Raw -LiteralPath $junitPath
+$gutTestCount = [int] $gutReport.testsuites.tests
+$gutFailureCount = [int] $gutReport.testsuites.failures
+if ($gutTestCount -le 0) {
+	throw "GUT did not run any tests."
+}
+if ($gutFailureCount -gt 0) {
+	throw "GUT reported $gutFailureCount failing test(s). See $junitPath."
+}
+
+Write-Output "Running headless project smoke test..."
+Invoke-Godot @("--headless", "--path", $repoRoot, "--quit-after", "60", "--no-header")
+
+Write-Output "Running two-instance connection smoke test..."
+$twoInstanceArgs = @{
+	Port = $IntegrationPort
+	ResultsDir = $resultsDir
+}
+if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
+	$twoInstanceArgs["GodotPath"] = $GodotPath
+}
+& (Join-Path $PSScriptRoot "run_two_instances.ps1") @twoInstanceArgs
+if ($LASTEXITCODE -ne 0) {
+	exit $LASTEXITCODE
+}
+
+Write-Output "Mimic verification passed."

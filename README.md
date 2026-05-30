@@ -342,6 +342,49 @@ Expected result:
 - The second instance joins as client.
 - Connection events appear in the Godot output.
 
+## Regression Testing And Automation
+
+Mimic includes automated checks intended to keep current behavior stable as the addon evolves. These tests are regression guardrails, not a requirement to practice test-driven development before every change.
+
+Run the full local verification pass from PowerShell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
+```
+
+This uses the repo-local Godot wrapper in `tools/godot.ps1`. By default it prefers a valid `MIMIC_GODOT_PATH`, then a valid `GODOT_PATH`, then the local Godot 4.6.3 path:
+
+```text
+C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe
+```
+
+Override the executable for one run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1 -GodotPath "C:\path\to\Godot.exe"
+```
+
+The verification pass does four things:
+
+- Imports project resources with Godot in headless mode.
+- Runs GUT unit regression tests from `res://test/unit/`.
+- Runs the project headlessly long enough to catch startup regressions.
+- Runs a two-instance ENet smoke test through `res://test/integration/mimic_connection_probe.tscn`.
+
+Run just the unit tests:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/godot.ps1 --headless --path . -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json -gexit
+```
+
+Run just the two-instance connection smoke test:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Port 18910
+```
+
+Unit tests use the vendored GUT addon in `res://addons/gut/`. Add tests when changing public Mimic behavior, fixing a bug, or touching connection/project-settings code that an AI assistant could easily regress later.
+
 ## Editor Multi-Instance Testing
 
 Godot can launch multiple local game instances from the editor:

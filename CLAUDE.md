@@ -16,6 +16,8 @@ Source references: Use `C:\Programming_Files\Godot\godot-master` as the local Go
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
+Testing and automation: Treat tests as regression guardrails for AI-assisted changes, not as a mandatory TDD ceremony. Add or update GUT tests in `res://test/unit/` when changing public Mimic behavior, fixing bugs, or touching connection lifecycle, project settings, editor plugin behavior, networking helpers, or example flows that should stay stable. For meaningful feature changes, behavior changes, and risky refactors, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1` before final response; for especially risky work, run it before and after the change to catch regressions early. Do not add tests for docs-only edits, comments-only edits, or mechanical formatting with no behavior impact. Use `tools/run_two_instances.ps1` for explicit local ENet server/client smoke coverage; prefer these deterministic CLI scripts over MCP as the source of truth for CI-style verification.
+
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
 
 Code style: Follow the Godot GDScript style guide at https://docs.godotengine.org/en/4.4/tutorials/scripting/gdscript/gdscript_styleguide.html; since GDScript is close to Python, the guide is inspired by Python's PEP 8 programming style guide. Use tabs for indentation, UTF-8 text, snake_case for files/functions/variables/signals, PascalCase for class_name values and enum names, UPPER_CASE for constants, and \_private_name for private helpers or backing fields. Prefer explicit typed public API, guard clauses, small functions, minimal comments, and no unrelated formatting churn. Use current Godot 4, GDScript 2 patterns; do not use outdated Godot 3 or GDScript 1 habits. Prefer typed Callable usage such as `some_method.call_deferred(args)` over string-based `call_deferred("some_method", args)` for local methods. Prefer `class_name` scripts over `preload()` for addon script dependencies unless there is a concrete reason to avoid a global class. Document every public class, signal, enum, enum value, exported property, public variable, and public method with GDScript `##` documentation comments; do not document private API with `##`. Use `## [br][br]` for public documentation paragraph breaks so comments stay readable in code and render correctly in Godot tooltips.
@@ -24,6 +26,7 @@ Files:
 
 ```
 .mcp.json: Repo-local MCP configuration for Coding-Solo godot-mcp using Godot 4.6.3.
+.gutconfig.json: GUT command-line test configuration for Mimic unit tests.
 C:\Programming_Files\Godot\godot-master: Local Godot engine source reference for API and multiplayer behavior research.
 C:\Programming_Files\Godot\netfox-main: Local Netfox multiplayer library reference for inspiration and comparative architecture research.
 project.godot: Godot project configuration, autoloads, plugin enablement, input actions, and main scene.
@@ -33,6 +36,7 @@ AGENTS.md: Agent-facing project guidance.
 CLAUDE.md: Claude-facing project guidance, kept aligned with AGENTS.md.
 README.md: User-facing developer guide for installing, configuring, and using Mimic.
 addons/: Godot addon root.
+addons/gut/: Vendored GUT test framework used only for regression tests.
 addons/mimic/: Mimic addon source folder.
 addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
@@ -55,4 +59,12 @@ examples/single_to_multiplayer/single_to_multiplayer.gd: Example scene script.
 examples/single_to_multiplayer/player/: Example player scene and script.
 examples/single_to_multiplayer/player/player.tscn: Example player scene.
 examples/single_to_multiplayer/player/player.gd: Example player script.
+test/: Automated regression tests and integration probes.
+test/unit/: GUT unit/regression tests for public Mimic behavior.
+test/integration/mimic_connection_probe.tscn: Headless scene used by the two-instance connection smoke test.
+test/integration/mimic_connection_probe.gd: Explicit server/client probe script used by automation.
+tools/: Local PowerShell automation entry points.
+tools/godot.ps1: Repo-local Godot CLI wrapper with Godot 4.6.3 fallback.
+tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, and two-instance connection smoke.
+tools/run_two_instances.ps1: Explicit ENet server/client smoke test runner.
 ```
