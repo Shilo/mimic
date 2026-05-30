@@ -7,6 +7,7 @@ const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
 const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 
 var _role := ""
+var _transport := "enet"
 var _address := "127.0.0.1"
 var _port := 18910
 var _timeout := 10.0
@@ -32,6 +33,8 @@ func _parse_user_args() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--mimic-role="):
 			_role = argument.trim_prefix("--mimic-role=")
+		elif argument.begins_with("--mimic-transport="):
+			_transport = argument.trim_prefix("--mimic-transport=").to_lower()
 		elif argument.begins_with("--mimic-address="):
 			_address = argument.trim_prefix("--mimic-address=")
 		elif argument.begins_with("--mimic-port="):
@@ -41,12 +44,23 @@ func _parse_user_args() -> void:
 
 
 func _configure_mimic() -> void:
-	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.ENET)
+	ProjectSettings.set_setting(TRANSPORT, _get_transport_type())
 	ProjectSettings.set_setting(ADDRESS, _address)
 	ProjectSettings.set_setting(PORT, _port)
 	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, false)
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
 	Mimic.stop()
+
+
+func _get_transport_type() -> int:
+	match _transport:
+		"enet":
+			return Mimic.TransportType.ENET
+		"websocket":
+			return Mimic.TransportType.WEBSOCKET
+		_:
+			_fail("Unknown transport '%s'. Use enet or websocket." % _transport)
+	return Mimic.TransportType.OFFLINE
 
 
 func _connect_signals() -> void:
@@ -61,7 +75,7 @@ func _start_server() -> void:
 	if error != OK:
 		_fail("Server start failed: %s." % error_string(error))
 		return
-	print("MIMIC_TEST_READY server port=%d" % _port)
+	print("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
 
 
 func _start_client() -> void:
@@ -69,18 +83,21 @@ func _start_client() -> void:
 	if error != OK:
 		_fail("Client start failed: %s." % error_string(error))
 		return
-	print("MIMIC_TEST_READY client port=%d" % _port)
+	print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
 
 
 func _on_peer_connected(peer_id: int) -> void:
 	if _role == "server":
-		print("MIMIC_TEST_CONNECTED server peer=%d" % peer_id)
+		print("MIMIC_TEST_CONNECTED server transport=%s peer=%d" % [_transport, peer_id])
 		_succeed.call_deferred()
 
 
 func _on_client_connected() -> void:
 	if _role == "client":
-		print("MIMIC_TEST_CONNECTED client peer=%d" % Mimic.get_local_peer_id())
+		print(
+			"MIMIC_TEST_CONNECTED client transport=%s peer=%d"
+			% [_transport, Mimic.get_local_peer_id()]
+		)
 		_succeed.call_deferred()
 
 

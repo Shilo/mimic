@@ -1,6 +1,8 @@
 param(
 	[string] $GodotPath = "",
 	[int] $Port = 18910,
+	[ValidateSet("enet", "websocket")]
+	[string] $Transport = "enet",
 	[int] $TimeoutSeconds = 12,
 	[string] $ResultsDir = ""
 )
@@ -15,10 +17,10 @@ if ([string]::IsNullOrWhiteSpace($ResultsDir)) {
 
 New-Item -ItemType Directory -Force -Path $ResultsDir | Out-Null
 
-$serverOut = Join-Path $ResultsDir "integration-server.out.log"
-$serverErr = Join-Path $ResultsDir "integration-server.err.log"
-$clientOut = Join-Path $ResultsDir "integration-client.out.log"
-$clientErr = Join-Path $ResultsDir "integration-client.err.log"
+$serverOut = Join-Path $ResultsDir "integration-$Transport-server.out.log"
+$serverErr = Join-Path $ResultsDir "integration-$Transport-server.err.log"
+$clientOut = Join-Path $ResultsDir "integration-$Transport-client.out.log"
+$clientErr = Join-Path $ResultsDir "integration-$Transport-client.err.log"
 Remove-Item -LiteralPath $serverOut, $serverErr, $clientOut, $clientErr -ErrorAction SilentlyContinue
 
 function Resolve-GodotPath {
@@ -52,6 +54,7 @@ function New-GodotArgumentList {
 		"--no-header",
 		"--",
 		"--mimic-role=$Role",
+		"--mimic-transport=$Transport",
 		"--mimic-address=127.0.0.1",
 		"--mimic-port=$Port",
 		"--mimic-timeout=$TimeoutSeconds"
@@ -157,4 +160,4 @@ if (-not $serverConnected -or -not $clientConnected) {
 	exit 1
 }
 
-Write-Output "Two-instance Mimic connection smoke test passed on port $Port."
+Write-Output "Two-instance Mimic $Transport connection smoke test passed on port $Port."

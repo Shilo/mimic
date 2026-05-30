@@ -68,9 +68,24 @@ Invoke-Godot @(
 	"--no-header"
 )
 
-Write-Output "Running two-instance connection smoke test..."
+Write-Output "Running two-instance ENet connection smoke test..."
 $twoInstanceArgs = @{
 	Port = $IntegrationPort
+	Transport = "enet"
+	ResultsDir = $resultsDir
+}
+if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
+	$twoInstanceArgs["GodotPath"] = $GodotPath
+}
+& (Join-Path $PSScriptRoot "run_two_instances.ps1") @twoInstanceArgs
+if ($LASTEXITCODE -ne 0) {
+	exit $LASTEXITCODE
+}
+
+Write-Output "Running two-instance WebSocket connection smoke test..."
+$twoInstanceArgs = @{
+	Port = ($IntegrationPort + 1)
+	Transport = "websocket"
 	ResultsDir = $resultsDir
 }
 if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
