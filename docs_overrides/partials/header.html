@@ -1,5 +1,5 @@
 {#-
-  Mimic override: adds a persistent Play Example header shortcut.
+  Mimic override: adds a persistent Play Showcase header shortcut.
 -#}
 {% set class = "md-header" %}
 {% if "navigation.tabs.sticky" in features %}
@@ -35,7 +35,7 @@
       </div>
     </div>
     {% if config.extra.play_url %}
-      <a href="{{ config.extra.play_url | url }}" title="Play Example" class="md-header__button mimic-header-play" aria-label="Play Example" target="_blank" rel="noopener">
+      <a href="{{ config.extra.play_url | url }}" title="Play Showcase" class="md-header__button mimic-header-play" aria-label="Play Showcase" target="_blank" rel="noopener">
         <span class="mimic-header-play__icon" aria-hidden="true"></span>
         <span class="mimic-header-play__text">Play</span>
       </a>
