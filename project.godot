@@ -61,7 +61,7 @@ move_right={
 
 [mimic_multiplayer]
 
-debug/log_level=3
+debug/log_level=0
 
 [physics]
 
