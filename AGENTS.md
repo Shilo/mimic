@@ -12,6 +12,8 @@ Boundaries: Avoid adding gameplay scenes, player scenes, resources, input maps, 
 
 Discovery: Prioritize progressive discovery over token usage. Read only the files needed for the current task, then expand outward when the code path requires it. Challenge and verify important ideas before changing the codebase, especially when a request affects architecture, public API, project settings, networking behavior, editor behavior, or file structure. Check local Godot docs/source when behavior depends on MultiplayerAPI, MultiplayerPeer, SceneMultiplayer, MultiplayerSynchronizer, MultiplayerSpawner, SceneReplicationConfig, GDScript syntax, or Godot 4 API style details.
 
+Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
+
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
 
 Code style: Follow the Godot GDScript style guide at https://docs.godotengine.org/en/4.4/tutorials/scripting/gdscript/gdscript_styleguide.html; since GDScript is close to Python, the guide is inspired by Python's PEP 8 programming style guide. Use tabs for indentation, UTF-8 text, snake_case for files/functions/variables/signals, PascalCase for class_name values and enum names, UPPER_CASE for constants, and \_private_name for private helpers or backing fields. Prefer explicit typed public API, guard clauses, small functions, minimal comments, and no unrelated formatting churn. Use current Godot 4, GDScript 2 patterns; do not use outdated Godot 3 or GDScript 1 habits. Prefer typed Callable usage such as `some_method.call_deferred(args)` over string-based `call_deferred("some_method", args)` for local methods. Prefer `class_name` scripts over `preload()` for addon script dependencies unless there is a concrete reason to avoid a global class. Document every public class, signal, enum, enum value, exported property, public variable, and public method with GDScript `##` documentation comments; do not document private API with `##`. Use `## [br][br]` for public documentation paragraph breaks so comments stay readable in code and render correctly in Godot tooltips.
@@ -19,10 +21,12 @@ Code style: Follow the Godot GDScript style guide at https://docs.godotengine.or
 Files:
 
 ```
+.mcp.json: Repo-local MCP configuration for Coding-Solo godot-mcp using Godot 4.6.3.
 project.godot: Godot project configuration, autoloads, plugin enablement, input actions, and main scene.
 icon.svg: Default Godot project icon.
 icon.svg.import: Godot import metadata for the project icon.
 AGENTS.md: Agent-facing project guidance.
+CLAUDE.md: Claude-facing project guidance, kept aligned with AGENTS.md.
 README.md: User-facing developer guide for installing, configuring, and using Mimic.
 addons/: Godot addon root.
 addons/mimic/: Mimic addon source folder.
