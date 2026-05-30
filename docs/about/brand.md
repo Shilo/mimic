@@ -23,15 +23,15 @@ The source mascot assets live in `brand/`.
 | `mimo_m.svg` | Scalable M-shaped Mimo icon |
 | `mimo_net.png` | Original Network Mimo raster source |
 | `mimo_m.png` | Original M-shaped Mimo raster source |
-| `logos/*.svg` | Outlined Fredoka logo variations |
-| `logos/logo_variations_preview.png` | Light and dark logo comparison sheet |
-| `logos/logo_multiplayer_variations_preview.png` | Full-name logo comparison sheet |
+| `logos/logo_m_hero_700.svg` | M-shaped Mimo hero wordmark |
+| `logos/logo_net_stacked_700.svg` | Network Mimo stacked wordmark |
+| `logos/logo_net_horizontal_700.svg` | Network Mimo horizontal wordmark |
 
 The SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both SVGs share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
 
 The logo SVGs use outlined Fredoka wordmark shapes, so they do not depend on local font installation. Network Mimo logos keep the full `MIMIC` word. M-shaped Mimo logos replace the first `M`, so the visible wordmark text is `IMIC`.
 
-Full-name logo variants add `MULTIPLAYER` below the primary wordmark. The `600` subtitle versions are the default choice because they keep `MULTIPLAYER` secondary, while the `700` subtitle versions are heavier display alternatives. The subtitle is width-matched to the primary text line: the full `MIMIC` word for Network Mimo logos and the mascot-plus-`IMIC` lockup for M-shaped Mimo logos.
+Full-name logo variants add `MULTIPLAYER` below the primary wordmark with the same outlined Fredoka weight as the main line. The subtitle is width-matched to the primary text line: the full `MIMIC` word for Network Mimo logos and the mascot-plus-`IMIC` lockup for M-shaped Mimo logos.
 
 ## Names
 
