@@ -14,7 +14,9 @@ const WEBSOCKET_PATH := "mimic_multiplayer/websocket/path"
 const WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic_multiplayer/websocket/handshake_timeout"
 const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
 const PORT_MAPPING_DELETE_ON_STOP := "mimic_multiplayer/port_forwarding/delete_mapping_on_stop"
-const PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := "mimic_multiplayer/port_forwarding/query_external_address"
+const PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := (
+	"mimic_multiplayer/port_forwarding/query_external_address"
+)
 const PORT_MAPPING_PROTOCOL := "mimic_multiplayer/port_forwarding/protocol"
 const PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
 const UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_timeout_ms"

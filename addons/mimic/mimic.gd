@@ -182,6 +182,9 @@ func start_server_if_first_else_client() -> Error:
 ## Stops the active peer, requests owned UPnP mapping deletion when enabled, and returns to
 ## offline state.
 func stop() -> void:
+	if _state == NetworkState.OFFLINE and not _has_active_peer():
+		return
+
 	_delete_port_mappings()
 	_reset_peer_state()
 	MimicLog.log("Network stopped.")
@@ -429,7 +432,7 @@ func _close_peer() -> void:
 	if current_peer is OfflineMultiplayerPeer:
 		return
 
-	# Keep an OfflineMultiplayerPeer installed so local-only multiplayer code keeps a valid peer.
+	# Install the offline peer before closing so close-side effects cannot observe stale state.
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	if current_peer != null:
 		current_peer.close()

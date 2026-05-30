@@ -77,6 +77,19 @@ func test_connector_host_and_stop_forward_to_mimic() -> void:
 	assert_true(Mimic.is_offline())
 
 
+func test_stop_is_noop_when_already_offline() -> void:
+	var stopped_count := 0
+	Mimic.stopped.connect(
+		func() -> void:
+			stopped_count += 1
+	)
+
+	Mimic.stop()
+
+	assert_eq(stopped_count, 0)
+	assert_true(Mimic.is_offline())
+
+
 func test_mimic_sync_remains_a_multiplayer_synchronizer() -> void:
 	var sync: MimicSync = autofree(MimicSync.new())
 
