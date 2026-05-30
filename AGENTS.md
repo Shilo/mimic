@@ -26,33 +26,23 @@ addons/: Godot addon root.
 addons/mimic/: Mimic addon source folder.
 addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
-addons/mimic/plugin.gd.uid: Godot UID metadata for plugin.gd.
 addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
-addons/mimic/mimic.gd.uid: Godot UID metadata for mimic.gd.
 addons/mimic/nodes/: Public user-facing scene-tree nodes developers add to scenes.
 addons/mimic/nodes/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports auto-connect modes.
-addons/mimic/nodes/mimic_connector.gd.uid: Godot UID metadata for mimic_connector.gd.
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
-addons/mimic/nodes/mimic_sync.gd.uid: Godot UID metadata for mimic_sync.gd.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
-addons/mimic/connection/mimic_port_mapper.gd.uid: Godot UID metadata for mimic_port_mapper.gd.
 addons/mimic/settings/: Project settings registration and typed settings access.
 addons/mimic/settings/mimic_project_settings.gd: Static ProjectSettings helper with typed property accessors for Mimic settings.
-addons/mimic/settings/mimic_project_settings.gd.uid: Godot UID metadata for mimic_project_settings.gd.
 addons/mimic/debug/: Logging and debug-facing support scripts.
 addons/mimic/debug/mimic_log.gd: Static logging helper for Mimic connection, warning, and error output.
-addons/mimic/debug/mimic_log.gd.uid: Godot UID metadata for mimic_log.gd.
 addons/mimic/testing/: Optional local testing helpers.
 addons/mimic/testing/mimic_run_instance_grid.gd: Utility for tiling multiple editor-launched game windows during local multiplayer testing.
-addons/mimic/testing/mimic_run_instance_grid.gd.uid: Godot UID metadata for mimic_run_instance_grid.gd.
 examples/: Example projects and scenes.
 examples/single_to_multiplayer/: Current sample showing a single-player scene adapted toward Mimic networking.
 examples/single_to_multiplayer/single_to_multiplayer.tscn: Example scene.
 examples/single_to_multiplayer/single_to_multiplayer.gd: Example scene script.
-examples/single_to_multiplayer/single_to_multiplayer.gd.uid: Godot UID metadata for single_to_multiplayer.gd.
 examples/single_to_multiplayer/player/: Example player scene and script.
 examples/single_to_multiplayer/player/player.tscn: Example player scene.
 examples/single_to_multiplayer/player/player.gd: Example player script.
-examples/single_to_multiplayer/player/player.gd.uid: Godot UID metadata for player.gd.
 ```
