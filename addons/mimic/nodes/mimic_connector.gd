@@ -1,3 +1,4 @@
+@icon("res://addons/mimic/icon.svg")
 class_name MimicConnector extends CanvasLayer
 ## Scene component that starts and stops Mimic connections.
 ## [br][br]

@@ -1,3 +1,4 @@
+@icon("res://addons/mimic/icon.svg")
 class_name MimicSync extends MultiplayerSynchronizer
 ## Visible per-entity synchronization component for Mimic networked scenes.
 ## [br][br]
