@@ -18,6 +18,8 @@ var _queued_request := {}
 
 
 ## Starts a background UPnP add-mapping request.
+## [br][br]
+## Does nothing when [member MimicProjectSettings.port_forwarding_enabled] is [code]false[/code].
 func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
 	if not MimicProjectSettings.port_forwarding_enabled:
 		return
@@ -67,10 +69,10 @@ func delete_mapping() -> void:
 	})
 
 
-## Waits for the active UPnP worker thread to finish.
+## Waits for the active UPnP worker thread and any queued cleanup work to finish.
 func wait_to_finish() -> void:
-	if _thread != null:
-		_thread.wait_to_finish()
+	while _thread != null:
+		_finish_completed_request()
 
 
 ## Returns the last external address reported by UPnP.
@@ -97,9 +99,13 @@ func _start_thread(request: Dictionary) -> void:
 			finished.emit(UPNP.UPNP_RESULT_UNKNOWN_ERROR, "")
 
 
-func _run_request(request: Dictionary) -> void:
+func _run_request(request: Dictionary) -> Dictionary:
 	var result := _execute_request(request)
-	_finish_request.call_deferred(int(request["id"]), result)
+	_finish_deferred_request.call_deferred()
+	return {
+		"id": int(request["id"]),
+		"result": result,
+	}
 
 
 func _execute_request(request: Dictionary) -> Dictionary:
@@ -145,12 +151,23 @@ func _execute_request(request: Dictionary) -> Dictionary:
 	return _result(request, UPNP.UPNP_RESULT_SUCCESS, mapped_address, port, mapped_protocols)
 
 
-func _finish_request(request_id: int, result: Dictionary) -> void:
+func _finish_deferred_request() -> void:
 	if _thread == null:
 		return
 
 	_thread.wait_to_finish()
+	_finish_completed_request()
+
+
+func _finish_completed_request() -> void:
+	if _thread == null:
+		return
+
+	var thread_result := _thread.wait_to_finish() as Dictionary
 	_thread = null
+
+	var request_id := int(thread_result["id"])
+	var result := thread_result["result"] as Dictionary
 
 	if request_id != _request_id:
 		return

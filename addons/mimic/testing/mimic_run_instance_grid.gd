@@ -26,7 +26,7 @@ var _base_title := ""
 func _ready() -> void:
 	if not OS.has_feature("editor"):
 		return
-	if OS.has_feature("dedicated_server") or DisplayServer.get_name() == "headless":
+	if DisplayServer.get_name() == "headless":
 		return
 
 	_base_title = get_window().title

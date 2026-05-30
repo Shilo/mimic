@@ -27,6 +27,7 @@ const _UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_t
 const _UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
 const _LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 
+# These mirror Mimic and MimicLog public enum values used by ProjectSettings hints.
 enum _TransportType {
 	OFFLINE,
 	ENET,
@@ -332,18 +333,8 @@ static func register() -> void:
 
 
 ## Resets the internal registration flag so [method register] can run again.
-## [br][br]
-## Optionally clears current setting values; ProjectSettings property hints remain until editor
-## restart.
-static func unregister(clear_values: bool = false) -> void:
+static func unregister() -> void:
 	_registered = false
-	if not clear_values:
-		return
-
-	for setting in _SETTINGS:
-		var name := String(setting["name"])
-		if ProjectSettings.has_setting(name):
-			ProjectSettings.clear(name)
 
 
 static func _get_setting(name: String, default_value: Variant) -> Variant:

@@ -101,6 +101,7 @@ func start_server(port_override: int = -1, bind_address_override: String = "") -
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
+	var transport := _get_transport_type()
 	var address := MimicProjectSettings.address.strip_edges()
 	if not address_override.is_empty():
 		address = address_override.strip_edges()
@@ -124,9 +125,9 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 		"port",
 		port,
 		"using",
-		_get_transport_name(_get_transport_type())
+		_get_transport_name(transport)
 	)
-	match _get_transport_type():
+	match transport:
 		TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
 			var bind_address := MimicProjectSettings.bind_address
@@ -234,7 +235,7 @@ func is_connecting() -> bool:
 	return _state == NetworkState.CLIENT_CONNECTING
 
 
-## Returns [code]true[/code] when Mimic has no active network peer.
+## Returns [code]true[/code] when Mimic is not hosting, connecting, or connected.
 func is_offline() -> bool:
 	return _state == NetworkState.OFFLINE
 
@@ -246,6 +247,7 @@ func _start_server(
 ) -> Error:
 	_connect_multiplayer_signals()
 
+	var transport := _get_transport_type()
 	var port := port_override if port_override > 0 else MimicProjectSettings.port
 	var error := _validate_start(NetworkState.SERVER_LISTENING, port)
 	if error != OK:
@@ -256,9 +258,9 @@ func _start_server(
 		"Starting server on port",
 		port,
 		"using",
-		_get_transport_name(_get_transport_type())
+		_get_transport_name(transport)
 	)
-	match _get_transport_type():
+	match transport:
 		TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
 			var bind_address := _get_bind_address(bind_address_override)
@@ -298,17 +300,20 @@ func _start_server(
 
 
 func _validate_start(state: NetworkState, port: int) -> Error:
+	var transport := _get_transport_type()
+
 	if port < 1 or port > 65535:
 		return _fail_start(state, ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
 
-	if _get_transport_type() == TransportType.ENET and OS.has_feature("web"):
+	if transport == TransportType.ENET and OS.has_feature("web"):
 		return _fail_start(
 			state,
 			ERR_UNAVAILABLE,
 			"ENet is not available on web exports. Use WebSocket instead."
 		)
 
-	if _get_transport_type() == TransportType.OFFLINE or _get_transport_type() == TransportType.WEBRTC:
+	# Invalid start requests do not tear down a currently working peer.
+	if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
 		return _fail_unavailable_transport(state)
 
 	if _has_active_peer():
@@ -420,17 +425,18 @@ func _has_active_peer() -> bool:
 
 
 func _close_peer() -> void:
-	if multiplayer.has_multiplayer_peer() and multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+	var current_peer := multiplayer.multiplayer_peer if multiplayer.has_multiplayer_peer() else null
+	if current_peer is OfflineMultiplayerPeer:
 		return
 
-	var old_peer := multiplayer.multiplayer_peer if multiplayer.has_multiplayer_peer() else null
 	# Keep an OfflineMultiplayerPeer installed so local-only multiplayer code keeps a valid peer.
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
-	if old_peer != null:
-		old_peer.close()
+	if current_peer != null:
+		current_peer.close()
 
 
 func _reset_peer_state() -> void:
+	# Explicit teardown clears last-attempt data; involuntary disconnects keep it for inspection.
 	_close_peer()
 	_last_client_address = ""
 	_last_client_port = 0
@@ -499,9 +505,10 @@ func _delete_port_mappings() -> void:
 
 func _get_port_mapping_protocols() -> PackedStringArray:
 	var protocols := PackedStringArray()
+	var transport := _get_transport_type()
 	match MimicProjectSettings.port_mapping_protocol:
 		PortMappingProtocol.TRANSPORT_DEFAULT:
-			protocols.append("TCP" if _get_transport_type() == TransportType.WEBSOCKET else "UDP")
+			protocols.append("TCP" if transport == TransportType.WEBSOCKET else "UDP")
 		PortMappingProtocol.TCP:
 			protocols.append("TCP")
 		PortMappingProtocol.UDP:
