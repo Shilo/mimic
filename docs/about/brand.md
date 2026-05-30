@@ -13,6 +13,19 @@ Mimo currently appears in two concept shapes:
 
 Both shapes use the same simple face, rounded body, mint fill, and dark outline so Mimo stays recognizable across sizes.
 
+## Assets
+
+The source mascot assets live in `brand/`.
+
+| Asset | Use |
+| --- | --- |
+| `mimo_net.svg` | Scalable Network Mimo icon |
+| `mimo_m.svg` | Scalable M-shaped Mimo icon |
+| `mimo_net.png` | Original Network Mimo raster source |
+| `mimo_m.png` | Original M-shaped Mimo raster source |
+
+The SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both SVGs share the same face geometry so Mimo remains recognizable while the body shape changes.
+
 ## Names
 
 | Name | Meaning |
