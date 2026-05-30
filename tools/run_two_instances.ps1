@@ -2,7 +2,6 @@ param(
 	[string] $GodotPath = "",
 	[int] $Port = 18910,
 	[int] $TimeoutSeconds = 12,
-	[int] $ServerStartupDelayMs = 1000,
 	[string] $ResultsDir = ""
 )
 
@@ -102,9 +101,13 @@ try {
 		-WindowStyle Hidden `
 		-PassThru
 
-	Start-Sleep -Milliseconds $ServerStartupDelayMs
-	if ($server.HasExited) {
-		throw "Server probe exited before the client started. See $serverOut and $serverErr."
+	$serverReady = Wait-ForLogLine `
+		-Path $serverOut `
+		-Pattern "MIMIC_TEST_READY server" `
+		-TimeoutSeconds $TimeoutSeconds `
+		-Process $server
+	if (-not $serverReady) {
+		throw "Server probe did not become ready before the client started. See $serverOut and $serverErr."
 	}
 
 	$client = Start-Process `
