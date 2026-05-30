@@ -344,6 +344,7 @@ static func register() -> void:
 
 
 ## Resets the internal registration flag so [method register] can run again.
+## [br][br]
 ## Optionally clears current setting values; ProjectSettings property hints remain until editor restart.
 static func unregister(clear_values: bool = false) -> void:
 	_registered = false

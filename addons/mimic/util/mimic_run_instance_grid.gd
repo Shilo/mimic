@@ -1,15 +1,15 @@
+extends Node
 ## MimicRunInstanceGrid optional editor-only AutoLoad.
 ##
 ## Not registered automatically by the plugin; add this script as an AutoLoad
 ## to enable window tiling.
 ## Automatically tiles multiple Godot run-instance windows into a shared grid.
-##
+## [br][br]
 ## This utility is intended for local multiplayer testing from the editor. Make
 ## sure "Game > Embedding Options > Embed Game on Next Play" is disabled so run
 ## instances open as separate windows. Each run instance writes a short-lived
 ## marker file, discovers sibling instances from the same launch burst, then
 ## moves and resizes itself into a screen tile.
-extends Node
 
 const _DIR := "user://mimic/run_grid"
 const _GROUP_MS := 3000
