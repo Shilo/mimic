@@ -36,6 +36,14 @@ Mimic's primary colors come directly from Mimo:
 
 Mint is best as an accent, not as small text on white. Midnight Ink keeps the site readable and gives the cute mascot enough weight to feel like a developer tool.
 
+## Readability
+
+Mimic documentation should follow WCAG AA contrast as the baseline:
+
+- Normal text should be at least `4.5:1` against its background.
+- Large text, icons, and UI boundaries should be at least `3:1`.
+- Mint can carry buttons, highlights, and active states, but small text should use Midnight Ink on light surfaces or near-white text on dark surfaces.
+
 ## Typography
 
 Mimic uses rounded type to echo Mimo's soft shape:
