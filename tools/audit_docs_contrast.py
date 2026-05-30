@@ -107,7 +107,7 @@ PAIRS = [
 	Pair("dark primary button text", "ink", "mint"),
 	Pair("dark primary button hover text", "ink", "mint_hover"),
 	Pair("dark top button text", "ink", "mint"),
-	Pair("dark top button hover text", "mint", "ink"),
+	Pair("dark top button hover text", "ink", "mint_hover"),
 	Pair("dark code button text", "mint", "dark_callout"),
 	Pair("dark code button border", "mint", "dark_callout", AA_UI),
 	Pair("dark code button hover text", "ink", "mint"),
