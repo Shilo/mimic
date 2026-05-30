@@ -6,6 +6,10 @@ The long-term goal is simple authoring: add one `MimicSync` node to a networked 
 
 This project is intentionally smaller than full networking frameworks. Mimic is for developers who want a lightweight helper around Godot's built-in high-level multiplayer API, not a prediction, rollback, interpolation, lag compensation, relay, or full gameplay framework.
 
+## Research Notes
+
+Public design research and recommendations live in [`research/`](research/).
+
 ## Compatibility Policy
 
 Mimic keeps the current project shape explicit instead of carrying compatibility layers for older names, behavior, files, scenes, or configuration. After updating Mimic, review your code, scenes, and Project Settings > Mimic Multiplayer against this README and update them to the current model.
@@ -322,6 +326,8 @@ NetFox is the better fit when your game needs advanced netcode features. Mimic i
 ## Current Limitations
 
 - WebRTC is listed but not implemented.
+- WebSocket server TLS is not configured by Mimic yet; terminate `wss://` at a proxy.
+- WebSocket subprotocols and custom handshake headers are not exposed yet.
 - Mimic does not yet perform dynamic spawn/despawn replication.
 - Mimic does not yet package spawn properties from `SceneReplicationConfig`.
 - Mimic does not yet provide built-in UI controls.
