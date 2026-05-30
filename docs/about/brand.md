@@ -15,20 +15,22 @@ Both shapes use the same simple face, rounded body, mint fill, and dark outline 
 
 ## Assets
 
-The source mascot assets live in `brand/`.
+Brand assets live in two folders:
+
+- `brand/icon/` for Mimo-only icon assets.
+- `brand/logo/` for full wordmark and lockup assets.
 
 | Asset | Use |
 | --- | --- |
-| `mimo_net.svg` | Scalable Network Mimo icon |
-| `mimo_m.svg` | Scalable M-shaped Mimo icon |
-| `mimo_net.png` | Original Network Mimo raster source |
-| `mimo_m.png` | Original M-shaped Mimo raster source |
-| `logos/mimic_*_stroked_mint.svg` | Primary universal transparent wordmarks |
-| `logos/mimic_*_flat_slate.svg` | Restrained universal transparent fallback wordmarks |
-| `logos/mimic_*_with_multiplayer.svg` | Large full-name lockups |
-| `logos/mimic_*_icon_only.svg` | Logo-ready icon-only mascot exports |
+| `icon/mimo_net.svg` | Scalable Network Mimo icon |
+| `icon/mimo_m.svg` | Scalable M-shaped Mimo icon |
+| `icon/mimo_net.png` | SVG-derived Network Mimo PNG |
+| `icon/mimo_m.png` | SVG-derived M-shaped Mimo PNG |
+| `logo/mimic_*_stroked_mint.svg` | Primary universal transparent wordmarks |
+| `logo/mimic_*_flat_slate.svg` | Restrained universal transparent fallback wordmarks |
+| `logo/mimic_*_with_multiplayer.svg` | Large full-name lockups |
 
-The SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both SVGs share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
+The mascot SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both mascot SVGs share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
 
 The logo SVGs use outlined Fredoka wordmark shapes, so they do not depend on local font installation. Network Mimo logos keep the full `MIMIC` word. M-shaped Mimo logos replace the first `M`, so the visible wordmark text is `IMIC`.
 
