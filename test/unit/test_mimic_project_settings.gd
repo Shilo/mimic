@@ -61,7 +61,7 @@ func after_each() -> void:
 func test_accessors_return_defaults_when_settings_are_missing() -> void:
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
 	assert_eq(MimicProjectSettings.address, "127.0.0.1")
-	assert_eq(MimicProjectSettings.port, 8910)
+	assert_eq(MimicProjectSettings.port, 15490)
 	assert_eq(MimicProjectSettings.max_clients, 32)
 	assert_eq(MimicProjectSettings.bind_address, "*")
 	assert_eq(MimicProjectSettings.enet_channel_count, 0)

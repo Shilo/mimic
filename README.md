@@ -73,7 +73,7 @@ Connection:
 ```text
 mimic_multiplayer/connection/transport: Offline, ENet, WebSocket, or WebRTC (Unsupported)
 mimic_multiplayer/connection/address: Client address, default 127.0.0.1
-mimic_multiplayer/connection/port: Server/client port, default 8910
+mimic_multiplayer/connection/port: Server/client port, default 15490
 mimic_multiplayer/connection/max_clients: Max ENet server clients, default 32
 ```
 
@@ -331,7 +331,7 @@ NetFox is the better fit when your game needs advanced netcode features. Mimic i
 
 1. Set `mimic_multiplayer/connection/transport` to `ENet`.
 2. Set `mimic_multiplayer/connection/address` to `127.0.0.1`.
-3. Set `mimic_multiplayer/connection/port` to `8910`.
+3. Set `mimic_multiplayer/connection/port` to `15490`.
 4. Add a `MimicConnector` node to your startup scene.
 5. Set `auto_connect_mode` to `Server If First Else Client`.
 6. Run two game instances.

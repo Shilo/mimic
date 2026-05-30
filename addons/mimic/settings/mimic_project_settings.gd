@@ -53,7 +53,7 @@ const _LOG_LEVEL_HINT := "All,Warning,Error,None"
 
 const _DEFAULT_TRANSPORT := _TransportType.ENET
 const _DEFAULT_ADDRESS := "127.0.0.1"
-const _DEFAULT_PORT := 8910
+const _DEFAULT_PORT := 15490
 const _DEFAULT_MAX_CLIENTS := 32
 const _DEFAULT_BIND_ADDRESS := "*"
 const _DEFAULT_ENET_CHANNEL_COUNT := 0
