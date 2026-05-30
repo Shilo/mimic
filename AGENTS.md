@@ -31,9 +31,7 @@ Files:
 .gutconfig.json: GUT command-line test configuration for Mimic unit tests.
 C:\Programming_Files\Godot\godot-master: Local Godot engine source reference for API and multiplayer behavior research.
 C:\Programming_Files\Godot\netfox-main: Local Netfox multiplayer library reference for inspiration and comparative architecture research.
-project.godot: Godot project configuration, autoloads, plugin enablement, input actions, and main scene.
-icon.svg: Default Godot project icon.
-icon.svg.import: Godot import metadata for the project icon.
+project.godot: Godot project configuration, autoloads, plugin enablement, input actions, project icon, and main scene.
 brand/: Source brand assets for icons, logos, and generated image imports.
 brand/icon/: Product icon assets. Plain `mimic` files are the primary network-shaped icon; `_m` files are the secondary M-shaped icon.
 brand/icon/mimic.svg: Primary two-color product icon used when documentation references Mimo.
@@ -52,6 +50,7 @@ docs/styles/brand.css: Custom documentation site theme styles.
 addons/: Godot addon root.
 addons/gut/: Vendored GUT test framework used only for regression tests.
 addons/mimic/: Mimic addon source folder.
+addons/mimic/icon.svg: Mimic addon icon used as the project icon and public node icon.
 addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
 addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
@@ -81,7 +80,7 @@ test/integration/mimic_connection_probe.tscn: Headless scene used by the two-ins
 test/integration/mimic_connection_probe.gd: Explicit server/client probe script used by automation.
 tools/: Local PowerShell automation entry points.
 tools/godot.ps1: Repo-local Godot CLI wrapper with Godot 4.6.3 fallback.
-tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, and two-instance connection smoke.
-tools/run_two_instances.ps1: Explicit ENet server/client smoke test runner.
+tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, ENet explicit/auto-connect smoke, and WebSocket smoke.
+tools/run_two_instances.ps1: Explicit ENet/WebSocket server/client smoke test runner.
 tools/mkdocs_hooks.py: MkDocs hook that generates API docs and copies SVG/PNG brand assets into the built documentation site.
 ```

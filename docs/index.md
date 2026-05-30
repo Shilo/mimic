@@ -43,7 +43,7 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 
 - [Installation](installation.md) if Mimic is not in your project yet.
 - [Quick Start](quick_start.md) to run a local host/client pair.
-- <a href="https://shilo.github.io/mimic/play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Example</a> to launch the web export when you want to try Mimic before opening the project.
+- <a href="https://shilo.github.io/mimic/play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Showcase</a> to launch the web export when you want to try Mimic before opening the project.
 - [MimicConnector](nodes/mimic_connector.md) if you want scene-driven connection startup.
 - [MimicSync](nodes/mimic_sync.md) if you are preparing entities for synchronization.
 - [Netfox](other_multiplayer_addons/netfox.md) if you are choosing between Mimic and a larger multiplayer framework.

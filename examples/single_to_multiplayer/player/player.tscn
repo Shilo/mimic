@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://bjyt4h4mdar5y"]
 
-[ext_resource type="Texture2D" uid="uid://prqp1j1l65qc" path="res://icon.svg" id="1_hss5t"]
 [ext_resource type="Script" uid="uid://b4wifa1s83bds" path="res://examples/single_to_multiplayer/player/player.gd" id="1_wcsf2"]
+[ext_resource type="Texture2D" uid="uid://cp8lbeowfabp5" path="res://addons/mimic/icon.svg" id="2_wcsf2"]
 
 [node name="Player" type="CharacterBody2D" unique_id=522806135]
 script = ExtResource("1_wcsf2")
 
 [node name="Icon" type="Sprite2D" parent="." unique_id=542378083]
-texture = ExtResource("1_hss5t")
+texture = ExtResource("2_wcsf2")

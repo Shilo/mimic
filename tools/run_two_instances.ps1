@@ -27,7 +27,7 @@ $clientErr = Join-Path $ResultsDir "$logPrefix-client.err.log"
 Remove-Item -LiteralPath $serverOut, $serverErr, $clientOut, $clientErr -ErrorAction SilentlyContinue
 
 function Resolve-GodotPath {
-	$defaultGodotPath = "C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe"
+	$defaultGodotPath = "C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
 	if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
 		if (-not (Test-Path -LiteralPath $GodotPath)) {
 			throw "Godot executable not found at explicit path '$GodotPath'."
@@ -39,6 +39,11 @@ function Resolve-GodotPath {
 		if (-not [string]::IsNullOrWhiteSpace($candidatePath) -and (Test-Path -LiteralPath $candidatePath)) {
 			return $candidatePath
 		}
+	}
+
+	$pathGodot = Get-Command godot -ErrorAction SilentlyContinue
+	if ($null -ne $pathGodot) {
+		return $pathGodot.Source
 	}
 
 	throw "Godot executable not found. Set MIMIC_GODOT_PATH or pass -GodotPath."
