@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $godotWrapper = Join-Path $PSScriptRoot "godot.ps1"
-$resultsDir = Join-Path $repoRoot "test-results"
+$resultsDir = Join-Path $repoRoot "test_results"
 $junitPath = Join-Path $resultsDir "gut-junit.xml"
 
 New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
