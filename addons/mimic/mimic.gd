@@ -170,6 +170,15 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 ## failures.
 ## Fallback is skipped on dedicated/server exports.
 func start_server_if_first_else_client() -> Error:
+	# This avoids Godot's noisy ENet bind error when the local port is already occupied.
+	# The real _start_server call below remains authoritative when the best-effort probe passes.
+	var preflight_error := _get_server_if_first_preflight_error()
+	if preflight_error != OK:
+		if not _can_fallback_to_client_after_server_failure(preflight_error):
+			return preflight_error
+
+		return start_client()
+
 	var server_error := _start_server(-1, "", true)
 	if server_error == OK:
 		return OK
@@ -398,6 +407,36 @@ func _fail_unavailable_transport(state: NetworkState) -> Error:
 			)
 		_:
 			return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
+
+
+func _get_server_if_first_preflight_error() -> Error:
+	if _get_transport_type() != TransportType.ENET:
+		return OK
+	if _has_active_peer() or OS.has_feature("web"):
+		return OK
+
+	var port := MimicProjectSettings.port
+	if port < 1 or port > 65535:
+		return OK
+
+	var bind_address := _get_bind_address()
+	if bind_address != "*" and not bind_address.is_valid_ip_address():
+		# PacketPeerUDP can only probe literal bind addresses; let ENet validate other values.
+		return OK
+
+	return _get_enet_server_bind_preflight_error(port, bind_address)
+
+
+func _get_enet_server_bind_preflight_error(port: int, bind_address: String) -> Error:
+	var udp_probe := PacketPeerUDP.new()
+	var error: Error = udp_probe.bind(port, bind_address)
+	udp_probe.close()
+	if error == OK:
+		return OK
+
+	# PacketPeerUDP is a heuristic probe; ENet's create_server remains the authoritative bind.
+	# Match ENet's create_server bind-failure error so fallback policy stays centralized.
+	return ERR_CANT_CREATE
 
 
 func _should_fallback_to_client(error: Error) -> bool:

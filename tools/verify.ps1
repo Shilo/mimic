@@ -82,9 +82,24 @@ if ($LASTEXITCODE -ne 0) {
 	exit $LASTEXITCODE
 }
 
-Write-Output "Running two-instance WebSocket connection smoke test..."
+Write-Output "Running two-instance ENet auto-connect smoke test..."
 $twoInstanceArgs = @{
 	Port = ($IntegrationPort + 1)
+	Transport = "enet"
+	ConnectMode = "server_if_first_else_client"
+	ResultsDir = $resultsDir
+}
+if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {
+	$twoInstanceArgs["GodotPath"] = $GodotPath
+}
+& (Join-Path $PSScriptRoot "run_two_instances.ps1") @twoInstanceArgs
+if ($LASTEXITCODE -ne 0) {
+	exit $LASTEXITCODE
+}
+
+Write-Output "Running two-instance WebSocket connection smoke test..."
+$twoInstanceArgs = @{
+	Port = ($IntegrationPort + 2)
 	Transport = "websocket"
 	ResultsDir = $resultsDir
 }

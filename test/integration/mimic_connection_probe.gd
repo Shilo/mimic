@@ -25,8 +25,10 @@ func _ready() -> void:
 			_start_server()
 		"client":
 			_start_client()
+		"auto":
+			_start_server_if_first_else_client()
 		_:
-			_fail("Unknown role '%s'. Use server or client." % _role)
+			_fail("Unknown role '%s'. Use server, client, or auto." % _role)
 
 
 func _parse_user_args() -> void:
@@ -84,6 +86,24 @@ func _start_client() -> void:
 		_fail("Client start failed: %s." % error_string(error))
 		return
 	print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
+
+
+func _start_server_if_first_else_client() -> void:
+	var error := Mimic.start_server_if_first_else_client()
+	if error != OK:
+		_fail("Auto-connect start failed: %s." % error_string(error))
+		return
+
+	if Mimic.is_server():
+		_role = "server"
+		print("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
+	elif Mimic.is_connecting() or Mimic.is_client():
+		_role = "client"
+		print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
+		if Mimic.is_client():
+			_on_client_connected.call_deferred()
+	else:
+		_fail("Auto-connect entered unexpected state %d." % Mimic.get_state())
 
 
 func _on_peer_connected(peer_id: int) -> void:

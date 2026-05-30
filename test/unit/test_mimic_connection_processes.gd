@@ -129,6 +129,41 @@ func test_websocket_client_connection_can_be_canceled_before_handshake_finishes(
 	await _assert_client_connection_can_be_canceled(Mimic.TransportType.WEBSOCKET)
 
 
+func test_enet_server_if_first_else_client_preflight_allows_available_port() -> void:
+	var port := _next_test_port()
+	_configure_transport(Mimic.TransportType.ENET, port)
+	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
+
+	assert_eq(Mimic._get_server_if_first_preflight_error(), OK)
+
+
+func test_enet_server_if_first_else_client_preflights_occupied_server_port() -> void:
+	var port := _next_test_port()
+	_configure_transport(Mimic.TransportType.ENET, port)
+	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
+	var occupying_peer := PacketPeerUDP.new()
+	assert_eq(occupying_peer.bind(port, "127.0.0.1"), OK)
+	watch_signals(Mimic)
+
+	assert_eq(Mimic._get_server_if_first_preflight_error(), ERR_CANT_CREATE)
+	var start_error := Mimic.start_server_if_first_else_client()
+	occupying_peer.close()
+
+	assert_eq(start_error, OK)
+	assert_true(Mimic.is_connecting())
+	assert_signal_not_emitted(Mimic, "server_started")
+	assert_signal_not_emitted(Mimic, "start_failed")
+	assert_signal_emitted_with_parameters(Mimic, "client_started", ["127.0.0.1", port])
+	Mimic.cancel_connection()
+	await wait_process_frames(2)
+
+
+func test_server_if_first_else_client_preflight_skips_websocket_transport() -> void:
+	_configure_transport(Mimic.TransportType.WEBSOCKET, _next_test_port())
+
+	assert_eq(Mimic._get_server_if_first_preflight_error(), OK)
+
+
 func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
 	watch_signals(Mimic)
 	var port := _next_test_port()

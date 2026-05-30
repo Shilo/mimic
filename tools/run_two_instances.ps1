@@ -3,6 +3,8 @@ param(
 	[int] $Port = 18910,
 	[ValidateSet("enet", "websocket")]
 	[string] $Transport = "enet",
+	[ValidateSet("explicit", "server_if_first_else_client")]
+	[string] $ConnectMode = "explicit",
 	[int] $TimeoutSeconds = 12,
 	[string] $ResultsDir = ""
 )
@@ -17,10 +19,11 @@ if ([string]::IsNullOrWhiteSpace($ResultsDir)) {
 
 New-Item -ItemType Directory -Force -Path $ResultsDir | Out-Null
 
-$serverOut = Join-Path $ResultsDir "integration-$Transport-server.out.log"
-$serverErr = Join-Path $ResultsDir "integration-$Transport-server.err.log"
-$clientOut = Join-Path $ResultsDir "integration-$Transport-client.out.log"
-$clientErr = Join-Path $ResultsDir "integration-$Transport-client.err.log"
+$logPrefix = "integration-$Transport-$ConnectMode"
+$serverOut = Join-Path $ResultsDir "$logPrefix-server.out.log"
+$serverErr = Join-Path $ResultsDir "$logPrefix-server.err.log"
+$clientOut = Join-Path $ResultsDir "$logPrefix-client.out.log"
+$clientErr = Join-Path $ResultsDir "$logPrefix-client.err.log"
 Remove-Item -LiteralPath $serverOut, $serverErr, $clientOut, $clientErr -ErrorAction SilentlyContinue
 
 function Resolve-GodotPath {
@@ -44,6 +47,11 @@ function Resolve-GodotPath {
 function New-GodotArgumentList {
 	param([string] $Role)
 
+	$probeRole = $Role
+	if ($ConnectMode -eq "server_if_first_else_client") {
+		$probeRole = "auto"
+	}
+
 	$arguments = @()
 	$arguments += @(
 		"--headless",
@@ -53,7 +61,7 @@ function New-GodotArgumentList {
 		"res://test/integration/mimic_connection_probe.tscn",
 		"--no-header",
 		"--",
-		"--mimic-role=$Role",
+		"--mimic-role=$probeRole",
 		"--mimic-transport=$Transport",
 		"--mimic-address=127.0.0.1",
 		"--mimic-port=$Port",
@@ -81,6 +89,23 @@ function Wait-ForLogLine {
 		Start-Sleep -Milliseconds 100
 	}
 	return $false
+}
+
+function Assert-ForbiddenLogLinesAbsent {
+	param(
+		[string[]] $Paths,
+		[string[]] $Patterns
+	)
+
+	foreach ($path in $Paths) {
+		foreach ($pattern in $Patterns) {
+			if ((Test-Path -LiteralPath $path) -and (Select-String -LiteralPath $path -Pattern $pattern -SimpleMatch -Quiet)) {
+				Write-Output "Forbidden log pattern '$pattern' found in $path."
+				Get-Content -LiteralPath $path -ErrorAction SilentlyContinue
+				exit 1
+			}
+		}
+	}
 }
 
 function Stop-IfRunning {
@@ -160,4 +185,10 @@ if (-not $serverConnected -or -not $clientConnected) {
 	exit 1
 }
 
-Write-Output "Two-instance Mimic $Transport connection smoke test passed on port $Port."
+if ($Transport -eq "enet" -and $ConnectMode -eq "server_if_first_else_client") {
+	Assert-ForbiddenLogLinesAbsent `
+		-Paths @($serverOut, $serverErr, $clientOut, $clientErr) `
+		-Patterns @("Couldn't create an ENet host", 'Parameter "host" is null')
+}
+
+Write-Output "Two-instance Mimic $Transport $ConnectMode connection smoke test passed on port $Port."
