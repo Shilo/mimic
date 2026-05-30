@@ -262,6 +262,24 @@ https://<owner>.github.io/<repository>/
 
 That is enough for both docs and a Godot Web export as long as they are part of the same built artifact.
 
+Decision: API references, documentation pages, and Godot Web exports should all be generated in GitHub Actions. The repository should keep human-authored source files, scripts, config, and assets under version control, while generated API Markdown, built site output, and exported Web game files are treated as build artifacts unless a later release process explicitly chooses to attach them to a release.
+
+Recommended trigger policy:
+
+- Run on `push` to `main` when docs source, addon GDScript, examples, branding assets, docs build scripts, export presets, docs dependencies, or the docs workflow changes.
+- Run on `pull_request` to `main` for the same paths as a validation build, but skip deployment.
+- Run on `workflow_dispatch` so maintainers can rebuild or redeploy the site manually.
+- Avoid running on every code-only change outside the docs/API/example surface until the project needs always-fresh docs for every commit.
+- Add tags/releases later only if the project introduces versioned docs or release-specific downloadable Web builds.
+
+Recommended generated artifact policy:
+
+- Generate API XML into an ignored temporary directory such as `build/api_xml/`.
+- Generate API Markdown into an ignored temporary docs staging directory or directly into `docs/api/` during CI before `mkdocs build`; if generated under `docs/api/`, keep it ignored and reproducible.
+- Build MkDocs into `site/`.
+- Export the playable Godot Web demo into `site/play/<example_name>/` after `mkdocs build`, or export into an ignored staging directory that MkDocs copies into `site/`.
+- Upload only the final `site/` directory as the GitHub Pages artifact.
+
 Recommended workflow shape:
 
 ```yaml
@@ -274,8 +292,27 @@ on:
       - "docs/**"
       - "addons/mimic/**/*.gd"
       - "examples/**"
+      - "research/**"
+      - "docs_assets/**"
+      - "export_presets.cfg"
       - "tools/generate_api_docs.py"
       - "tools/mkdocs_hooks.py"
+      - "tools/export_web_example.*"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "addons/mimic/**/*.gd"
+      - "examples/**"
+      - "research/**"
+      - "docs_assets/**"
+      - "export_presets.cfg"
+      - "tools/generate_api_docs.py"
+      - "tools/mkdocs_hooks.py"
+      - "tools/export_web_example.*"
       - "mkdocs.yml"
       - "requirements-docs.txt"
       - ".github/workflows/docs.yml"
@@ -309,12 +346,15 @@ jobs:
         run: python tools/generate_api_docs.py build/api_xml docs/api
       - name: Build docs
         run: mkdocs build --strict
+      - name: Export playable Web example
+        run: echo "Export single-threaded Godot Web demo into site/play/single_to_multiplayer"
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -358,13 +398,13 @@ Recommended content split:
 
 MkDocs copies non-Markdown files in the docs directory to the built site unaltered, so a raw HTML Godot export can live under the built site. However, generated Web export files can be large and should not automatically be committed unless the project explicitly decides to version them.
 
-Best build options:
+Best build option:
 
 1. Build docs with `mkdocs build`.
 2. Export the Godot Web demo into `site/play/single_to_multiplayer/index.html`.
 3. Upload `site` as the Pages artifact.
 
-Alternative:
+Alternative if `mkdocs build --strict` should validate the playable demo link before export:
 
 1. Export the Godot Web demo into a temporary ignored `docs/play/single_to_multiplayer/` folder.
 2. Run `mkdocs build`, letting MkDocs copy the raw HTML, `.wasm`, `.pck`, `.js`, and `.png` files into `site`.
@@ -512,7 +552,6 @@ Recommended mapping:
 - Use Material for MkDocs now, or prototype both Material and Astro Starlight before committing to the site framework?
 - Should docs default to dark mode, system preference, or light mode with a prominent toggle?
 - Should generated API docs be a single page first, or one page per public class from the start?
-- Should generated Web export files be committed, published only as CI artifacts, or attached to releases and copied into Pages from release artifacts?
 - Should the playable demo be offline/local-only at first, or connect to a public `wss://` demo server?
 - Should `MimicProjectSettings` be surfaced as a public API page or documented only through the Project Settings guide?
 
