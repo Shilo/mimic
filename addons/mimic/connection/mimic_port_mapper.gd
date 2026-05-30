@@ -100,10 +100,11 @@ func _start_thread(request: Dictionary) -> void:
 
 
 func _run_request(request: Dictionary) -> Dictionary:
+	var request_id := int(request["id"])
 	var result := _execute_request(request)
-	_finish_deferred_request.call_deferred()
+	_finish_deferred_request.call_deferred(request_id)
 	return {
-		"id": int(request["id"]),
+		"id": request_id,
 		"result": result,
 	}
 
@@ -151,11 +152,10 @@ func _execute_request(request: Dictionary) -> Dictionary:
 	return _result(request, UPNP.UPNP_RESULT_SUCCESS, mapped_address, port, mapped_protocols)
 
 
-func _finish_deferred_request() -> void:
-	if _thread == null:
+func _finish_deferred_request(request_id: int) -> void:
+	if request_id != _request_id:
 		return
 
-	_thread.wait_to_finish()
 	_finish_completed_request()
 
 
@@ -166,6 +166,7 @@ func _finish_completed_request() -> void:
 	var thread_result := _thread.wait_to_finish() as Dictionary
 	_thread = null
 
+	# Worker threads only compute results; tracked port-mapping state mutates here.
 	var request_id := int(thread_result["id"])
 	var result := thread_result["result"] as Dictionary
 
