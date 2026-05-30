@@ -6,6 +6,6 @@
 [node name="Single To Multiplayer" type="Node2D" unique_id=945951482]
 script = ExtResource("1_anqd6")
 
-[node name="MimicConnector" type="CanvasLayer" parent="." unique_id=120544771]
+[node name="MimicConnector" type="CanvasLayer" parent="." unique_id=546372071]
 script = ExtResource("3_h1ccd")
-auto_connect_mode = 3
+metadata/_custom_type_script = "uid://cdcb4gpt3dlg"

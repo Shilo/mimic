@@ -18,8 +18,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-MimicRunInstanceGrid="*res://addons/mimic/testing/mimic_run_instance_grid.gd"
 Mimic="*uid://cfxdmksnokbik"
+MimicRunInstanceGrid="*uid://crtmtjqc58nuo"
 
 [display]
 

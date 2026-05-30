@@ -341,3 +341,15 @@ Expected result:
 - The first instance starts as server.
 - The second instance joins as client.
 - Connection events appear in the Godot output.
+
+## Editor Multi-Instance Testing
+
+Godot can launch multiple local game instances from the editor:
+
+1. Open Debug > Customize Run Instances...
+2. Set the number of instances you want.
+3. Run the project.
+
+For easier window tiling, add `res://addons/mimic/testing/mimic_run_instance_grid.gd` as an AutoLoad named `MimicRunInstanceGrid`.
+
+Also disable Game > Embedding Options > Embed Game on Next Play so each instance opens in its own window. When multiple editor-launched instances start together, `MimicRunInstanceGrid` arranges them into a grid and appends their instance index to the window title.
