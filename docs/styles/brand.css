@@ -584,16 +584,20 @@ label.md-nav__title {
 	}
 }
 
-[data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary .md-nav--primary .md-nav__title {
-	border-bottom: 2px solid var(--mimic-ink) !important;
-	border-radius: 0 !important;
+.mimic-hero-actions {
+	margin: 1.2rem 0;
 }
 
-.mimic-hero-actions {
+.mimic-hero-actions > p {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.6rem;
-	margin: 1.2rem 0;
+	column-gap: 0.6rem;
+	margin: 0;
+	row-gap: 0.85rem;
+}
+
+.mimic-hero-actions .md-button {
+	margin: 0;
 }
 
 .mimic-callout {
