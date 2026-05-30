@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap");
+
+:root {
+	--mimic-mint: #65E6B8;
+	--mimic-mint-hover: #4FD9A8;
+	--mimic-ink: #10212B;
+	--mimic-muted: #49616B;
+	--mimic-page-bg: #FAFCFB;
+	--mimic-soft-mint: #E9FFF7;
+	--mimic-border: #DDE8E5;
+	--mimic-font-display: "Fredoka", sans-serif;
+	--mimic-font-body: "Nunito Sans", sans-serif;
+	--md-text-font-family: var(--mimic-font-body);
+	--md-primary-fg-color: var(--mimic-ink);
+	--md-primary-fg-color--light: #18313F;
+	--md-primary-fg-color--dark: #08141B;
+	--md-accent-fg-color: var(--mimic-mint-hover);
+}
+
+[data-md-color-scheme="default"] {
+	--md-default-bg-color: var(--mimic-page-bg);
+	--md-default-fg-color: var(--mimic-ink);
+	--md-default-fg-color--light: var(--mimic-muted);
+	--md-typeset-a-color: #167E62;
+	--md-code-bg-color: #EEF7F4;
+}
+
+[data-md-color-scheme="slate"] {
+	--md-default-bg-color: #0E1B22;
+	--md-default-fg-color: #EAF8F3;
+	--md-default-fg-color--light: #B8CCC5;
+	--md-typeset-a-color: var(--mimic-mint);
+	--md-code-bg-color: #142933;
+	--md-code-fg-color: #EAF8F3;
+}
+
+.md-header__title,
+.md-tabs__link,
+.md-typeset h1,
+.md-typeset h2 {
+	font-family: var(--mimic-font-display);
+	letter-spacing: 0;
+}
+
+.md-typeset h1 {
+	font-weight: 700;
+}
+
+.md-typeset h2 {
+	font-weight: 600;
+}
+
+.md-typeset .md-button {
+	border-radius: 999px;
+	font-weight: 800;
+}
+
+.md-typeset .md-button--primary {
+	background-color: var(--mimic-mint);
+	border-color: var(--mimic-ink);
+	color: var(--mimic-ink);
+}
+
+.md-typeset .md-button--primary:is(:focus, :hover) {
+	background-color: var(--mimic-mint-hover);
+	border-color: var(--mimic-ink);
+	color: var(--mimic-ink);
+}
+
+.mimic-hero-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin: 1.2rem 0;
+}
+
+.mimic-callout {
+	background: var(--mimic-soft-mint);
+	border: 1px solid var(--mimic-border);
+	border-radius: 8px;
+	color: var(--mimic-ink);
+	margin: 1rem 0;
+	padding: 1rem;
+}
+
+[data-md-color-scheme="slate"] .mimic-callout {
+	background: #112A24;
+	border-color: #245647;
+	color: #EAF8F3;
+}

@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$defaultGodotPath = "C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe"
+$defaultGodotPath = "C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe"
 $GodotPath = ""
 $GodotArguments = @($args)
 $explicitGodotPath = $false
@@ -26,6 +26,12 @@ if ($explicitGodotPath) {
 		if (-not [string]::IsNullOrWhiteSpace($candidatePath) -and (Test-Path -LiteralPath $candidatePath)) {
 			$GodotPath = $candidatePath
 			break
+		}
+	}
+	if ([string]::IsNullOrWhiteSpace($GodotPath)) {
+		$pathGodot = Get-Command godot -ErrorAction SilentlyContinue
+		if ($null -ne $pathGodot) {
+			$GodotPath = $pathGodot.Source
 		}
 	}
 }

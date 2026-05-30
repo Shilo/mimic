@@ -3,3 +3,9 @@
 /android/
 .vscode/settings.json
 test-results/
+__pycache__/
+
+# Generated documentation and export artifacts
+/build/
+/site/
+/docs/api/

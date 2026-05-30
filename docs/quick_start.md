@@ -1,0 +1,90 @@
+# Quick Start
+
+This path gets two local Godot instances talking to each other with the current connection MVP.
+
+## Configure Defaults
+
+Open **Project > Project Settings** and search for **Mimic Multiplayer**.
+
+Use these values:
+
+```text
+mimic_multiplayer/connection/transport = ENet
+mimic_multiplayer/connection/address = 127.0.0.1
+mimic_multiplayer/connection/port = 15490
+```
+
+## Add A Connector
+
+Add a `MimicConnector` node to your startup scene.
+
+Set `auto_connect_mode` to:
+
+```text
+Server If First Else Client
+```
+
+Run two game instances. The first instance should bind the port and become the server. The second instance should fail the local server bind preflight and connect as a client.
+
+## Start From Code Instead
+
+Host:
+
+```gdscript
+var error := Mimic.start_server()
+if error != OK:
+	push_error("Failed to start server: %s" % error_string(error))
+```
+
+Join:
+
+```gdscript
+var error := Mimic.start_client()
+if error != OK:
+	push_error("Failed to start client: %s" % error_string(error))
+```
+
+Stop:
+
+```gdscript
+Mimic.stop()
+```
+
+## Listen For Events
+
+```gdscript
+func _ready() -> void:
+	Mimic.server_started.connect(_on_server_started)
+	Mimic.client_connected.connect(_on_client_connected)
+	Mimic.client_connection_failed.connect(_on_client_connection_failed)
+	Mimic.peer_connected.connect(_on_peer_connected)
+	Mimic.peer_disconnected.connect(_on_peer_disconnected)
+
+
+func _on_server_started(port: int) -> void:
+	print("Server listening on ", port)
+
+
+func _on_client_connected() -> void:
+	print("Connected")
+
+
+func _on_client_connection_failed(message: String) -> void:
+	push_warning(message)
+
+
+func _on_peer_connected(peer_id: int) -> void:
+	print("Peer connected: ", peer_id)
+
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	print("Peer disconnected: ", peer_id)
+```
+
+## Verify Locally
+
+From this repository, run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
+```

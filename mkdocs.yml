@@ -1,0 +1,101 @@
+site_name: Mimic Multiplayer
+site_description: Clone-and-play multiplayer helpers for Godot 4.
+site_url: !ENV [MIMIC_DOCS_SITE_URL, "https://shilocity.github.io/mimic/"]
+site_dir: build/site
+repo_url: !ENV [MIMIC_DOCS_REPO_URL, "https://github.com/Shilocity/mimic"]
+repo_name: !ENV [MIMIC_DOCS_REPO_NAME, "Shilocity/mimic"]
+
+theme:
+  name: material
+  language: en
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+hooks:
+  - tools/mkdocs_hooks.py
+
+plugins:
+  - search
+  - llmstxt:
+      full_output: llms-full.txt
+      markdown_description: |
+        Mimic Multiplayer is a Godot 4 addon for small, friendly multiplayer
+        authoring around Godot's native high-level multiplayer API. Mimic
+        focuses on connection helpers, project settings, and a visible
+        MimicSync component that remains close to MultiplayerSynchronizer.
+      sections:
+        Start:
+          - index.md: Product overview and fastest path into Mimic.
+          - installation.md: Install and enable the addon.
+          - quick_start.md: Host and join a local project quickly.
+        Guides:
+          - guides/project_settings.md: Mimic Project Settings reference.
+          - guides/websockets.md: WebSocket and browser deployment guidance.
+          - guides/deployment.md: Practical deployment notes.
+        Reference:
+          - nodes/mimic.md: Runtime singleton teaching page.
+          - nodes/mimic_connector.md: Connector node teaching page.
+          - nodes/mimic_sync.md: Synchronizer node teaching page.
+          - api/index.md: Generated GDScript API reference.
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+extra_css:
+  - styles/brand.css
+
+nav:
+  - Start:
+      - Overview: index.md
+      - Installation: installation.md
+      - Quick Start: quick_start.md
+  - Tutorials:
+      - Host And Join Locally: tutorials/host_and_join_locally.md
+  - Nodes:
+      - Mimic: nodes/mimic.md
+      - MimicConnector: nodes/mimic_connector.md
+      - MimicSync: nodes/mimic_sync.md
+  - Guides:
+      - Project Settings: guides/project_settings.md
+      - WebSockets: guides/websockets.md
+      - Deployment: guides/deployment.md
+  - Examples:
+      - Single To Multiplayer: examples/single_to_multiplayer.md
+  - Compare:
+      - Mimic Vs Netfox: compare/mimic_vs_netfox.md
+  - API Reference:
+      - Overview: api/index.md
+      - Mimic: api/mimic.md
+      - MimicConnector: api/mimic_connector.md
+      - MimicSync: api/mimic_sync.md
+      - MimicProjectSettings: api/mimic_project_settings.md
+  - About:
+      - Brand: about/brand.md
