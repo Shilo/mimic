@@ -59,6 +59,7 @@ PAIRS = [
 	Pair("light search idle text/icons", "ink", "search_idle"),
 	Pair("light search idle hover text/icons", "ink", "search_idle_hover"),
 	Pair("light search idle border", "ink", "search_idle", AA_UI),
+	Pair("light scrollbar thumb", "border_strong", "page", AA_UI),
 	Pair("light search focus text/icons", "ink", "white_mint"),
 	Pair("light search focus border", "ink", "white_mint", AA_UI),
 	Pair("light search results meta", "ink", "soft_mint"),
@@ -108,8 +109,8 @@ PAIRS = [
 	Pair("dark primary button hover text", "ink", "mint_hover"),
 	Pair("dark top button text", "ink", "mint"),
 	Pair("dark top button hover text", "ink", "mint_hover"),
-	Pair("dark code button text", "mint", "dark_callout"),
-	Pair("dark code button border", "mint", "dark_callout", AA_UI),
+	Pair("dark code button text", "mint", "ink"),
+	Pair("dark code button border", "mint", "ink", AA_UI),
 	Pair("dark code button hover text", "ink", "mint"),
 	Pair("dark secondary button text", "mint", "dark_page"),
 	Pair("dark secondary button border", "mint", "dark_page", AA_UI),
@@ -123,6 +124,7 @@ PAIRS = [
 	Pair("dark callout border", "mint", "dark_callout", AA_UI),
 	Pair("dark footer text", "dark_text", "dark_page"),
 	Pair("dark footer link", "mint", "dark_page"),
+	Pair("dark scrollbar thumb", "mint", "ink", AA_UI),
 ]
 
 

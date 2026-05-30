@@ -45,6 +45,45 @@
 	--md-code-fg-color: #EAF8F3;
 }
 
+* {
+	scrollbar-color: var(--mimic-border-strong) transparent;
+	scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+	height: 0.65rem;
+	width: 0.65rem;
+}
+
+*::-webkit-scrollbar-button {
+	display: none;
+	height: 0;
+	width: 0;
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+	background-clip: content-box;
+	background-color: var(--mimic-border-strong);
+	border: 0.16rem solid transparent;
+	border-radius: 999px;
+}
+
+[data-md-color-scheme="slate"] * {
+	scrollbar-color: var(--mimic-mint) var(--mimic-ink);
+}
+
+[data-md-color-scheme="slate"] *::-webkit-scrollbar-track {
+	background: var(--mimic-ink);
+}
+
+[data-md-color-scheme="slate"] *::-webkit-scrollbar-thumb {
+	background-color: var(--mimic-mint);
+}
+
 .md-header__title,
 .md-tabs__link,
 .md-typeset h1,
@@ -114,7 +153,9 @@
 	border: 2px solid var(--mimic-ink);
 	border-top: 0;
 	border-radius: 0 0 var(--mimic-radius) var(--mimic-radius) !important;
+	box-sizing: border-box;
 	overflow: hidden;
+	padding-right: 0.35rem;
 }
 
 .md-search__scrollwrap,
@@ -127,10 +168,14 @@
 .md-search__scrollwrap {
 	border-radius: 0 0 var(--mimic-radius) var(--mimic-radius) !important;
 	box-sizing: border-box;
-	margin-right: 0.35rem;
 	overflow-x: hidden;
 	overflow-y: auto;
-	scrollbar-gutter: stable both-edges;
+	scrollbar-gutter: stable;
+	width: 100%;
+}
+
+.md-search__scrollwrap::-webkit-scrollbar-thumb {
+	border-right-width: 0.32rem;
 }
 
 .md-search-result__meta,
@@ -350,7 +395,8 @@ label.md-nav__title {
 	color: var(--mimic-ink) !important;
 }
 
-.md-sidebar .md-nav__title {
+.md-sidebar--primary > .md-sidebar__scrollwrap > .md-sidebar__inner > .md-nav > .md-nav__title {
+	border-bottom: 2px solid var(--mimic-ink);
 	border-radius: 0;
 }
 
@@ -516,7 +562,7 @@ label.md-nav__title {
 
 [data-md-color-scheme="slate"] .md-typeset .md-code__button,
 [data-md-color-scheme="slate"] .md-typeset .md-clipboard {
-	background: #112A24;
+	background: var(--mimic-ink);
 	border-color: var(--mimic-mint);
 	color: var(--mimic-mint);
 }
