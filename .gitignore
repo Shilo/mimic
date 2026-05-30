@@ -2,7 +2,7 @@
 .godot/
 /android/
 .vscode/settings.json
-test_results/
+/test/.output/
 __pycache__/
 
 # Generated documentation and export artifacts

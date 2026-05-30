@@ -73,6 +73,7 @@ examples/single_to_multiplayer/player/: Example player scene and script.
 examples/single_to_multiplayer/player/player.tscn: Example player scene.
 examples/single_to_multiplayer/player/player.gd: Example player script.
 test/: Automated regression tests and integration probes.
+test/.output/: Ignored local verification output for GUT reports and integration logs; the dot-prefixed folder is skipped by Godot's editor file scan.
 test/unit/: GUT unit/regression tests for public Mimic behavior.
 test/integration/mimic_startup_probe.tscn: Minimal headless scene used by the no-network startup smoke test.
 test/integration/mimic_startup_probe.gd: Startup probe script that exits after the project and autoloads initialize.

@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
 if ([string]::IsNullOrWhiteSpace($ResultsDir)) {
-	$ResultsDir = Join-Path $repoRoot "test_results"
+	$ResultsDir = Join-Path $repoRoot "test/.output"
 }
 
 New-Item -ItemType Directory -Force -Path $ResultsDir | Out-Null
