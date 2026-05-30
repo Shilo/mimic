@@ -4,17 +4,19 @@
 	--mimic-mint: #65E6B8;
 	--mimic-mint-hover: #4FD9A8;
 	--mimic-ink: #10212B;
+	--mimic-ink-deep: #08141B;
 	--mimic-muted: #49616B;
 	--mimic-page-bg: #FAFCFB;
 	--mimic-soft-mint: #E9FFF7;
 	--mimic-border: #DDE8E5;
+	--mimic-dark-surface: #0E1B22;
 	--mimic-font-display: "Fredoka", sans-serif;
 	--mimic-font-body: "Nunito Sans", sans-serif;
 	--md-text-font-family: var(--mimic-font-body);
 	--md-primary-fg-color: var(--mimic-ink);
 	--md-primary-fg-color--light: #18313F;
-	--md-primary-fg-color--dark: #08141B;
-	--md-accent-fg-color: var(--mimic-mint-hover);
+	--md-primary-fg-color--dark: var(--mimic-ink-deep);
+	--md-accent-fg-color: var(--mimic-mint);
 }
 
 [data-md-color-scheme="default"] {
@@ -26,7 +28,7 @@
 }
 
 [data-md-color-scheme="slate"] {
-	--md-default-bg-color: #0E1B22;
+	--md-default-bg-color: var(--mimic-dark-surface);
 	--md-default-fg-color: #EAF8F3;
 	--md-default-fg-color--light: #B8CCC5;
 	--md-typeset-a-color: var(--mimic-mint);
@@ -40,6 +42,106 @@
 .md-typeset h2 {
 	font-family: var(--mimic-font-display);
 	letter-spacing: 0;
+}
+
+.md-header {
+	--md-primary-bg-color: var(--mimic-ink);
+	--md-primary-bg-color--light: rgba(16, 33, 43, 0.72);
+	background: var(--mimic-mint);
+	border-bottom: 2px solid var(--mimic-ink);
+}
+
+.md-header__title {
+	color: var(--mimic-ink);
+	font-weight: 700;
+}
+
+.md-header__button.md-logo svg,
+.md-header__button.md-logo img {
+	color: var(--mimic-ink);
+}
+
+.md-header__button,
+.md-header__button.md-icon,
+.md-header__button.md-icon svg,
+.md-search__icon,
+.md-search__icon svg {
+	color: var(--mimic-ink) !important;
+	fill: currentColor !important;
+}
+
+.md-search__form {
+	background: rgba(16, 33, 43, 0.1);
+	border: 2px solid var(--mimic-ink);
+}
+
+.md-search__form:hover {
+	background: rgba(16, 33, 43, 0.14);
+}
+
+[data-md-toggle="search"]:checked ~ .md-header .md-search__form,
+.md-search--active .md-search__form,
+.md-search__form:focus-within {
+	background: #F5FFFB !important;
+	box-shadow: 0 0 0 2px rgba(16, 33, 43, 0.18);
+}
+
+.md-search__input {
+	caret-color: var(--mimic-ink);
+}
+
+.md-search__input,
+.md-search__input::placeholder,
+.md-search__icon {
+	color: var(--mimic-ink) !important;
+	opacity: 1;
+}
+
+.md-search__output {
+	background: #F5FFFB !important;
+	border: 2px solid var(--mimic-ink);
+	border-top: 0;
+}
+
+.md-search__scrollwrap,
+.md-search-result,
+.md-search-result__list,
+.md-search-result__item {
+	background: #F5FFFB !important;
+}
+
+.md-search-result__meta,
+.md-search-result__article {
+	background: #F5FFFB !important;
+	color: var(--mimic-ink) !important;
+}
+
+.md-search-result__meta {
+	background: var(--mimic-soft-mint) !important;
+	border-bottom: 1px solid var(--mimic-border);
+}
+
+.md-search-result__title {
+	color: var(--mimic-ink) !important;
+}
+
+.md-search-result__teaser {
+	color: var(--mimic-muted) !important;
+}
+
+.md-search-result mark {
+	background: transparent;
+	color: #008A68 !important;
+	font-weight: 800;
+}
+
+.md-search-result__link:is(:focus, :hover),
+.md-search-result__link[aria-selected="true"] {
+	background: var(--mimic-soft-mint);
+}
+
+.md-source {
+	color: var(--mimic-ink);
 }
 
 .md-typeset h1 {
@@ -67,6 +169,35 @@
 	color: var(--mimic-ink);
 }
 
+.md-nav__title,
+.md-nav__item--section > .md-nav__link {
+	font-family: var(--mimic-font-display);
+	font-weight: 700;
+	letter-spacing: 0;
+}
+
+.md-nav__item--section > .md-nav__link {
+	border-top: 1px solid rgba(101, 230, 184, 0.22);
+	color: var(--mimic-ink);
+	margin-top: 0.5rem;
+	padding-top: 0.65rem;
+}
+
+[data-md-color-scheme="slate"] .md-nav__title,
+[data-md-color-scheme="slate"] .md-nav__item--section > .md-nav__link {
+	color: var(--mimic-mint);
+}
+
+.md-nav__link--active,
+.md-nav__link:is(:focus, :hover) {
+	color: var(--mimic-mint-hover);
+}
+
+[data-md-color-scheme="slate"] .md-nav__link--active,
+[data-md-color-scheme="slate"] .md-nav__link:is(:focus, :hover) {
+	color: var(--mimic-mint);
+}
+
 .mimic-hero-actions {
 	display: flex;
 	flex-wrap: wrap;
@@ -87,4 +218,17 @@
 	background: #112A24;
 	border-color: #245647;
 	color: #EAF8F3;
+}
+
+.netfox-intro {
+	align-items: center;
+	display: flex;
+	gap: 1rem;
+	margin: 1rem 0 1.4rem;
+}
+
+.netfox-logo {
+	flex: 0 0 auto;
+	height: 72px;
+	width: 72px;
 }

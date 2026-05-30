@@ -14,7 +14,7 @@ Discovery: Prioritize progressive discovery over token usage. Read only the file
 
 Source references: Use `C:\Programming_Files\Godot\godot-master` as the local Godot engine source reference when implementing or improving behavior that depends on Godot multiplayer internals, editor/plugin behavior, GDScript APIs, CLI behavior, project settings, or testing hooks. Use `C:\Programming_Files\Godot\netfox-main` as an inspiration/reference point for multiplayer library architecture, tests, and tradeoffs, while preserving Mimic's different vision: a small helper around Godot's native high-level multiplayer rather than a prediction/rollback/netcode framework.
 
-Research: See research/ for project research notes and recommendations.
+Documentation: User-facing docs live in docs/. Keep docs phrased for Mimic users.
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 

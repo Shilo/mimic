@@ -6,7 +6,9 @@ Mimic's current deployment story is intentionally small: configure a transport, 
 
 Mimic defaults to port `15490`.
 
-The default is configurable. Local availability is never guaranteed, so change the port if another service is already bound on the machine or server.
+The number is configurable. Local availability is never guaranteed, so change the port if another service is already bound on the machine or server.
+
+`15490` was chosen as a stable project default in the user-port range. It avoids the previous `8910` collision with an assigned IANA service and still leaves room for hosts to pick their own public ports.
 
 ENet uses UDP. WebSocket uses TCP. TCP and UDP have separate port namespaces, but production documentation should still say which protocol a server expects.
 
@@ -35,3 +37,5 @@ The public page path should be:
 In the build artifact, that lives under `build/site/play/single_to_multiplayer/`.
 
 Use a single-threaded Godot Web export for GitHub Pages unless the project deliberately enables Godot's PWA cross-origin isolation workaround.
+
+GitHub Pages is a good place for a playable browser client, a local-only demo, or an example that connects to an external `wss://` server. It is not a place to run an authoritative Godot server.

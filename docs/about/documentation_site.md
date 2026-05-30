@@ -1,0 +1,38 @@
+# Documentation Site
+
+The Mimic documentation is hosted with GitHub Pages from the same repository as the addon.
+
+The site is built so the pages, API reference, and playable web example can stay together under one domain:
+
+```text
+https://shilo.github.io/mimic/
+```
+
+## Generated API Reference
+
+The API reference is generated from the `##` documentation comments in Mimic's GDScript files. That means the reference pages should match the same public classes and descriptions Godot can show in editor help.
+
+The generated API section currently focuses on the user-facing surface:
+
+- `Mimic`
+- `MimicConnector`
+- `MimicSync`
+- `MimicProjectSettings`
+
+Internal helpers stay out of the main API navigation so the reference remains useful for developers adding Mimic to a game.
+
+## Playable Web Example
+
+The documentation build can also export a Godot Web example into the same Pages artifact.
+
+The demo path is:
+
+```text
+/play/single_to_multiplayer/
+```
+
+This is a browser client export. It can show the example scene and connect to an external WebSocket server, but GitHub Pages itself cannot run the multiplayer server.
+
+## Reading The Docs
+
+Start with [Quick Start](../quick_start.md) if you want to run Mimic locally. Use the node pages for explanations, and use the generated API pages when you need exact method, signal, enum, and setting details.

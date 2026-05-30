@@ -1,47 +1,46 @@
 # Brand
 
-Mimic Multiplayer's mascot is Mimo.
+Mimic Multiplayer's mascot is **Mimo**, a small shapeshifting character that can morph between playful logo shapes. Mimo gives the project a friendlier face for a topic that often feels intimidating: multiplayer.
 
-Mimo is the shapeshifting Mimic mascot: a playful slime-like character that can copy, morph, and adapt into different shapes.
+The mascot idea matches the product idea. Mimic helps a Godot scene adapt into a network-aware scene while staying close to Godot's built-in multiplayer tools.
 
-## Naming
+## Mimo Shapes
 
-- Full product name: Mimic Multiplayer.
-- Short product name: Mimic.
-- Mascot name: Mimo.
+Mimo currently appears in two concept shapes:
 
-Use Mimo's name instead of gendered pronouns.
+- **Network Mimo** looks like a soft connection graph. This version hints at peers, synchronization, replication, and network links.
+- **M-shaped Mimo** turns the mascot into the first letter of Mimic. This version works best for headers, lockups, and places where the product name should be the first read.
 
-Preferred:
+Both shapes use the same simple face, rounded body, mint fill, and dark outline so Mimo stays recognizable across sizes.
 
-- Mimo can morph into network shapes.
-- Mimo represents synchronization, replication, and adaptability.
-- Mimo is the Mimic Multiplayer mascot.
+## Names
 
-Avoid:
+| Name | Meaning |
+| --- | --- |
+| Mimic Multiplayer | The full product name |
+| Mimic | The short name |
+| Mimo | The mascot |
 
-- He is the mascot.
-- She is the mascot.
-- It is just a blob.
-
-## Logo Variants
-
-The network-shaped Mimo communicates multiplayer, synchronization, replication, and network links.
-
-The M-shaped Mimo communicates the Mimic name and works best as the main brand mark.
+Mimo is referred to by name because the mascot is a character, not just a generic icon.
 
 ## Colors
 
+Mimic's primary colors come directly from Mimo:
+
 | Token | Value | Use |
 | --- | --- | --- |
-| Mimic Mint | `#65E6B8` | Mimo fill and primary accent |
-| Midnight Ink | `#10212B` | Mimo outline, eyes, mouth, wordmark, headings |
-| Muted Text | `#49616B` | Secondary text |
-| Soft Mint Background | `#E9FFF7` | Gentle highlights |
+| Mimic Mint | `#65E6B8` | Mimo fill, primary buttons, links, active states, focus accents |
+| Midnight Ink | `#10212B` | Mimo outline, face, headers, dark navigation, body text on light pages |
+| Muted Text | `#49616B` | Secondary copy and quieter UI text |
+| Soft Mint | `#E9FFF7` | Gentle callouts and highlights |
+
+Mint is best as an accent, not as small text on white. Midnight Ink keeps the site readable and gives the cute mascot enough weight to feel like a developer tool.
 
 ## Typography
 
-- Display/logo: Fredoka.
-- Documentation/body: Nunito Sans.
+Mimic uses rounded type to echo Mimo's soft shape:
 
-The brand should feel playful and cute, but still professional for a developer multiplayer tool.
+- **Fredoka** for the product wordmark and major headings.
+- **Nunito Sans** for documentation, navigation, code-adjacent UI, and longer reading.
+
+The result should feel warm and approachable without making the reference pages harder to scan.

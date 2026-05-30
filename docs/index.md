@@ -35,4 +35,4 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 - [Quick Start](quick_start.md) to run a local host/client pair.
 - [MimicConnector](nodes/mimic_connector.md) if you want scene-driven connection startup.
 - [MimicSync](nodes/mimic_sync.md) if you are preparing entities for synchronization.
-- [Mimic vs Netfox](compare/mimic_vs_netfox.md) if you are choosing a multiplayer library shape.
+- [Netfox](other_multiplayer_addons/netfox.md) if you are choosing between Mimic and a larger multiplayer framework.
