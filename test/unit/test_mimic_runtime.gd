@@ -49,26 +49,18 @@ func test_invalid_server_start_does_not_stop_existing_server() -> void:
 
 
 func test_empty_client_address_fails_cleanly_and_emits_start_failed() -> void:
-	var failures := []
-	Mimic.start_failed.connect(
-		func(state: int, error: int, message: String) -> void:
-			failures.append({
-				"state": state,
-				"error": error,
-				"message": message,
-			}),
-		CONNECT_ONE_SHOT
-	)
+	watch_signals(Mimic)
 	ProjectSettings.set_setting(ADDRESS, "")
 
 	var error := Mimic.start_client()
 
 	assert_eq(error, ERR_INVALID_PARAMETER)
 	assert_true(Mimic.is_offline())
-	assert_eq(failures.size(), 1)
-	assert_eq(failures[0]["state"], Mimic.NetworkState.CLIENT_CONNECTING)
-	assert_eq(failures[0]["error"], ERR_INVALID_PARAMETER)
-	assert_string_contains(failures[0]["message"], "Client address is empty")
+	assert_signal_emitted_with_parameters(
+		Mimic,
+		"start_failed",
+		[Mimic.NetworkState.CLIENT_CONNECTING, ERR_INVALID_PARAMETER, "Client address is empty."]
+	)
 
 
 func test_connector_host_and_stop_forward_to_mimic() -> void:

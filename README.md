@@ -368,7 +368,7 @@ The verification pass does four things:
 
 - Imports project resources with Godot in headless mode.
 - Runs GUT unit regression tests from `res://test/unit/`.
-- Runs the project headlessly long enough to catch startup regressions.
+- Runs a minimal project startup probe headlessly without opening a network peer.
 - Runs a two-instance ENet smoke test through `res://test/integration/mimic_connection_probe.tscn`.
 
 Run just the unit tests:

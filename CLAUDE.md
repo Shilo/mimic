@@ -61,6 +61,8 @@ examples/single_to_multiplayer/player/player.tscn: Example player scene.
 examples/single_to_multiplayer/player/player.gd: Example player script.
 test/: Automated regression tests and integration probes.
 test/unit/: GUT unit/regression tests for public Mimic behavior.
+test/integration/mimic_startup_probe.tscn: Minimal headless scene used by the no-network startup smoke test.
+test/integration/mimic_startup_probe.gd: Startup probe script that exits after the project and autoloads initialize.
 test/integration/mimic_connection_probe.tscn: Headless scene used by the two-instance connection smoke test.
 test/integration/mimic_connection_probe.gd: Explicit server/client probe script used by automation.
 tools/: Local PowerShell automation entry points.

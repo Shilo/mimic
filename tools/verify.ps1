@@ -57,7 +57,16 @@ if ($gutFailureCount -gt 0) {
 }
 
 Write-Output "Running headless project smoke test..."
-Invoke-Godot @("--headless", "--path", $repoRoot, "--quit-after", "60", "--no-header")
+Invoke-Godot @(
+	"--headless",
+	"--path",
+	$repoRoot,
+	"--scene",
+	"res://test/integration/mimic_startup_probe.tscn",
+	"--quit-after",
+	"60",
+	"--no-header"
+)
 
 Write-Output "Running two-instance connection smoke test..."
 $twoInstanceArgs = @{
