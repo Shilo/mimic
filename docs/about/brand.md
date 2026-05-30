@@ -26,9 +26,12 @@ Brand assets live in two folders:
 | `icon/mimo_m.svg` | Scalable M-shaped Mimo icon |
 | `icon/mimo_net.png` | SVG-derived Network Mimo PNG |
 | `icon/mimo_m.png` | SVG-derived M-shaped Mimo PNG |
-| `logo/mimic_*_stroked_mint.svg` | Primary universal transparent wordmarks |
-| `logo/mimic_*_flat_slate.svg` | Restrained universal transparent fallback wordmarks |
-| `logo/mimic_*_with_multiplayer.svg` | Large full-name lockups |
+| `logo/mimic_m_imic_stroked_mint.svg` | Primary M-shaped Mimo wordmark |
+| `logo/mimic_net_full_stroked_mint.svg` | Primary Network Mimo wordmark |
+| `logo/mimic_m_imic_flat_slate.svg` | Restrained M-shaped Mimo fallback wordmark |
+| `logo/mimic_net_full_flat_slate.svg` | Restrained Network Mimo fallback wordmark |
+| `logo/mimic_m_imic_with_multiplayer.svg` | Large M-shaped Mimo full-name lockup |
+| `logo/mimic_net_full_with_multiplayer.svg` | Large Network Mimo full-name lockup |
 
 The mascot SVG files use a `512x512` viewBox, no fixed display size, and only Mimic Mint plus Midnight Ink. Both mascot SVGs share the same face proportions so Mimo remains recognizable while each body shape positions the face on its own visual center. The body outline uses a `12` unit ink width in the SVG viewBox, and the smile uses a `24` unit stroke so it reads at exactly double the outline weight.
 
