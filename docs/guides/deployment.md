@@ -31,10 +31,10 @@ The documentation site can host a Godot Web export under the same GitHub Pages d
 The public page path should be:
 
 ```text
-/play/single_to_multiplayer/
+/play/
 ```
 
-In the build artifact, that lives under `build/site/play/single_to_multiplayer/`.
+In the build artifact, that lives under `build/site/play/`.
 
 Use a single-threaded Godot Web export for GitHub Pages unless the project deliberately enables Godot's PWA cross-origin isolation workaround.
 

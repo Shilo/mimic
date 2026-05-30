@@ -589,15 +589,42 @@ label.md-nav__title {
 }
 
 .mimic-hero-actions > p {
-	display: flex;
-	flex-wrap: wrap;
-	column-gap: 0.6rem;
+	display: grid;
+	gap: 0.85rem 0.75rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	margin: 0;
-	row-gap: 0.85rem;
+	max-width: 28rem;
 }
 
 .mimic-hero-actions .md-button {
+	align-items: center;
+	display: inline-flex;
+	justify-content: center;
 	margin: 0;
+	text-align: center;
+}
+
+.mimic-play-button {
+	gap: 0.7rem;
+}
+
+.mimic-play-button::before {
+	border-bottom: 0.43em solid transparent;
+	border-left: 0.68em solid currentColor;
+	border-top: 0.43em solid transparent;
+	content: "";
+	display: inline-block;
+	flex: 0 0 auto;
+	height: 0;
+	transform: translateY(0.02em);
+	width: 0;
+}
+
+@media screen and (max-width: 34em) {
+	.mimic-hero-actions > p {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 16rem;
+	}
 }
 
 .mimic-callout {

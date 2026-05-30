@@ -23,15 +23,15 @@ Internal helpers stay out of the main API navigation so the reference remains us
 
 ## Playable Web Example
 
-The documentation build can also export a Godot Web example into the same Pages artifact.
+The documentation build can also export the Godot Web example hub into the same Pages artifact.
 
-The demo path is:
+The playable path is:
 
 ```text
-/play/single_to_multiplayer/
+/play/
 ```
 
-This is a browser client export. It can show the example scene and connect to an external WebSocket server, but GitHub Pages itself cannot run the multiplayer server.
+This is a browser client export. It can show the example hub and connect to an external WebSocket server, but GitHub Pages itself cannot run the multiplayer server.
 
 ## Reading The Docs
 

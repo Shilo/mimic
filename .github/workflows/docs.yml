@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
     paths:
       - ".github/workflows/docs.yml"
       - "addons/mimic/**/*.gd"
@@ -32,6 +34,9 @@ on:
       - "mkdocs.yml"
       - "requirements-docs.txt"
   workflow_dispatch:
+  release:
+    types:
+      - published
 
 permissions:
   contents: read

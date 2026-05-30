@@ -1,6 +1,6 @@
 param(
 	[string] $GodotPath = "",
-	[string] $OutputDir = "build/site/play/single_to_multiplayer",
+	[string] $OutputDir = "build/site/play",
 	[string] $SiteDir = "build/site",
 	[string] $Preset = "Docs Web Example"
 )

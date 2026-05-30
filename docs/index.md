@@ -4,10 +4,13 @@ Clone-and-play multiplayer for Godot. Drop in a `MimicSync` node and make your s
 
 Mimic Multiplayer is a Godot 4 addon for making the first steps of high-level multiplayer easier to author. Add Mimic to a project, use the `Mimic` singleton or `MimicConnector` to host and join, and keep scene synchronization close to Godot's native `MultiplayerSynchronizer` workflow.
 
-<div class="mimic-hero-actions" markdown>
-[Quick Start](quick_start.md){ .md-button .md-button--primary }
-[Installation](installation.md){ .md-button }
-[API Reference](api/index.md){ .md-button }
+<div class="mimic-hero-actions">
+<p>
+<a class="md-button md-button--primary mimic-play-button" href="play/" target="_blank" rel="noopener">Play Example</a>
+<a class="md-button" href="quick_start/">Quick Start</a>
+<a class="md-button" href="installation/">Installation</a>
+<a class="md-button" href="api/">API Reference</a>
+</p>
 </div>
 
 <div class="mimic-callout" markdown>
@@ -35,6 +38,7 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 
 - [Installation](installation.md) if Mimic is not in your project yet.
 - [Quick Start](quick_start.md) to run a local host/client pair.
+- <a href="play/" target="_blank" rel="noopener">Play Example</a> to launch the web export when you want to try Mimic before opening the project.
 - [MimicConnector](nodes/mimic_connector.md) if you want scene-driven connection startup.
 - [MimicSync](nodes/mimic_sync.md) if you are preparing entities for synchronization.
 - [Netfox](other_multiplayer_addons/netfox.md) if you are choosing between Mimic and a larger multiplayer framework.

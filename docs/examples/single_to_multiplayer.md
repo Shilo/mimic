@@ -14,10 +14,10 @@ The example is intentionally small. It exists to show the current connection and
 
 The GitHub Pages workflow is expected to export this example as a single-threaded Godot Web build.
 
-When published, it should be available at:
+When published, it is part of the single playable example hub at:
 
 ```text
-play/single_to_multiplayer/
+play/
 ```
 
 The Web build is a static browser client. It cannot host a multiplayer server on GitHub Pages.
