@@ -215,55 +215,13 @@
 	fill: currentColor !important;
 }
 
-.md-header__button.mimic-header-play:not([hidden]) {
-	align-items: center;
-	box-sizing: border-box;
-	border-radius: 999px;
-	display: inline-flex;
-	font-family: var(--mimic-font-display);
-	font-size: 0.8rem;
-	font-weight: 700;
-	gap: 0.34rem;
-	height: 2rem;
-	justify-content: center;
-	line-height: 1;
-	margin-left: 0.15rem;
-	margin-right: 0.25rem;
-	min-width: 3rem;
-	padding: 0 0.6rem;
-	vertical-align: middle;
-}
-
-.mimic-header-play:is(:focus, :hover) {
-	background: rgba(16, 33, 43, 0.12);
-}
-
-.mimic-header-play__icon {
-	border-bottom: 0.36rem solid transparent;
-	border-left: 0.56rem solid currentColor;
-	border-top: 0.36rem solid transparent;
-	display: inline-block;
-	height: 0;
-	transform: translateY(0.005rem);
-	width: 0;
-}
-
-.mimic-header-play__text {
-	display: inline-block;
-	line-height: 1;
-	transform: translateY(-0.01rem);
-}
-
 [data-md-toggle="search"]:checked ~ .md-header .md-header__option,
-[data-md-toggle="search"]:checked ~ .md-header .mimic-header-play,
-.md-header:has(.md-search__input:focus) .md-header__option,
-.md-header:has(.md-search__input:focus) .mimic-header-play {
+.md-header:has(.md-search__input:focus) .md-header__option {
 	display: none;
 }
 
 @media screen and (max-width: 44em) {
-	.md-header .md-header__option,
-	.md-header .md-header__button.mimic-header-play:not([hidden]) {
+	.md-header .md-header__option {
 		display: none;
 	}
 }

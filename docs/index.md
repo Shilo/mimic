@@ -6,9 +6,9 @@ Mimic Multiplayer is a Godot 4 addon for making the first steps of high-level mu
 
 <div class="mimic-hero-actions">
 <p>
-<a class="md-button md-button--primary mimic-play-button" href="play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Showcase</a>
-<a class="md-button" href="quick_start/">Quick Start</a>
 <a class="md-button" href="installation/">Installation</a>
+<a class="md-button" href="quick_start/">Quick Start</a>
+<a class="md-button md-button--primary mimic-play-button" href="https://shilo.github.io/mimic/play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Showcase</a>
 <a class="md-button" href="api/">API Reference</a>
 </p>
 </div>
@@ -38,7 +38,7 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 
 - [Installation](installation.md) if Mimic is not in your project yet.
 - [Quick Start](quick_start.md) to run a local host/client pair.
-- <a href="play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Example</a> to launch the web export when you want to try Mimic before opening the project.
+- <a href="https://shilo.github.io/mimic/play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Example</a> to launch the web export when you want to try Mimic before opening the project.
 - [MimicConnector](nodes/mimic_connector.md) if you want scene-driven connection startup.
 - [MimicSync](nodes/mimic_sync.md) if you are preparing entities for synchronization.
 - [Netfox](other_multiplayer_addons/netfox.md) if you are choosing between Mimic and a larger multiplayer framework.

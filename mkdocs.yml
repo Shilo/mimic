@@ -8,7 +8,6 @@ repo_name: !ENV [MIMIC_DOCS_REPO_NAME, "Shilo/mimic"]
 theme:
   name: material
   language: en
-  custom_dir: docs_overrides
   font: false
   palette:
     - scheme: slate
@@ -73,14 +72,12 @@ markdown_extensions:
 extra_css:
   - styles/brand.css
 
-extra:
-  play_url: play/
-
 nav:
   - Start:
       - Overview: index.md
       - Installation: installation.md
       - Quick Start: quick_start.md
+      - Play Showcase: https://shilo.github.io/mimic/play/
   - Tutorials:
       - Host And Join Locally: tutorials/host_and_join_locally.md
   - Nodes:
