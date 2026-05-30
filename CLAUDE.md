@@ -12,6 +12,8 @@ Boundaries: Avoid adding gameplay scenes, player scenes, resources, input maps, 
 
 Discovery: Prioritize progressive discovery over token usage. Read only the files needed for the current task, then expand outward when the code path requires it. Challenge and verify important ideas before changing the codebase, especially when a request affects architecture, public API, project settings, networking behavior, editor behavior, or file structure. Check local Godot docs/source when behavior depends on MultiplayerAPI, MultiplayerPeer, SceneMultiplayer, MultiplayerSynchronizer, MultiplayerSpawner, SceneReplicationConfig, GDScript syntax, or Godot 4 API style details.
 
+Source references: Use `C:\Programming_Files\Godot\godot-master` as the local Godot engine source reference when implementing or improving behavior that depends on Godot multiplayer internals, editor/plugin behavior, GDScript APIs, CLI behavior, project settings, or testing hooks. Use `C:\Programming_Files\Godot\netfox-main` as an inspiration/reference point for multiplayer library architecture, tests, and tradeoffs, while preserving Mimic's different vision: a small helper around Godot's native high-level multiplayer rather than a prediction/rollback/netcode framework.
+
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
@@ -22,6 +24,8 @@ Files:
 
 ```
 .mcp.json: Repo-local MCP configuration for Coding-Solo godot-mcp using Godot 4.6.3.
+C:\Programming_Files\Godot\godot-master: Local Godot engine source reference for API and multiplayer behavior research.
+C:\Programming_Files\Godot\netfox-main: Local Netfox multiplayer library reference for inspiration and comparative architecture research.
 project.godot: Godot project configuration, autoloads, plugin enablement, input actions, and main scene.
 icon.svg: Default Godot project icon.
 icon.svg.import: Godot import metadata for the project icon.
