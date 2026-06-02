@@ -62,6 +62,7 @@ jobs:
         with:
           python-version: "3.x"
           cache: "pip"
+          cache-dependency-path: requirements-docs.txt
 
       - name: Install docs dependencies
         run: python -m pip install -r requirements-docs.txt
