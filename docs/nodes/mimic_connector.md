@@ -11,6 +11,8 @@ Client: Start a client on ready.
 Server If First Else Client: Try server first, then fall back to client.
 ```
 
+Auto-connect runs after the node enters the scene tree. The server-first fallback is designed for quick local multi-instance testing and follows the same dedicated/server export guard as `Mimic.start_server_if_first_else_client()`.
+
 ## Button UI Example
 
 ```gdscript
@@ -32,9 +34,11 @@ func _on_stop_pressed() -> void:
 Pass explicit connection values when the UI has address or port fields:
 
 ```gdscript
-connector.host(15490)
+connector.host(15490, "0.0.0.0")
 connector.join("127.0.0.1", 15490)
 ```
+
+`MimicConnector` does not render buttons, fields, or panels yet. Add your own UI and call `host()`, `join()`, or `stop()`.
 
 ## API
 

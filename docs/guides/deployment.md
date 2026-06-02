@@ -8,13 +8,13 @@ Mimic defaults to port `15490`.
 
 The number is configurable. Local availability is never guaranteed, so change the port if another service is already bound on the machine or server.
 
-`15490` was chosen as a stable project default in the user-port range. It avoids the previous `8910` collision with an assigned IANA service and still leaves room for hosts to pick their own public ports.
+`15490` is a stable project default in the user-port range. Hosts can still choose their own public ports.
 
 ENet uses UDP. WebSocket uses TCP. TCP and UDP have separate port namespaces, but production documentation should still say which protocol a server expects.
 
 ## ENet
 
-Use ENet for native desktop or mobile clients when browser support is not required.
+Use ENet for native desktop or mobile clients when browser support is not required. ENet is not available in Godot web exports.
 
 Expose the configured UDP port intentionally. If the server is behind a router, UPnP may help local testing, but production hosting should use explicit firewall and network configuration.
 

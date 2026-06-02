@@ -37,6 +37,18 @@ Mimic.stop()
 Mimic.cancel_connection()
 ```
 
+`stop()` closes the active peer, returns Mimic to `OFFLINE`, and requests deletion of owned UPnP mappings when that setting is enabled. `cancel_connection()` only stops an in-progress client connection.
+
+## Start Server If First Else Client
+
+```gdscript
+var error := Mimic.start_server_if_first_else_client()
+if error != OK:
+	push_error("Unable to auto-connect: %s" % error_string(error))
+```
+
+This helper is meant for local multi-instance testing. With ENet, Mimic first performs a best-effort local bind preflight so later instances can fall back to client mode without noisy ENet bind errors. The fallback is skipped on dedicated/server exports.
+
 ## State Helpers
 
 ```gdscript
@@ -49,6 +61,30 @@ Mimic.get_local_peer_id()
 Mimic.get_peer_ids()
 Mimic.get_external_address()
 ```
+
+`get_local_peer_id()` returns `0` while offline or connecting. `get_external_address()` returns the last address reported by UPnP port forwarding.
+
+## Signals
+
+```gdscript
+Mimic.state_changed.connect(_on_state_changed)
+Mimic.start_failed.connect(_on_start_failed)
+Mimic.server_started.connect(_on_server_started)
+Mimic.client_started.connect(_on_client_started)
+Mimic.client_connected.connect(_on_client_connected)
+Mimic.client_connection_failed.connect(_on_client_connection_failed)
+Mimic.server_disconnected.connect(_on_server_disconnected)
+Mimic.peer_connected.connect(_on_peer_connected)
+Mimic.peer_disconnected.connect(_on_peer_disconnected)
+Mimic.stopped.connect(_on_stopped)
+Mimic.port_mapping_finished.connect(_on_port_mapping_finished)
+```
+
+`stopped` is emitted for explicit `stop()` calls. Use `server_disconnected`, `client_connection_failed`, or `state_changed` for involuntary disconnects and failed attempts.
+
+## Transport Scope
+
+ENet and WebSocket are the implemented network transports. Offline is an explicit non-network state, and WebRTC is reserved for future signaling support but currently returns an unavailable error when used for server or client startup.
 
 ## API
 

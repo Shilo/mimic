@@ -7,17 +7,34 @@
 
 Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay.
 
-The long-term goal is simple authoring: add one `MimicSync` node to a networked scene, keep using Godot's native `MultiplayerSynchronizer` and `SceneReplicationConfig` for property replication, and let Mimic handle the repetitive setup around networking, connection flow, and eventually dynamic spawn/despawn.
+Mimic Multiplayer is currently a small connection and configuration addon for Godot 4. It manages a `Mimic` autoload, exposes typed Project Settings, starts ENet and WebSocket peers, and provides `MimicConnector` plus `MimicSync` nodes for scene-level authoring.
 
 This project is intentionally smaller than full networking frameworks. Mimic is for developers who want a lightweight helper around Godot's built-in high-level multiplayer API, not a prediction, rollback, interpolation, lag compensation, relay, or full gameplay framework.
+
+## Contents
+
+- [Current Scope](#current-scope)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configure Connection Defaults](#configure-connection-defaults)
+- [Start Networking From Code](#start-networking-from-code)
+- [Listen For Connection Events](#listen-for-connection-events)
+- [Use MimicConnector](#use-mimicconnector)
+- [Use MimicSync](#use-mimicsync)
+- [Logging](#logging)
+- [Mimic Or NetFox?](#mimic-or-netfox)
+- [Current Limitations](#current-limitations)
+- [Minimal Local Test](#minimal-local-test)
+- [Regression Testing And Automation](#regression-testing-and-automation)
+- [Editor Multi-Instance Testing](#editor-multi-instance-testing)
 
 ## Compatibility Policy
 
 Mimic keeps the current project shape explicit instead of carrying compatibility layers for older names, behavior, files, scenes, or configuration. After updating Mimic, review your code, scenes, and Project Settings > Mimic Multiplayer against this README and update them to the current model.
 
-## Current Status
+## Current Scope
 
-Mimic is currently focused on connection setup and project configuration.
+Mimic is focused on connection setup, project configuration, and a stable visible component shape.
 
 Working now:
 
@@ -25,20 +42,19 @@ Working now:
 - Project Settings for connection defaults.
 - ENet server/client startup.
 - WebSocket server/client startup.
-- Offline mode placeholder.
-- WebRTC enum placeholder, currently unsupported.
+- Offline state and an Offline transport selection that intentionally does not start a network peer.
+- WebRTC transport selection reserved for future signaling support, currently unsupported.
 - Optional UPnP port forwarding.
-- Runtime connection state signals.
+- Runtime connection state, status helpers, and lifecycle signals.
 - `MimicConnector` component for simple host/join/stop calls and auto-connect.
 - `MimicSync` component that subclasses Godot's `MultiplayerSynchronizer`.
 
-Planned, but not ready yet:
+Not ready yet:
 
-- Replacing manual `MultiplayerSpawner` setup.
-- Server-authoritative dynamic spawn/despawn replication.
-- Late-join spawn replay.
-- Spawn-state transfer from `SceneReplicationConfig` spawn properties.
-- One visible network node per networked entity.
+- Automatic dynamic spawn/despawn replication.
+- Late-join spawn replay or spawn-state transfer from `SceneReplicationConfig` spawn properties.
+- Built-in connector UI controls.
+- Prediction, rollback, interpolation, lag compensation, matchmaking, relay services, or raw packet protocols.
 
 ## Requirements
 
@@ -85,13 +101,13 @@ mimic_multiplayer/connection/max_clients: Max ENet server clients, default 32
 WebSocket:
 
 ```text
-mimic_multiplayer/websocket/client_use_tls: Use wss:// when joining a WebSocket server
+mimic_multiplayer/websocket/client_use_tls: Use wss:// when joining a WebSocket server, default false
 ```
 
 Port Forwarding:
 
 ```text
-mimic_multiplayer/port_forwarding/enabled: Try UPnP port forwarding when hosting
+mimic_multiplayer/port_forwarding/enabled: Try UPnP port forwarding when hosting, default false
 ```
 
 Advanced settings are hidden unless Advanced Settings is enabled in Project Settings.
@@ -99,7 +115,7 @@ Advanced settings are hidden unless Advanced Settings is enabled in Project Sett
 Advanced connection settings:
 
 ```text
-mimic_multiplayer/connection/bind_address: Local bind address for server sockets and ENet client local binding
+mimic_multiplayer/connection/bind_address: Local bind address for server sockets and ENet client local binding, default *
 ```
 
 Advanced ENet settings:
@@ -114,25 +130,25 @@ mimic_multiplayer/enet/client_local_port: Local ENet client port, 0 for ephemera
 Advanced WebSocket settings:
 
 ```text
-mimic_multiplayer/websocket/path: Optional path appended to WebSocket client URLs
-mimic_multiplayer/websocket/handshake_timeout: WebSocket handshake timeout in seconds
+mimic_multiplayer/websocket/path: Optional path appended to WebSocket client URLs, default empty
+mimic_multiplayer/websocket/handshake_timeout: WebSocket handshake timeout in seconds, default 3.0
 ```
 
 Advanced port forwarding settings:
 
 ```text
-mimic_multiplayer/port_forwarding/delete_mapping_on_stop: Delete owned UPnP mappings when networking stops
-mimic_multiplayer/port_forwarding/query_external_address: Query the gateway external address after mapping
-mimic_multiplayer/port_forwarding/protocol: TCP/UDP mapping protocol selection
-mimic_multiplayer/port_forwarding/duration: UPnP mapping lease duration in seconds, 0 for permanent
-mimic_multiplayer/port_forwarding/discover_timeout_ms: UPnP discovery timeout in milliseconds
-mimic_multiplayer/port_forwarding/discover_ttl: UPnP discovery time-to-live hop count
+mimic_multiplayer/port_forwarding/delete_mapping_on_stop: Delete owned UPnP mappings when networking stops, default true
+mimic_multiplayer/port_forwarding/query_external_address: Query the gateway external address after mapping, default true
+mimic_multiplayer/port_forwarding/protocol: TCP/UDP mapping protocol selection, default Transport Default
+mimic_multiplayer/port_forwarding/duration: UPnP mapping lease duration in seconds, default 7200; 0 requests permanent
+mimic_multiplayer/port_forwarding/discover_timeout_ms: UPnP discovery timeout in milliseconds, default 2000
+mimic_multiplayer/port_forwarding/discover_ttl: UPnP discovery time-to-live hop count, default 2
 ```
 
 Debug:
 
 ```text
-mimic_multiplayer/debug/log_level: All, Warning, Error, or None
+mimic_multiplayer/debug/log_level: All, Warning, Error, or None, default Warning
 ```
 
 UPnP discovery and port mapping run in a background thread so hosting does not block the main thread while the router responds.
@@ -190,16 +206,33 @@ Connect to Mimic signals from any script:
 
 ```gdscript
 func _ready() -> void:
+	Mimic.state_changed.connect(_on_state_changed)
+	Mimic.start_failed.connect(_on_start_failed)
 	Mimic.server_started.connect(_on_server_started)
+	Mimic.client_started.connect(_on_client_started)
 	Mimic.client_connected.connect(_on_client_connected)
 	Mimic.client_connection_failed.connect(_on_client_connection_failed)
+	Mimic.server_disconnected.connect(_on_server_disconnected)
 	Mimic.peer_connected.connect(_on_peer_connected)
 	Mimic.peer_disconnected.connect(_on_peer_disconnected)
 	Mimic.stopped.connect(_on_stopped)
+	Mimic.port_mapping_finished.connect(_on_port_mapping_finished)
+
+
+func _on_state_changed(state: int, previous_state: int) -> void:
+	print("State changed from ", previous_state, " to ", state)
+
+
+func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
+	push_warning("%s (%s)" % [message, error_string(error)])
 
 
 func _on_server_started(port: int) -> void:
 	print("Server listening on ", port)
+
+
+func _on_client_started(address: String, port: int) -> void:
+	print("Connecting to %s:%d" % [address, port])
 
 
 func _on_client_connected() -> void:
@@ -208,6 +241,10 @@ func _on_client_connected() -> void:
 
 func _on_client_connection_failed(message: String) -> void:
 	push_warning(message)
+
+
+func _on_server_disconnected() -> void:
+	print("Disconnected from server")
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -220,6 +257,10 @@ func _on_peer_disconnected(peer_id: int) -> void:
 
 func _on_stopped() -> void:
 	print("Networking stopped")
+
+
+func _on_port_mapping_finished(result: int, external_address: String) -> void:
+	print("Port mapping result: ", result, " ", external_address)
 ```
 
 Useful state helpers:
@@ -327,6 +368,7 @@ NetFox is the better fit when your game needs advanced netcode features. Mimic i
 ## Current Limitations
 
 - WebRTC is listed but not implemented.
+- ENet is not available in web exports; use WebSocket for browser clients.
 - WebSocket server TLS is not configured by Mimic yet; terminate `wss://` at a proxy.
 - WebSocket subprotocols and custom handshake headers are not exposed yet.
 - Mimic does not yet perform dynamic spawn/despawn replication.
@@ -362,7 +404,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
 This uses the repo-local Godot wrapper in `tools/godot.ps1`. By default it prefers a valid `MIMIC_GODOT_PATH`, then a valid `GODOT_PATH`, then the local Godot 4.6.3 path:
 
 ```text
-C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe
+C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
 ```
 
 Override the executable for one run:
@@ -371,12 +413,14 @@ Override the executable for one run:
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1 -GodotPath "C:\path\to\Godot.exe"
 ```
 
-The verification pass does four things:
+The verification pass does six things:
 
 - Imports project resources with Godot in headless mode.
 - Runs GUT unit regression tests from `res://test/unit/`.
 - Runs a minimal project startup probe headlessly without opening a network peer.
-- Runs a two-instance ENet smoke test through `res://test/integration/mimic_connection_probe.tscn`.
+- Runs a two-instance ENet explicit host/client smoke test through `res://test/integration/mimic_connection_probe.tscn`.
+- Runs a two-instance ENet `Server If First Else Client` smoke test.
+- Runs a two-instance WebSocket explicit host/client smoke test.
 
 Run just the unit tests:
 
@@ -387,7 +431,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/godot.ps1 --headless -
 Run just the two-instance connection smoke test:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Port 18910
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode explicit -Port 18910
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode server_if_first_else_client -Port 18911
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport websocket -ConnectMode explicit -Port 18912
 ```
 
 Unit tests use the vendored GUT addon in `res://addons/gut/`. Add tests when changing public Mimic behavior, fixing a bug, or touching connection/project-settings code that automated changes could easily regress later.

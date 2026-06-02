@@ -42,6 +42,8 @@ You can set a full WebSocket URL as the Mimic client address, such as `wss://gam
 
 ## Browser Notes
 
+ENet is not available in Godot web exports, so browser clients should use WebSocket.
+
 Browser exports can use WebSocket clients, but GitHub Pages cannot host a Godot multiplayer server. A playable Web export hosted in the docs can run offline/local behavior or connect out to an external `wss://` server.
 
 Avoid connecting from an HTTPS docs page to `ws://` production endpoints. Browsers may block mixed content, and real player traffic should be encrypted.

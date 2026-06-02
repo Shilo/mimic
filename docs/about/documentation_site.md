@@ -21,6 +21,8 @@ The generated API section currently focuses on the user-facing surface:
 
 Internal helpers stay out of the main API navigation so the reference remains useful for developers adding Mimic to a game.
 
+The MkDocs hook runs Godot's doctool against `res://addons/mimic`, writes XML into `build/api_xml/`, and regenerates Markdown under `docs/api/` with `tools/generate_api_docs.py`. The generated `docs/api/` files are ignored by git and rebuilt during documentation builds.
+
 ## Playable Web Example
 
 The documentation build can also export the Godot Web example hub into the same Pages artifact.
@@ -32,6 +34,8 @@ The playable path is:
 ```
 
 This is a browser client export. It can show the example hub and connect to an external WebSocket server, but GitHub Pages itself cannot run the multiplayer server.
+
+The docs workflow builds the site with Godot 4.6.3, runs `mkdocs build --strict`, then calls `tools/export_web_example.ps1` to place the web export at `build/site/play/`.
 
 ## Brand Assets
 

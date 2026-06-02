@@ -50,19 +50,43 @@ Stop:
 Mimic.stop()
 ```
 
+Use the same quick local auto-connect behavior from code:
+
+```gdscript
+Mimic.start_server_if_first_else_client()
+```
+
+Cancel a client while it is still connecting:
+
+```gdscript
+Mimic.cancel_connection()
+```
+
 ## Listen For Events
 
 ```gdscript
 func _ready() -> void:
+	Mimic.start_failed.connect(_on_start_failed)
 	Mimic.server_started.connect(_on_server_started)
+	Mimic.client_started.connect(_on_client_started)
 	Mimic.client_connected.connect(_on_client_connected)
 	Mimic.client_connection_failed.connect(_on_client_connection_failed)
+	Mimic.server_disconnected.connect(_on_server_disconnected)
 	Mimic.peer_connected.connect(_on_peer_connected)
 	Mimic.peer_disconnected.connect(_on_peer_disconnected)
+	Mimic.stopped.connect(_on_stopped)
+
+
+func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
+	push_warning("%s (%s)" % [message, error_string(error)])
 
 
 func _on_server_started(port: int) -> void:
 	print("Server listening on ", port)
+
+
+func _on_client_started(address: String, port: int) -> void:
+	print("Connecting to %s:%d" % [address, port])
 
 
 func _on_client_connected() -> void:
@@ -73,12 +97,20 @@ func _on_client_connection_failed(message: String) -> void:
 	push_warning(message)
 
 
+func _on_server_disconnected() -> void:
+	print("Disconnected from server")
+
+
 func _on_peer_connected(peer_id: int) -> void:
 	print("Peer connected: ", peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	print("Peer disconnected: ", peer_id)
+
+
+func _on_stopped() -> void:
+	print("Networking stopped")
 ```
 
 ## Verify Locally

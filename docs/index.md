@@ -26,8 +26,10 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 
 - Manages a plugin-installed `Mimic` autoload.
 - Starts and stops ENet and WebSocket server/client peers.
-- Provides an offline state placeholder and a reserved WebRTC transport option.
+- Provides an offline state, stop/cancel helpers, and status helpers.
+- Keeps Offline and WebRTC transport selections explicit: Offline does not start a peer, and WebRTC is reserved but unsupported.
 - Exposes typed Project Settings for connection defaults.
+- Can request optional UPnP port forwarding when hosting.
 - Emits compact connection lifecycle signals.
 - Provides `MimicConnector` for simple host/join/stop entry points.
 - Provides `MimicSync`, a visible per-entity component that subclasses `MultiplayerSynchronizer`.
@@ -37,7 +39,8 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 - Automatic dynamic spawn/despawn replication.
 - Late-join spawn replay.
 - Built-in UI controls.
-- Prediction, rollback, interpolation, lag compensation, matchmaking, relay, or raw packet protocols.
+- WebRTC signaling.
+- Prediction, rollback, interpolation, lag compensation, matchmaking, relay services, or raw packet protocols.
 
 ## What To Read Next
 
