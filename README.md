@@ -1,4 +1,4 @@
-# Mimic Multiplayer
+# <img src="brand/icon/mimic.png" alt="Mimic icon" width="40"> Mimic Multiplayer
 
 <picture>
   <source srcset="brand/logo/mimic_m_multiplayer.svg" type="image/svg+xml">
