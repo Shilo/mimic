@@ -26,6 +26,7 @@ const _SETTLE_TIMEOUT := 2.0
 const _SETTLE_STEP := 0.15
 const _STABLE_SCANS := 3
 const _MIN_SIZE := Vector2i(96, 96)
+const _MIN_CLIENT_SIZE := Vector2i(1, 1)
 const _APPEND_WINDOW_INDEX := true
 const _STRETCH_MODE_SETTING := "display/window/stretch/mode"
 const _STRETCH_ASPECT_SETTING := "display/window/stretch/aspect"
@@ -37,9 +38,12 @@ const _STRETCH_ASPECT_KEEP_HEIGHT := "keep_height"
 
 var _base_title := ""
 var _grid_title := ""
+var _auto_tile_enabled := true
 
 
 func _ready() -> void:
+	if not _auto_tile_enabled:
+		return
 	if not OS.has_feature("editor"):
 		return
 	if DisplayServer.get_name() == "headless":
@@ -57,6 +61,7 @@ func _ready() -> void:
 	var index := markers.find(marker)
 
 	if index < 0 or markers.size() < 2:
+		_remove_marker(marker)
 		return
 
 	if _APPEND_WINDOW_INDEX:
@@ -111,27 +116,24 @@ func _tile(index: int, count: int) -> void:
 	var area := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
 	var reference_client_size := _get_reference_client_size()
 	var cell_rect := _get_cell_rect(index, count, area, reference_client_size)
-	var titlebar_height := _get_titlebar_height()
-	var frame_border_size := _get_frame_border_size()
+	var frame_margins := _get_frame_decoration_margins()
 
 	# Fill uses the whole cell. Fit shrinks and centers the frame only when
 	# Godot would otherwise letterbox or pillarbox the game content.
 	var should_fit_to_cell := _should_fit_to_cell(
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 	var frame_rect := cell_rect
 	if should_fit_to_cell:
 		frame_rect = _fit_frame_rect_to_cell(
 			cell_rect,
 			reference_client_size,
-			titlebar_height,
-			frame_border_size
+			frame_margins
 		)
 
-	_set_frame_rect(frame_rect, titlebar_height, frame_border_size)
+	_set_frame_rect(frame_rect, frame_margins)
 
 
 func _get_cell_rect(index: int, count: int, area: Rect2i, reference_client_size: Vector2i) -> Rect2i:
@@ -166,32 +168,30 @@ func _get_grid(count: int, screen_size: Vector2i, target_aspect := 16.0 / 9.0) -
 	return best
 
 
-func _get_titlebar_height() -> int:
+func _get_frame_decoration_margins() -> Vector4i:
 	var client_position := DisplayServer.window_get_position()
-	var outer_position := DisplayServer.window_get_position_with_decorations()
-	return maxi(0, client_position.y - outer_position.y)
+	var frame_position := DisplayServer.window_get_position_with_decorations()
+	var client_size := DisplayServer.window_get_size()
+	var frame_size := DisplayServer.window_get_size_with_decorations()
+	var left := maxi(0, client_position.x - frame_position.x)
+	var top := maxi(0, client_position.y - frame_position.y)
+	var right := maxi(0, frame_size.x - client_size.x - left)
+	var bottom := maxi(0, frame_size.y - client_size.y - top)
 
-
-func _get_frame_border_size() -> Vector2i:
-	if OS.has_feature("windows"):
-		return Vector2i(1, 1)
-
-	return Vector2i.ZERO
+	return Vector4i(left, top, right, bottom)
 
 
 func _should_fit_to_cell(
 	cell_rect: Rect2i,
 	reference_client_size: Vector2i,
-	titlebar_height: int,
-	frame_border_size := Vector2i.ZERO
+	frame_margins := Vector4i(0, 0, 0, 0)
 ) -> bool:
 	var stretch_mode := String(ProjectSettings.get_setting(_STRETCH_MODE_SETTING, "disabled"))
 	var stretch_aspect := String(ProjectSettings.get_setting(_STRETCH_ASPECT_SETTING, _STRETCH_ASPECT_KEEP))
 	return _should_fit_to_cell_for_stretch(
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size,
+		frame_margins,
 		stretch_mode,
 		stretch_aspect
 	)
@@ -200,8 +200,7 @@ func _should_fit_to_cell(
 func _should_fit_to_cell_for_stretch(
 	cell_rect: Rect2i,
 	reference_client_size: Vector2i,
-	titlebar_height: int,
-	frame_border_size: Vector2i,
+	frame_margins: Vector4i,
 	stretch_mode: String,
 	stretch_aspect: String
 ) -> bool:
@@ -210,8 +209,7 @@ func _should_fit_to_cell_for_stretch(
 
 	var target_client_size := _get_unclamped_frame_client_size(
 		cell_rect.size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	).max(Vector2i(1, 1))
 	var reference_aspect := _get_aspect(reference_client_size)
 	var target_aspect := _get_aspect(target_client_size)
@@ -233,14 +231,12 @@ func _should_fit_to_cell_for_stretch(
 func _fit_frame_rect_to_cell(
 	cell_rect: Rect2i,
 	reference_client_size: Vector2i,
-	titlebar_height: int,
-	frame_border_size := Vector2i.ZERO
+	frame_margins := Vector4i(0, 0, 0, 0)
 ) -> Rect2i:
-	var frame_chrome_size := _get_frame_chrome_size(titlebar_height, frame_border_size)
+	var frame_chrome_size := _get_frame_chrome_size(frame_margins)
 	var available_client_size := _get_frame_client_size(
 		cell_rect.size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 	var fitted_client_size := _fit_size_to_aspect(available_client_size, reference_client_size)
 	var fitted_frame_size := fitted_client_size + frame_chrome_size
@@ -249,24 +245,22 @@ func _fit_frame_rect_to_cell(
 	return Rect2i(fitted_frame_position, fitted_frame_size)
 
 
-func _get_frame_chrome_size(titlebar_height: int, frame_border_size := Vector2i.ZERO) -> Vector2i:
-	return Vector2i(frame_border_size.x * 2, titlebar_height + frame_border_size.y)
+func _get_frame_chrome_size(frame_margins := Vector4i(0, 0, 0, 0)) -> Vector2i:
+	return Vector2i(frame_margins.x + frame_margins.z, frame_margins.y + frame_margins.w)
 
 
 func _get_frame_client_size(
 	frame_size: Vector2i,
-	titlebar_height: int,
-	frame_border_size := Vector2i.ZERO
+	frame_margins := Vector4i(0, 0, 0, 0)
 ) -> Vector2i:
-	return _get_unclamped_frame_client_size(frame_size, titlebar_height, frame_border_size).max(_MIN_SIZE)
+	return _get_unclamped_frame_client_size(frame_size, frame_margins).max(_MIN_CLIENT_SIZE)
 
 
 func _get_unclamped_frame_client_size(
 	frame_size: Vector2i,
-	titlebar_height: int,
-	frame_border_size := Vector2i.ZERO
+	frame_margins := Vector4i(0, 0, 0, 0)
 ) -> Vector2i:
-	return frame_size - _get_frame_chrome_size(titlebar_height, frame_border_size)
+	return frame_size - _get_frame_chrome_size(frame_margins)
 
 
 func _fit_size_to_aspect(available_size: Vector2i, reference_size: Vector2i) -> Vector2i:
@@ -289,19 +283,23 @@ func _get_aspect(size: Vector2i) -> float:
 	return float(size.x) / float(size.y)
 
 
-func _set_frame_rect(rect: Rect2i, titlebar_height: int, frame_border_size := Vector2i.ZERO) -> Vector2i:
-	var frame_chrome_size := _get_frame_chrome_size(titlebar_height, frame_border_size)
-	var client_size := _get_frame_client_size(rect.size, titlebar_height, frame_border_size)
+func _set_frame_rect(rect: Rect2i, frame_margins := Vector4i(0, 0, 0, 0)) -> Vector2i:
+	var frame_chrome_size := _get_frame_chrome_size(frame_margins)
+	var client_size := _get_frame_client_size(rect.size, frame_margins)
 	var frame_size := client_size + frame_chrome_size
 	var frame_position := rect.position + (rect.size - frame_size) / 2
 
 	get_window().size = client_size
-	get_window().position = frame_position + Vector2i(frame_border_size.x, titlebar_height)
+	get_window().position = frame_position + Vector2i(frame_margins.x, frame_margins.y)
 
 	return client_size
 
 
 func _connect_multiplayer_title_signals() -> void:
+	# Title updates are purely event-driven off MultiplayerAPI; no polling. There
+	# is no signal for assigning or clearing the local peer, so a lone server
+	# with no remote peers keeps its launch-order title until a peer connects.
+	# That edge case is accepted on purpose to avoid a refresh timer.
 	var multiplayer_api := multiplayer
 	if multiplayer_api == null:
 		return
@@ -325,10 +323,12 @@ func _set_grid_title(index: int, count: int) -> void:
 
 func _refresh_connection_title() -> void:
 	var peer_id := _get_multiplayer_peer_id()
+	var title := _grid_title
 	if peer_id > 0 and not _grid_title.is_empty():
-		get_window().title = _format_peer_title(_grid_title, peer_id)
-	elif not _grid_title.is_empty():
-		get_window().title = _grid_title
+		title = _format_peer_title(_grid_title, peer_id)
+
+	if not title.is_empty() and get_window().title != title:
+		get_window().title = title
 
 
 func _get_multiplayer_peer_id() -> int:
@@ -359,6 +359,12 @@ func _on_multiplayer_state_changed() -> void:
 
 func _on_multiplayer_peer_connection_changed(_peer_id: int) -> void:
 	_refresh_connection_title()
+
+
+func _remove_marker(marker: String) -> void:
+	var path := "%s/%s" % [_DIR, marker]
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
 
 
 func _now_ms() -> int:
