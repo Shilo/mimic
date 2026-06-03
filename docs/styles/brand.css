@@ -680,20 +680,25 @@ label.md-nav__title {
 	color: #EAF8F3;
 }
 
+.addon-intro,
 .netfox-intro {
 	margin: 1rem 0 1.4rem;
 }
 
+.addon-intro p:first-child,
 .netfox-intro p:first-child {
 	margin-bottom: 0.85rem;
 }
 
+.addon-logo,
 .netfox-logo {
 	display: block;
 	height: 72px;
+	object-fit: contain;
 	width: 72px;
 }
 
+.addon-disclaimer,
 .netfox-disclaimer {
 	color: var(--md-default-fg-color--light);
 	font-size: 0.6rem;

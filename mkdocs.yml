@@ -97,6 +97,7 @@ nav:
       - Single To Multiplayer: examples/single_to_multiplayer.md
   - Other Multiplayer Addons:
       - Netfox: other_multiplayer_addons/netfox.md
+      - BAD Multiplayer: other_multiplayer_addons/bad_multiplayer.md
   - API Reference:
       - Overview: api/index.md
       - Mimic: api/mimic.md
