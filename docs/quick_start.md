@@ -28,7 +28,7 @@ Host:
 ```gdscript
 var error := Mimic.start_server()
 if error != OK:
-	push_error("Failed to start server: %s" % error_string(error))
+	MimicLog.error("Failed to start server: %s" % error_string(error))
 ```
 
 Join:
@@ -36,7 +36,7 @@ Join:
 ```gdscript
 var error := Mimic.start_client()
 if error != OK:
-	push_error("Failed to start client: %s" % error_string(error))
+	MimicLog.error("Failed to start client: %s" % error_string(error))
 ```
 
 Stop:
@@ -73,39 +73,39 @@ func _ready() -> void:
 
 
 func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
-	push_warning("%s (%s)" % [message, error_string(error)])
+	MimicLog.warning("%s (%s)" % [message, error_string(error)])
 
 
 func _on_server_started(port: int) -> void:
-	print("Server listening on ", port)
+	MimicLog.log("Server listening on", port)
 
 
 func _on_client_started(address: String, port: int) -> void:
-	print("Connecting to %s:%d" % [address, port])
+	MimicLog.log("Connecting to %s:%d" % [address, port])
 
 
 func _on_client_connected() -> void:
-	print("Connected")
+	MimicLog.log("Connected")
 
 
 func _on_client_connection_failed(message: String) -> void:
-	push_warning(message)
+	MimicLog.warning(message)
 
 
 func _on_server_disconnected() -> void:
-	print("Disconnected from server")
+	MimicLog.log("Disconnected from server")
 
 
 func _on_peer_connected(peer_id: int) -> void:
-	print("Peer connected: ", peer_id)
+	MimicLog.log("Peer connected:", peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
-	print("Peer disconnected: ", peer_id)
+	MimicLog.log("Peer disconnected:", peer_id)
 
 
 func _on_stopped() -> void:
-	print("Networking stopped")
+	MimicLog.log("Networking stopped")
 ```
 
 ## Verify Locally

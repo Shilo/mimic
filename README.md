@@ -164,7 +164,7 @@ Host a server using the Project Settings defaults:
 ```gdscript
 var error := Mimic.start_server()
 if error != OK:
-	push_error("Failed to start server: %s" % error_string(error))
+	MimicLog.error("Failed to start server: %s" % error_string(error))
 ```
 
 Join a server using the Project Settings defaults:
@@ -172,7 +172,7 @@ Join a server using the Project Settings defaults:
 ```gdscript
 var error := Mimic.start_client()
 if error != OK:
-	push_error("Failed to start client: %s" % error_string(error))
+	MimicLog.error("Failed to start client: %s" % error_string(error))
 ```
 
 Override the address or port for a single call:
@@ -224,47 +224,47 @@ func _ready() -> void:
 
 
 func _on_state_changed(state: int, previous_state: int) -> void:
-	print("State changed from ", previous_state, " to ", state)
+	MimicLog.log("State changed from", previous_state, "to", state)
 
 
 func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
-	push_warning("%s (%s)" % [message, error_string(error)])
+	MimicLog.warning("%s (%s)" % [message, error_string(error)])
 
 
 func _on_server_started(port: int) -> void:
-	print("Server listening on ", port)
+	MimicLog.log("Server listening on", port)
 
 
 func _on_client_started(address: String, port: int) -> void:
-	print("Connecting to %s:%d" % [address, port])
+	MimicLog.log("Connecting to %s:%d" % [address, port])
 
 
 func _on_client_connected() -> void:
-	print("Connected")
+	MimicLog.log("Connected")
 
 
 func _on_client_connection_failed(message: String) -> void:
-	push_warning(message)
+	MimicLog.warning(message)
 
 
 func _on_server_disconnected() -> void:
-	print("Disconnected from server")
+	MimicLog.log("Disconnected from server")
 
 
 func _on_peer_connected(peer_id: int) -> void:
-	print("Peer connected: ", peer_id)
+	MimicLog.log("Peer connected:", peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
-	print("Peer disconnected: ", peer_id)
+	MimicLog.log("Peer disconnected:", peer_id)
 
 
 func _on_stopped() -> void:
-	print("Networking stopped")
+	MimicLog.log("Networking stopped")
 
 
 func _on_port_mapping_finished(result: int, external_address: String) -> void:
-	print("Port mapping result: ", result, " ", external_address)
+	MimicLog.log("Port mapping result:", result, external_address)
 ```
 
 Useful state helpers:
@@ -334,10 +334,10 @@ mimic_multiplayer/debug/log_level: All, Warning, Error, None
 Example log line:
 
 ```text
-05-29 22:14:03 [Mimic 2] Connected to server.
+05-29 22:14:03 [Mimic 2] [mimic._on_connected_to_server] Connected to server.
 ```
 
-The number inside the Mimic tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID.
+The number inside the Mimic tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID. The caller tag appears when GDScript call stacks are available; release exports need `debug/settings/gdscript/always_track_call_stacks` enabled to include it.
 
 ## Mimic Or NetFox?
 

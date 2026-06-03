@@ -4,6 +4,26 @@ class_name MimicProjectSettings extends Object
 ## [br][br]
 ## Settings are registered by the editor plugin and read by the Mimic runtime.
 
+# These mirror Mimic and MimicLog public enum values used by ProjectSettings hints.
+enum _TransportType {
+	OFFLINE,
+	ENET,
+	WEBSOCKET,
+	WEBRTC,
+}
+enum _PortMappingProtocol {
+	TRANSPORT_DEFAULT,
+	TCP,
+	UDP,
+	TCP_AND_UDP,
+}
+enum _LogLevel {
+	ALL,
+	WARNING,
+	ERROR,
+	NONE,
+}
+
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
 const _EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const _ADDRESS := "mimic_multiplayer/connection/address"
@@ -27,26 +47,6 @@ const _PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
 const _UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_timeout_ms"
 const _UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
 const _LOG_LEVEL := "mimic_multiplayer/debug/log_level"
-
-# These mirror Mimic and MimicLog public enum values used by ProjectSettings hints.
-enum _TransportType {
-	OFFLINE,
-	ENET,
-	WEBSOCKET,
-	WEBRTC,
-}
-enum _PortMappingProtocol {
-	TRANSPORT_DEFAULT,
-	TCP,
-	UDP,
-	TCP_AND_UDP,
-}
-enum _LogLevel {
-	ALL,
-	WARNING,
-	ERROR,
-	NONE,
-}
 
 const _TRANSPORT_HINT := "Offline,ENet,WebSocket,WebRTC (Unsupported)"
 const _EDITOR_AUTO_CONNECT_HINT := "Disabled,Server Then Client,Client,Server"

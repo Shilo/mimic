@@ -55,43 +55,6 @@ var _custom_multiplayer_roots: Array[Node] = []
 var _next_port := 19200
 
 
-class FakePortMapper extends MimicPortMapper:
-	var add_requests: Array[Dictionary] = []
-	var delete_count := 0
-	var wait_count := 0
-	var next_error := UPNP.UPNP_RESULT_SUCCESS
-	var next_external_address := ""
-	var emit_on_add := false
-
-
-	func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
-		if not MimicProjectSettings.port_forwarding_enabled:
-			return
-
-		add_requests.append({
-			"port": port,
-			"protocols": protocols.duplicate(),
-			"description": description,
-		})
-		if emit_on_add:
-			finished.emit(next_error, next_external_address)
-
-
-	func delete_mapping() -> void:
-		if not MimicProjectSettings.port_mapping_delete_on_stop:
-			return
-
-		delete_count += 1
-
-
-	func wait_to_finish() -> void:
-		wait_count += 1
-
-
-	func get_external_address() -> String:
-		return next_external_address
-
-
 func before_each() -> void:
 	Mimic.stop()
 	_save_settings()
@@ -418,3 +381,40 @@ func _restore_settings() -> void:
 			ProjectSettings.set_setting(setting_name, saved_setting["value"])
 		elif ProjectSettings.has_setting(setting_name):
 			ProjectSettings.clear(setting_name)
+
+
+class FakePortMapper extends MimicPortMapper:
+	var add_requests: Array[Dictionary] = []
+	var delete_count := 0
+	var wait_count := 0
+	var next_error := UPNP.UPNP_RESULT_SUCCESS
+	var next_external_address := ""
+	var emit_on_add := false
+
+
+	func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+		if not MimicProjectSettings.port_forwarding_enabled:
+			return
+
+		add_requests.append({
+			"port": port,
+			"protocols": protocols.duplicate(),
+			"description": description,
+		})
+		if emit_on_add:
+			finished.emit(next_error, next_external_address)
+
+
+	func delete_mapping() -> void:
+		if not MimicProjectSettings.port_mapping_delete_on_stop:
+			return
+
+		delete_count += 1
+
+
+	func wait_to_finish() -> void:
+		wait_count += 1
+
+
+	func get_external_address() -> String:
+		return next_external_address

@@ -11,24 +11,24 @@ func _ready() -> void:
 
 
 func _on_server_started(port: int) -> void:
-	print("Mimic server listening on port ", port)
+	MimicLog.log("Mimic server listening on port", port)
 
 
 func _on_client_connected() -> void:
-	print("Mimic client connected.")
+	MimicLog.log("Mimic client connected.")
 
 
 func _on_client_connection_failed(message: String) -> void:
-	print("Mimic client connection failed: ", message)
+	MimicLog.warning("Mimic client connection failed:", message)
 
 
 func _on_peer_connected(peer_id: int) -> void:
-	print("Mimic peer connected: ", peer_id)
+	MimicLog.log("Mimic peer connected:", peer_id)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
-	print("Mimic peer disconnected: ", peer_id)
+	MimicLog.log("Mimic peer disconnected:", peer_id)
 
 
 func _on_stopped() -> void:
-	print("Mimic network stopped.")
+	MimicLog.log("Mimic network stopped.")

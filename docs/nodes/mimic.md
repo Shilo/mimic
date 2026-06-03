@@ -7,7 +7,7 @@
 ```gdscript
 var error := Mimic.start_server()
 if error != OK:
-	push_error("Failed to start server: %s" % error_string(error))
+	MimicLog.error("Failed to start server: %s" % error_string(error))
 ```
 
 Pass a port or bind address to override Project Settings for one call:
@@ -21,7 +21,7 @@ Mimic.start_server(9000, "0.0.0.0")
 ```gdscript
 var error := Mimic.start_client()
 if error != OK:
-	push_error("Failed to start client: %s" % error_string(error))
+	MimicLog.error("Failed to start client: %s" % error_string(error))
 ```
 
 Override address and port for one call:
@@ -44,7 +44,7 @@ Mimic.cancel_connection()
 ```gdscript
 var error := Mimic.start_server_or_client()
 if error != OK:
-	push_error("Unable to auto-connect: %s" % error_string(error))
+	MimicLog.error("Unable to auto-connect: %s" % error_string(error))
 ```
 
 This helper is meant for local multi-instance testing. With ENet, Mimic first performs a best-effort local bind preflight so later instances can fall back to client mode without noisy ENet bind errors. The fallback is skipped on dedicated/server exports.

@@ -30,7 +30,7 @@ Settings marked Advanced are hidden unless **Advanced Settings** is enabled in P
 | `mimic_multiplayer/port_forwarding/duration` | `7200` | Advanced | UPnP mapping lease duration in seconds. `0` requests a permanent mapping. |
 | `mimic_multiplayer/port_forwarding/discover_timeout_ms` | `2000` | Advanced | UPnP discovery timeout in milliseconds. |
 | `mimic_multiplayer/port_forwarding/discover_ttl` | `2` | Advanced | UPnP discovery time-to-live hop count. |
-| `mimic_multiplayer/debug/log_level` | `Warning` | Basic | Controls Mimic log output. Values are All, Warning, Error, and None. |
+| `mimic_multiplayer/debug/log_level` | `Warning` | Basic | Controls Mimic log output. Values are All, Warning, Error, and None. Log lines include a Mimic peer tag and, when GDScript call stacks are available, a caller tag. |
 
 ## Connection
 

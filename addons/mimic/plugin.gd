@@ -20,7 +20,7 @@ func _enable_plugin() -> void:
 		return
 
 	if autoload_status == ERR_ALREADY_EXISTS:
-		push_warning("Autoload '%s' already exists and does not point to this addon." % _AUTOLOAD_NAME)
+		MimicLog.warning("Autoload '%s' already exists and does not point to this addon." % _AUTOLOAD_NAME)
 		return
 
 	add_autoload_singleton(_AUTOLOAD_NAME, _get_autoload_path())

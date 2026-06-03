@@ -3,7 +3,9 @@ class_name MimicLog extends Object
 ## [br][br]
 ## Messages are filtered by [member MimicProjectSettings.log_level] and include
 ## a compact timestamp. Editor-launched runs also include the local multiplayer
-## ID when available so multi-instance logs are easier to distinguish.
+## ID when available so multi-instance logs are easier to distinguish. When
+## GDScript call stacks are available, each line also includes the source method
+## that called MimicLog.
 
 ## Output levels available for Mimic logs.
 enum Level {
@@ -18,6 +20,7 @@ enum Level {
 }
 
 static var _is_editor_feature := OS.has_feature("editor")
+static var _output_override := Callable()
 
 
 ## Prints an informational Mimic log message when the current log level allows it.
@@ -25,7 +28,7 @@ static func log(...objects: Array) -> void:
 	if not _should_log(Level.ALL):
 		return
 
-	prints(_line(objects))
+	_print_line(_line(objects))
 
 
 ## Pushes a Mimic warning when the current log level allows it.
@@ -33,7 +36,7 @@ static func warning(...objects: Array) -> void:
 	if not _should_log(Level.WARNING):
 		return
 
-	push_warning(_line(objects))
+	_push_warning_line(_line(objects))
 
 
 ## Pushes a Mimic error when the current log level allows it.
@@ -41,7 +44,11 @@ static func error(...objects: Array) -> void:
 	if not _should_log(Level.ERROR):
 		return
 
-	push_error(_line(objects))
+	_push_error_line(_line(objects))
+
+
+static func _log_unfiltered(...objects: Array) -> void:
+	_print_line(_line(objects))
 
 
 static func _should_log(message_level: Level) -> bool:
@@ -50,6 +57,9 @@ static func _should_log(message_level: Level) -> bool:
 
 static func _line(objects: Array) -> String:
 	var parts := PackedStringArray([_timestamp(), _get_name_tag()])
+	var caller_tag := _get_caller_tag()
+	if not caller_tag.is_empty():
+		parts.append(caller_tag)
 
 	var message := _join(objects)
 	if not message.is_empty():
@@ -68,6 +78,26 @@ static func _get_name_tag() -> String:
 	if peer_id <= 0:
 		return "[%s]" % NAME
 	return "[%s %d]" % [NAME, peer_id]
+
+
+static func _get_caller_tag() -> String:
+	for frame in get_stack():
+		var source := String(frame.get("source", ""))
+		if source.get_file() == "mimic_log.gd":
+			continue
+
+		return _format_caller_tag(source, String(frame.get("function", "")))
+
+	return ""
+
+
+static func _format_caller_tag(source: String, function_name: String) -> String:
+	var source_name := source.get_file().get_basename()
+	if source_name.is_empty():
+		return "[%s]" % function_name if not function_name.is_empty() else ""
+	if function_name.is_empty():
+		return "[%s]" % source_name
+	return "[%s.%s]" % [source_name, function_name]
 
 
 static func _timestamp() -> String:
@@ -110,3 +140,27 @@ static func _join(objects: Array) -> String:
 	for index in range(objects.size()):
 		parts[index] = str(objects[index])
 	return " ".join(parts)
+
+
+static func _print_line(line: String) -> void:
+	if _output_override.is_valid():
+		_output_override.call("log", line)
+		return
+
+	prints(line)
+
+
+static func _push_warning_line(line: String) -> void:
+	if _output_override.is_valid():
+		_output_override.call("warning", line)
+		return
+
+	push_warning(line)
+
+
+static func _push_error_line(line: String) -> void:
+	if _output_override.is_valid():
+		_output_override.call("error", line)
+		return
+
+	push_error(line)

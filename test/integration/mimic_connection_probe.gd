@@ -90,7 +90,7 @@ func _start_server() -> void:
 	if error != OK:
 		_fail("Server start failed: %s." % error_string(error))
 		return
-	print("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
+	MimicLog._log_unfiltered("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
 
 
 func _start_client() -> void:
@@ -98,7 +98,7 @@ func _start_client() -> void:
 	if error != OK:
 		_fail("Client start failed: %s." % error_string(error))
 		return
-	print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
+	MimicLog._log_unfiltered("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
 
 
 func _finish_project_editor_auto_connect() -> void:
@@ -106,10 +106,10 @@ func _finish_project_editor_auto_connect() -> void:
 
 	if Mimic.is_server():
 		_role = "server"
-		print("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
+		MimicLog._log_unfiltered("MIMIC_TEST_READY server transport=%s port=%d" % [_transport, _port])
 	elif Mimic.is_connecting() or Mimic.is_client():
 		_role = "client"
-		print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
+		MimicLog._log_unfiltered("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
 		if Mimic.is_client():
 			_on_client_connected.call_deferred()
 	else:
@@ -118,13 +118,15 @@ func _finish_project_editor_auto_connect() -> void:
 
 func _on_peer_connected(peer_id: int) -> void:
 	if _role == "server":
-		print("MIMIC_TEST_CONNECTED server transport=%s peer=%d" % [_transport, peer_id])
+		MimicLog._log_unfiltered(
+			"MIMIC_TEST_CONNECTED server transport=%s peer=%d" % [_transport, peer_id]
+		)
 		_succeed.call_deferred()
 
 
 func _on_client_connected() -> void:
 	if _role == "client":
-		print(
+		MimicLog._log_unfiltered(
 			"MIMIC_TEST_CONNECTED client transport=%s peer=%d"
 			% [_transport, Mimic.get_local_peer_id()]
 		)
@@ -158,8 +160,8 @@ func _fail(message: String) -> void:
 	if _finished:
 		return
 	_finished = true
-	print("MIMIC_TEST_FAILED %s %s" % [_role, message])
-	push_error(message)
+	MimicLog._log_unfiltered("MIMIC_TEST_FAILED %s %s" % [_role, message])
+	MimicLog.error(message)
 	Mimic.stop()
 	_restore_editor_auto_connect()
 	get_tree().quit(1)
