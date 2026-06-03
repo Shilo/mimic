@@ -193,13 +193,17 @@ func test_should_fit_uses_unclamped_cell_aspect_for_tiny_cells() -> void:
 func test_window_index_title_uses_launch_order_until_connected() -> void:
 	var title: String = _grid.call("_format_window_index_title", "Mimic Multiplayer", 1, 3)
 
-	assert_eq(title, "Mimic Multiplayer [2/3]")
+	assert_eq(title, "Mimic Multiplayer [Session 2/3]")
 
 
-func test_peer_title_replaces_launch_order_after_connection() -> void:
-	var title: String = _grid.call("_format_peer_title", "Mimic Multiplayer", 618443343)
+func test_peer_title_appends_peer_id_to_launch_order_after_connection() -> void:
+	var title: String = _grid.call(
+		"_format_peer_title",
+		"Mimic Multiplayer [Session 2/3]",
+		618443343
+	)
 
-	assert_eq(title, "Mimic Multiplayer [618443343]")
+	assert_eq(title, "Mimic Multiplayer [Session 2/3] [Peer 618443343]")
 
 
 func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
@@ -215,7 +219,7 @@ func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
 	_grid.call("_set_grid_title", 1, 2)
 	_grid.call("_connect_multiplayer_title_signals")
 
-	assert_eq(get_window().title, "Mimic Multiplayer [2/2]")
+	assert_eq(get_window().title, "Mimic Multiplayer [Session 2/2]")
 
 	var host_peer := ENetMultiplayerPeer.new()
 	assert_eq(host_peer.create_server(port, 2), OK)
@@ -231,7 +235,7 @@ func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
 			return (
 				client_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
 				and peer_id > 1
-				and get_window().title == "Mimic Multiplayer [%d]" % peer_id
+				and get_window().title == "Mimic Multiplayer [Session 2/2] [Peer %d]" % peer_id
 			),
 		5.0
 	)

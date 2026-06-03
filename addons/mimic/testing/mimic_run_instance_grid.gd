@@ -11,9 +11,9 @@ extends Node
 ## marker file, discovers sibling instances from the same launch burst, then
 ## moves and resizes itself into a screen tile.
 ## [br][br]
-## Window titles first show launch order. When a window has an active
-## multiplayer connection, the title shows its local peer ID so each session is
-## easier to identify.
+## Window titles show launch order. When a window has an active multiplayer
+## connection, the title also shows its local peer ID so each session is easier
+## to match with debugger tabs and peer-tagged logs.
 ## [br][br]
 ## "Fill" uses the whole grid cell as the window frame. "Fit" shrinks and
 ## centers the window inside that cell so Godot's aspect-preserving stretch modes
@@ -325,8 +325,8 @@ func _set_grid_title(index: int, count: int) -> void:
 
 func _refresh_connection_title() -> void:
 	var peer_id := _get_multiplayer_peer_id()
-	if peer_id > 0:
-		get_window().title = _format_peer_title(_base_title, peer_id)
+	if peer_id > 0 and not _grid_title.is_empty():
+		get_window().title = _format_peer_title(_grid_title, peer_id)
 	elif not _grid_title.is_empty():
 		get_window().title = _grid_title
 
@@ -346,11 +346,11 @@ func _get_multiplayer_peer_id() -> int:
 
 
 func _format_window_index_title(base_title: String, index: int, count: int) -> String:
-	return "%s [%d/%d]" % [base_title, index + 1, count]
+	return "%s [Session %d/%d]" % [base_title, index + 1, count]
 
 
-func _format_peer_title(base_title: String, peer_id: int) -> String:
-	return "%s [%d]" % [base_title, peer_id]
+func _format_peer_title(grid_title: String, peer_id: int) -> String:
+	return "%s [Peer %d]" % [grid_title, peer_id]
 
 
 func _on_multiplayer_state_changed() -> void:
