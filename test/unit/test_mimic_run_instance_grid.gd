@@ -295,7 +295,6 @@ func _should_fit(
 
 
 func _attach_grid_to_multiplayer_root(root: Node, index: int, count: int) -> void:
-	_grid.set("_auto_tile_enabled", false)
 	root.add_child(_grid)
 	_grid.set("_base_title", "Mimic Multiplayer")
 	_grid.call("_set_grid_title", index, count)

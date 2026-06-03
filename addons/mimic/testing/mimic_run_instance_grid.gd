@@ -38,12 +38,9 @@ const _STRETCH_ASPECT_KEEP_HEIGHT := "keep_height"
 
 var _base_title := ""
 var _grid_title := ""
-var _auto_tile_enabled := true
 
 
 func _ready() -> void:
-	if not _auto_tile_enabled:
-		return
 	if not OS.has_feature("editor"):
 		return
 	if DisplayServer.get_name() == "headless":
