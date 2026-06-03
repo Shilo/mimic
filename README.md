@@ -25,7 +25,6 @@ This project is intentionally smaller than full networking frameworks. Mimic is 
 - [Mimic Or NetFox?](#mimic-or-netfox)
 - [Current Limitations](#current-limitations)
 - [Minimal Local Test](#minimal-local-test)
-- [Regression Testing And Automation](#regression-testing-and-automation)
 - [Editor Multi-Instance Testing](#editor-multi-instance-testing)
 
 ## Compatibility Policy
@@ -402,53 +401,6 @@ Expected result:
 - The first instance starts as server.
 - The second instance joins as client.
 - Connection events appear in the Godot output.
-
-## Regression Testing And Automation
-
-Mimic includes automated checks intended to keep current behavior stable as the addon evolves. These tests are regression guardrails, not a requirement to practice test-driven development before every change.
-
-Run the full local verification pass from PowerShell:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
-```
-
-This uses the repo-local Godot wrapper in `tools/godot.ps1`. By default it prefers a valid `MIMIC_GODOT_PATH`, then a valid `GODOT_PATH`, then the local Godot 4.6.3 path:
-
-```text
-C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64_console.exe
-```
-
-Override the executable for one run:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1 -GodotPath "C:\path\to\Godot.exe"
-```
-
-The verification pass does six things:
-
-- Imports project resources with Godot in headless mode.
-- Runs GUT unit regression tests from `res://test/unit/`.
-- Runs a minimal project startup probe headlessly without opening a network peer.
-- Runs a two-instance ENet explicit host/client smoke test through `res://test/integration/mimic_connection_probe.tscn`.
-- Runs a two-instance ENet `Server Then Client` smoke test.
-- Runs a two-instance WebSocket explicit host/client smoke test.
-
-Run just the unit tests:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/godot.ps1 --headless --path . -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json -gexit
-```
-
-Run just the two-instance connection smoke test:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode explicit -Port 18910
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode server_then_client -Port 18911
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport websocket -ConnectMode explicit -Port 18912
-```
-
-Unit tests use the vendored GUT addon in `res://addons/gut/`. Add tests when changing public Mimic behavior, fixing a bug, or touching connection/project-settings code that automated changes could easily regress later.
 
 ## Editor Multi-Instance Testing
 

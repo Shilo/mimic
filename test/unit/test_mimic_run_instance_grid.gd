@@ -126,17 +126,7 @@ func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
 	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(4, 28, 4, 4)
 
-	var fitted_rect: Rect2i = _grid.call(
-		"_fit_frame_rect_to_cell",
-		cell_rect,
-		reference_client_size,
-		frame_margins
-	)
-
-	assert_gte(fitted_rect.position.x, cell_rect.position.x)
-	assert_gte(fitted_rect.position.y, cell_rect.position.y)
-	assert_lte(fitted_rect.end.x, cell_rect.end.x)
-	assert_lte(fitted_rect.end.y, cell_rect.end.y)
+	_assert_fit_frame_rect_inside_cell(cell_rect, reference_client_size, frame_margins)
 
 
 func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> void:
@@ -144,17 +134,7 @@ func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> voi
 	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(4, 28, 4, 4)
 
-	var fitted_rect: Rect2i = _grid.call(
-		"_fit_frame_rect_to_cell",
-		cell_rect,
-		reference_client_size,
-		frame_margins
-	)
-
-	assert_gte(fitted_rect.position.x, cell_rect.position.x)
-	assert_gte(fitted_rect.position.y, cell_rect.position.y)
-	assert_lte(fitted_rect.end.x, cell_rect.end.x)
-	assert_lte(fitted_rect.end.y, cell_rect.end.y)
+	_assert_fit_frame_rect_inside_cell(cell_rect, reference_client_size, frame_margins)
 
 
 func test_frame_border_is_hardcoded_not_measured_to_avoid_window_gaps() -> void:
@@ -309,6 +289,24 @@ func _should_fit(
 		stretch_mode,
 		stretch_aspect
 	)
+
+
+func _assert_fit_frame_rect_inside_cell(
+	cell_rect: Rect2i,
+	reference_client_size: Vector2i,
+	frame_margins: Vector4i
+) -> void:
+	var fitted_rect: Rect2i = _grid.call(
+		"_fit_frame_rect_to_cell",
+		cell_rect,
+		reference_client_size,
+		frame_margins
+	)
+
+	assert_gte(fitted_rect.position.x, cell_rect.position.x)
+	assert_gte(fitted_rect.position.y, cell_rect.position.y)
+	assert_lte(fitted_rect.end.x, cell_rect.end.x)
+	assert_lte(fitted_rect.end.y, cell_rect.end.y)
 
 
 func _attach_grid_to_multiplayer_root(root: Node, index: int, count: int) -> void:

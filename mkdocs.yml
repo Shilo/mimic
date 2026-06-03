@@ -56,6 +56,7 @@ plugins:
           - guides/project_settings.md: Mimic Project Settings reference.
           - guides/websockets.md: WebSocket and browser deployment guidance.
           - guides/deployment.md: Practical deployment notes.
+          - guides/ai_quality_workflow.md: AI-focused quality, duplicate-code, and regression workflow.
         Reference:
           - nodes/mimic.md: Runtime singleton teaching page.
           - nodes/mimic_connector.md: Connector node teaching page.
@@ -93,6 +94,7 @@ nav:
       - Project Settings: guides/project_settings.md
       - WebSockets: guides/websockets.md
       - Deployment: guides/deployment.md
+      - AI Quality Workflow: guides/ai_quality_workflow.md
   - Examples:
       - Single To Multiplayer: examples/single_to_multiplayer.md
   - Other Multiplayer Addons:

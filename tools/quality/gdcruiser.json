@@ -1,0 +1,33 @@
+{
+	"options": {
+		"exclude": [
+			"^res://addons/gut/",
+			"^res://build/",
+			"^res://docs/api/",
+			"^res://site/",
+			"^res://test/.output/"
+		]
+	},
+	"forbidden": [
+		{
+			"name": "no-addon-to-examples-or-tests",
+			"comment": "Production addon code must not depend on examples or regression tests.",
+			"from": {
+				"path": "^res://addons/mimic/"
+			},
+			"to": {
+				"path": "^res://(examples|test)/"
+			}
+		},
+		{
+			"name": "no-addon-to-dev-tooling",
+			"comment": "Quality and documentation tooling must stay outside addon runtime dependencies.",
+			"from": {
+				"path": "^res://addons/mimic/"
+			},
+			"to": {
+				"path": "^res://(docs|tools)/"
+			}
+		}
+	]
+}

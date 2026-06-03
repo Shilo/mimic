@@ -107,11 +107,3 @@ func _on_peer_disconnected(peer_id: int) -> void:
 func _on_stopped() -> void:
 	MimicLog.log("Networking stopped")
 ```
-
-## Verify Locally
-
-From this repository, run:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1
-```

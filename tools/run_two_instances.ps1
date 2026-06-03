@@ -11,7 +11,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 
 if ([string]::IsNullOrWhiteSpace($ResultsDir)) {
 	$ResultsDir = Join-Path $repoRoot "test/.output"
@@ -121,18 +121,36 @@ function Stop-IfRunning {
 	}
 }
 
+function Start-GodotProbe {
+	param(
+		[string[]] $Arguments,
+		[string] $StandardOutputPath,
+		[string] $StandardErrorPath
+	)
+
+	$startParameters = @{
+		FilePath = $godotExecutable
+		ArgumentList = $Arguments
+		RedirectStandardOutput = $StandardOutputPath
+		RedirectStandardError = $StandardErrorPath
+		PassThru = $true
+	}
+	if ($env:OS -eq "Windows_NT") {
+		$startParameters["WindowStyle"] = "Hidden"
+	}
+
+	return Start-Process @startParameters
+}
+
 $server = $null
 $client = $null
 $godotExecutable = Resolve-GodotPath
 
 try {
-	$server = Start-Process `
-		-FilePath $godotExecutable `
-		-ArgumentList (New-GodotArgumentList "server") `
-		-RedirectStandardOutput $serverOut `
-		-RedirectStandardError $serverErr `
-		-WindowStyle Hidden `
-		-PassThru
+	$server = Start-GodotProbe `
+		-Arguments (New-GodotArgumentList "server") `
+		-StandardOutputPath $serverOut `
+		-StandardErrorPath $serverErr
 
 	$serverReady = Wait-ForLogLine `
 		-Path $serverOut `
@@ -143,13 +161,10 @@ try {
 		throw "Server probe did not become ready before the client started. See $serverOut and $serverErr."
 	}
 
-	$client = Start-Process `
-		-FilePath $godotExecutable `
-		-ArgumentList (New-GodotArgumentList "client") `
-		-RedirectStandardOutput $clientOut `
-		-RedirectStandardError $clientErr `
-		-WindowStyle Hidden `
-		-PassThru
+	$client = Start-GodotProbe `
+		-Arguments (New-GodotArgumentList "client") `
+		-StandardOutputPath $clientOut `
+		-StandardErrorPath $clientErr
 
 	Wait-Process -Id $server.Id, $client.Id -Timeout $TimeoutSeconds -ErrorAction Stop
 	$server.Refresh()

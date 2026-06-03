@@ -1,0 +1,122 @@
+name: Quality
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/quality.yml"
+      - ".gitignore"
+      - "AGENTS.md"
+      - "addons/mimic/**/*.gd"
+      - "addons/mimic/**/*.res"
+      - "addons/mimic/**/*.tres"
+      - "addons/mimic/**/*.tscn"
+      - "addons/mimic/plugin.cfg"
+      - "CLAUDE.md"
+      - "export_presets.cfg"
+      - "examples/**/*.gd"
+      - "examples/**/*.res"
+      - "examples/**/*.tres"
+      - "examples/**/*.tscn"
+      - "project.godot"
+      - "test/**/*.gd"
+      - "test/**/*.res"
+      - "test/**/*.tres"
+      - "test/**/*.tscn"
+      - "tools/.gdignore"
+      - "tools/*.ps1"
+      - "tools/**/*.ps1"
+      - "tools/quality/**"
+      - "README.md"
+      - "docs/guides/ai_quality_workflow.md"
+      - "mkdocs.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/quality.yml"
+      - ".gitignore"
+      - "AGENTS.md"
+      - "addons/mimic/**/*.gd"
+      - "addons/mimic/**/*.res"
+      - "addons/mimic/**/*.tres"
+      - "addons/mimic/**/*.tscn"
+      - "addons/mimic/plugin.cfg"
+      - "CLAUDE.md"
+      - "export_presets.cfg"
+      - "examples/**/*.gd"
+      - "examples/**/*.res"
+      - "examples/**/*.tres"
+      - "examples/**/*.tscn"
+      - "project.godot"
+      - "test/**/*.gd"
+      - "test/**/*.res"
+      - "test/**/*.tres"
+      - "test/**/*.tscn"
+      - "tools/.gdignore"
+      - "tools/*.ps1"
+      - "tools/**/*.ps1"
+      - "tools/quality/**"
+      - "README.md"
+      - "docs/guides/ai_quality_workflow.md"
+      - "mkdocs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static_quality:
+    name: Static Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/quality/package-lock.json
+
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache bootstrapped quality tools
+        uses: actions/cache@v4
+        with:
+          path: tools/.bin
+          key: quality-tools-${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('tools/quality.ps1', 'tools/quality/gdstyle.toml', 'tools/quality/gdcruiser.json', 'tools/quality/requirements_quality.txt') }}
+
+      - name: Run Mimic quality checks
+        shell: pwsh
+        run: ./tools/quality.ps1 -BootstrapTools
+
+  godot_regression:
+    name: Godot Regression
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: "4.6.3"
+          use-dotnet: false
+          include-templates: false
+
+      - name: Verify Godot setup
+        shell: pwsh
+        run: godot --version
+
+      - name: Run Godot regression checks
+        shell: pwsh
+        run: ./tools/verify.ps1 -SkipQuality

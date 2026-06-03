@@ -1,0 +1,2 @@
+gdcruiser==1.7.0 \
+    --hash=sha256:8b270694c5660f93f0c5daa03ece2a2c182378c388bab7de306544714a421e06
