@@ -57,6 +57,7 @@ func _ready() -> void:
 	var index := markers.find(marker)
 
 	if index < 0 or markers.size() < 2:
+		_remove_marker(marker)
 		return
 
 	if _APPEND_WINDOW_INDEX:
@@ -379,6 +380,12 @@ func _on_multiplayer_state_changed() -> void:
 
 func _on_multiplayer_peer_connection_changed(_peer_id: int) -> void:
 	_refresh_connection_title()
+
+
+func _remove_marker(marker: String) -> void:
+	var path := "%s/%s" % [_DIR, marker]
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
 
 
 func _now_ms() -> int:
