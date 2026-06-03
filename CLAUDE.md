@@ -20,7 +20,7 @@ Consistency updates: When changing public behavior, public API, Project Settings
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
-Testing and automation: Treat tests as regression guardrails for AI-assisted changes, not as a mandatory TDD ceremony. Add or update GUT tests in `res://test/unit/` when changing public Mimic behavior, fixing bugs, or touching connection lifecycle, project settings, editor plugin behavior, networking helpers, or example flows that should stay stable. For meaningful feature changes, behavior changes, and risky refactors, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1` before final response; for especially risky work, run it before and after the change to catch regressions early. Do not add tests for docs-only edits, comments-only edits, or mechanical formatting with no behavior impact. Use `tools/run_two_instances.ps1` for explicit local ENet server/client smoke coverage; prefer these deterministic CLI scripts over MCP as the source of truth for CI-style verification.
+Testing and automation: Treat tests as regression guardrails for AI-assisted changes, not as a mandatory TDD ceremony. Add or update GUT tests in `res://test/unit/` when changing public Mimic behavior, fixing bugs, or touching connection lifecycle, project settings, editor plugin behavior, networking helpers, or example flows that should stay stable. For meaningful feature changes, behavior changes, and risky refactors, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1` before final response; for especially risky work, run it before and after the change to catch regressions early. Use `powershell -NoProfile -ExecutionPolicy Bypass -File tools/quality.ps1` for the fast AI-focused quality gate: Mimic policy and public API documentation checks, PowerShell syntax checks, lockfile-backed `jscpd@4.2.4` duplicate-code detection with a committed baseline, optional hash-locked `gdcruiser==1.7.0` dependency architecture checks, and optional checksum-verified `gdstyle v0.1.4` diagnostics. Do not add tests for docs-only edits, comments-only edits, or mechanical formatting with no behavior impact. Use `tools/run_two_instances.ps1` for explicit local ENet server/client smoke coverage; prefer these deterministic CLI scripts over MCP as the source of truth for CI-style verification.
 
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
 
@@ -84,6 +84,12 @@ test/integration/mimic_connection_probe.gd: Explicit server/client probe script 
 tools/: Local PowerShell automation entry points.
 tools/godot.ps1: Repo-local Godot CLI wrapper with Godot 4.6.3 fallback.
 tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, ENet explicit/auto-connect smoke, and WebSocket smoke.
+tools/quality.ps1: Fast AI-focused quality gate for Mimic policy and public API documentation checks, PowerShell syntax checks, duplicate-code detection, dependency architecture checks, and GDScript style diagnostics.
+tools/quality/: Static quality tool configuration kept out of Godot's resource scan by tools/.gdignore.
+tools/quality/jscpd_baseline.json: Committed duplicate-code baseline used by the jscpd ratchet.
+tools/quality/package.json: Local Node tool manifest for locked jscpd execution.
+tools/quality/package-lock.json: npm lockfile with integrity hashes for jscpd and its transitive dependencies.
+tools/quality/requirements_quality.txt: Hash-locked Python requirement used when bootstrapping gdcruiser.
 tools/run_two_instances.ps1: Explicit ENet/WebSocket server/client and auto-connect smoke test runner.
 tools/mkdocs_hooks.py: MkDocs hook that generates API docs and copies SVG/PNG brand assets into the built documentation site.
 ```

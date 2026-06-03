@@ -1,0 +1,16 @@
+{
+  "allowedClones": [
+    {
+      "firstFile": "test/unit/test_mimic_connection_processes.gd",
+      "secondFile": "test/unit/test_mimic_project_settings.gd",
+      "fragmentSha256": "a7d8d8b02bcecf0e361e9cb65fd9a461e268320e782d0ecec748efbd568b0a2e",
+      "reason": "Shared ProjectSettings key list in existing unit tests."
+    },
+    {
+      "firstFile": "test/unit/test_mimic_connection_processes.gd",
+      "secondFile": "test/unit/test_mimic_runtime.gd",
+      "fragmentSha256": "240492ff019629bd2be5cd41ecfcd856c55562bb2c1ad53391f4ff4a5605ba29",
+      "reason": "Shared ProjectSettings save/restore helper in existing unit tests."
+    }
+  ]
+}

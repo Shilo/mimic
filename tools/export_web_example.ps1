@@ -56,5 +56,60 @@ $arguments += @(
 	(Join-Path $outputPath "index.html")
 )
 
-& $godotScript @arguments
-exit $LASTEXITCODE
+function Get-PowerShellExecutable {
+	$binaryName = "powershell.exe"
+	if ($PSVersionTable.PSEdition -eq "Core") {
+		$binaryName = "pwsh.exe"
+		if (-not ($env:OS -eq "Windows_NT")) {
+			$binaryName = "pwsh"
+		}
+	}
+
+	$hostPath = Join-Path $PSHOME $binaryName
+	if (Test-Path -LiteralPath $hostPath) {
+		return $hostPath
+	}
+
+	if ($PSVersionTable.PSEdition -eq "Core") {
+		return "pwsh"
+	}
+	return "powershell"
+}
+
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+	$exportOutput = & (Get-PowerShellExecutable) -NoProfile -ExecutionPolicy Bypass -File $godotScript @arguments 2>&1
+	$exportExitCode = $LASTEXITCODE
+} finally {
+	$ErrorActionPreference = $previousErrorActionPreference
+}
+$exportOutput | ForEach-Object { Write-Output $_ }
+
+if ($exportExitCode -ne 0) {
+	exit $exportExitCode
+}
+
+if ($exportOutput -match "Cannot export project|Project export .* failed") {
+	exit 1
+}
+
+$expectedArtifacts = @(
+	"index.html",
+	"index.js",
+	"index.pck",
+	"index.wasm"
+)
+
+$missingArtifacts = @()
+foreach ($artifact in $expectedArtifacts) {
+	if (-not (Test-Path -LiteralPath (Join-Path $outputPath $artifact))) {
+		$missingArtifacts += $artifact
+	}
+}
+
+if ($missingArtifacts.Count -gt 0) {
+	throw "Godot export did not write expected web artifact(s): $($missingArtifacts -join ', ')."
+}
+
+exit 0

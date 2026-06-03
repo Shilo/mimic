@@ -1,0 +1,46 @@
+# Mimic runs gdstyle as a cautious advisory/error gate for AI-generated GDScript.
+# This config intentionally checks only project-owned scripts selected by
+# tools/quality.ps1; vendored GUT files stay out of scope.
+
+max_line_length = 100
+use_tabs = true
+max_function_length = 70
+max_file_length = 700
+max_parameters = 7
+max_returns = 8
+max_nesting_depth = 4
+max_local_variables = 14
+max_branches = 10
+max_class_variables = 30
+max_public_methods = 25
+max_inner_classes = 5
+exclude = [
+	".godot",
+	"addons/gut",
+	"build",
+	"docs/api",
+	"test/.output",
+	"tools",
+]
+
+[rules]
+"syntax/lex-error" = "error"
+"naming/file-name-snake-case" = "error"
+"format/trailing-whitespace" = "error"
+"format/trailing-newline" = "error"
+"format/no-tabs-as-spaces" = "error"
+"format/one-statement-per-line" = "error"
+"quality/self-comparison" = "error"
+"quality/no-self-assign" = "error"
+"quality/duplicate-dict-key" = "error"
+"quality/duplicated-load" = "error"
+"quality/unreachable-code" = "error"
+"quality/await-in-loop" = "error"
+"quality/allocation-in-loop" = "error"
+"quality/process-get-node" = "error"
+"quality/no-debug-print" = "warn"
+"quality/type-hint" = "warn"
+"quality/max-function-length" = "warn"
+"quality/max-file-length" = "warn"
+"quality/max-public-methods" = "warn"
+"quality/max-class-variables" = "warn"

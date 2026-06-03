@@ -1,0 +1,7 @@
+{
+  "name": "mimic-quality-tools",
+  "private": true,
+  "devDependencies": {
+    "jscpd": "4.2.4"
+  }
+}

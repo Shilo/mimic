@@ -3,6 +3,8 @@
 /android/
 .vscode/settings.json
 /test/.output/
+/tools/.bin/
+/tools/quality/node_modules/
 __pycache__/
 
 # Generated documentation and export artifacts
