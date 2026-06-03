@@ -18,14 +18,15 @@ func after_each() -> void:
 	_restore_log_level()
 
 
-func test_line_includes_stack_caller_tag_when_available() -> void:
+func test_line_includes_stack_source_tag_when_available() -> void:
 	var line := _make_logged_line_from_test()
 
 	assert_string_contains(line, "[test_mimic_log._make_logged_line_from_test]")
+	assert_false(line.contains("[Mimic]"))
 	assert_string_contains(line, "hello 42")
 
 
-func test_log_formats_message_with_caller_tag() -> void:
+func test_log_formats_message_with_source_tag() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ALL)
 
 	_call_log()
@@ -33,7 +34,7 @@ func test_log_formats_message_with_caller_tag() -> void:
 	_assert_captured_line(MimicLog.Level.ALL, "[test_mimic_log._call_log]", "info 123")
 
 
-func test_warning_formats_message_with_caller_tag() -> void:
+func test_warning_formats_message_with_source_tag() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.WARNING)
 
 	_call_warning()
@@ -41,7 +42,7 @@ func test_warning_formats_message_with_caller_tag() -> void:
 	_assert_captured_line(MimicLog.Level.WARNING, "[test_mimic_log._call_warning]", "warn 456")
 
 
-func test_error_formats_message_with_caller_tag() -> void:
+func test_error_formats_message_with_source_tag() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ERROR)
 
 	_call_error()
@@ -49,7 +50,7 @@ func test_error_formats_message_with_caller_tag() -> void:
 	_assert_captured_line(MimicLog.Level.ERROR, "[test_mimic_log._call_error]", "err 789")
 
 
-func test_forced_log_formats_message_with_caller_tag_when_logs_disabled() -> void:
+func test_forced_log_formats_message_with_source_tag_when_logs_disabled() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_log()
@@ -57,7 +58,7 @@ func test_forced_log_formats_message_with_caller_tag_when_logs_disabled() -> voi
 	_assert_captured_line(MimicLog.Level.ALL, "[test_mimic_log._call_forced_log]", "marker ok")
 
 
-func test_forced_warning_formats_message_with_caller_tag_when_logs_disabled() -> void:
+func test_forced_warning_formats_message_with_source_tag_when_logs_disabled() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_warning()
@@ -65,7 +66,7 @@ func test_forced_warning_formats_message_with_caller_tag_when_logs_disabled() ->
 	_assert_captured_line(MimicLog.Level.WARNING, "[test_mimic_log._call_forced_warning]", "setup warning")
 
 
-func test_forced_error_formats_message_with_caller_tag_when_logs_disabled() -> void:
+func test_forced_error_formats_message_with_source_tag_when_logs_disabled() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_error()
@@ -73,11 +74,17 @@ func test_forced_error_formats_message_with_caller_tag_when_logs_disabled() -> v
 	_assert_captured_line(MimicLog.Level.ERROR, "[test_mimic_log._call_forced_error]", "probe failure")
 
 
-func test_format_caller_tag_uses_source_and_function() -> void:
-	assert_eq(MimicLog._format_caller_tag("res://addons/mimic/mimic.gd", "start_server"), "[mimic.start_server]")
-	assert_eq(MimicLog._format_caller_tag("res://addons/mimic/mimic.gd", ""), "[mimic]")
-	assert_eq(MimicLog._format_caller_tag("", "anonymous"), "[anonymous]")
-	assert_eq(MimicLog._format_caller_tag("", ""), "")
+func test_format_caller_name_uses_source_and_function() -> void:
+	assert_eq(MimicLog._format_caller_name("res://addons/mimic/mimic.gd", "start_server"), "mimic.start_server")
+	assert_eq(MimicLog._format_caller_name("res://addons/mimic/mimic.gd", ""), "mimic")
+	assert_eq(MimicLog._format_caller_name("", "anonymous"), "anonymous")
+	assert_eq(MimicLog._format_caller_name("", ""), "")
+
+
+func test_format_source_tag_uses_peer_id_prefix_when_available() -> void:
+	assert_eq(MimicLog._format_source_tag("mimic._on_connected_to_server", 2), "[2 mimic._on_connected_to_server]")
+	assert_eq(MimicLog._format_source_tag("mimic._start_server", 0), "[mimic._start_server]")
+	assert_eq(MimicLog._format_source_tag("", 2), "[2 Mimic]")
 
 
 func _call_log() -> void:
@@ -111,7 +118,7 @@ func _capture_output(level: MimicLog.Level, message: String) -> void:
 	})
 
 
-func _assert_captured_line(level: MimicLog.Level, caller_tag: String, expected_message: String) -> void:
+func _assert_captured_line(level: MimicLog.Level, source_tag: String, expected_message: String) -> void:
 	assert_eq(_captured_lines.size(), 1)
 	if _captured_lines.is_empty():
 		return
@@ -120,8 +127,8 @@ func _assert_captured_line(level: MimicLog.Level, caller_tag: String, expected_m
 	var message := String(captured_line["message"])
 	assert_eq(captured_line["level"], level)
 	_assert_timestamp_prefix(message)
-	assert_string_contains(message, "[Mimic]")
-	assert_string_contains(message, caller_tag)
+	assert_string_contains(message, source_tag)
+	assert_false(message.contains("[Mimic]"))
 	assert_string_contains(message, expected_message)
 
 

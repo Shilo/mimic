@@ -334,10 +334,10 @@ mimic_multiplayer/debug/log_level: All, Warning, Error, None
 Example log line:
 
 ```text
-05-29 22:14:03 [Mimic 2] [mimic._on_connected_to_server] Connected to server.
+05-29 22:14:03 [2 mimic._on_connected_to_server] Connected to server.
 ```
 
-The number inside the Mimic tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID. The caller tag appears when GDScript call stacks are available; release exports need `debug/settings/gdscript/always_track_call_stacks` enabled to include it.
+The number inside the source tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID. The source tag falls back to `Mimic` when GDScript call stacks are unavailable; release exports need `debug/settings/gdscript/always_track_call_stacks` enabled to include caller names.
 
 Use `MimicLog.log()`, `MimicLog.warning()`, and `MimicLog.error()` for messages that should respect `mimic_multiplayer/debug/log_level`. Use `MimicLog.log_forced()`, `MimicLog.warning_forced()`, and `MimicLog.error_forced()` for diagnostics that should always output logs.
 

@@ -2,10 +2,10 @@ class_name MimicLog extends Object
 ## Small logging wrapper used by Mimic connection helpers.
 ## [br][br]
 ## Messages are filtered by [member MimicProjectSettings.log_level] and include
-## a compact timestamp. Editor-launched runs also include the local multiplayer
-## ID when available so multi-instance logs are easier to distinguish. When
-## GDScript call stacks are available, each line also includes the source method
-## that called MimicLog.
+## a compact timestamp plus a source tag. When GDScript call stacks are available,
+## the source tag names the method that called MimicLog. Editor-launched runs also
+## include the local multiplayer ID when available so multi-instance logs are
+## easier to distinguish.
 
 ## Output levels available for Mimic logs.
 enum Level {
@@ -75,10 +75,7 @@ static func _should_log(message_level: Level) -> bool:
 
 
 static func _line(objects: Array) -> String:
-	var parts := PackedStringArray([_timestamp(), _get_name_tag()])
-	var caller_tag := _get_caller_tag()
-	if not caller_tag.is_empty():
-		parts.append(caller_tag)
+	var parts := PackedStringArray([_timestamp(), _get_source_tag()])
 
 	var message := _join(objects)
 	if not message.is_empty():
@@ -87,36 +84,40 @@ static func _line(objects: Array) -> String:
 	return " ".join(parts)
 
 
-static func _get_name_tag() -> String:
-	const NAME := "Mimic"
+static func _get_source_tag() -> String:
+	var caller_name := _get_caller_name()
+	if _is_editor_feature:
+		return _format_source_tag(caller_name, _get_local_peer_id())
 
-	if not _is_editor_feature:
-		return "[%s]" % NAME
-
-	var peer_id := _get_local_peer_id()
-	if peer_id <= 0:
-		return "[%s]" % NAME
-	return "[%s %d]" % [NAME, peer_id]
+	return _format_source_tag(caller_name, 0)
 
 
-static func _get_caller_tag() -> String:
+static func _format_source_tag(caller_name: String, peer_id: int) -> String:
+	if caller_name.is_empty():
+		caller_name = "Mimic"
+	if peer_id > 0:
+		return "[%d %s]" % [peer_id, caller_name]
+	return "[%s]" % caller_name
+
+
+static func _get_caller_name() -> String:
 	for frame in get_stack():
 		var source := String(frame.get("source", ""))
 		if source.get_file() == "mimic_log.gd":
 			continue
 
-		return _format_caller_tag(source, String(frame.get("function", "")))
+		return _format_caller_name(source, String(frame.get("function", "")))
 
 	return ""
 
 
-static func _format_caller_tag(source: String, function_name: String) -> String:
+static func _format_caller_name(source: String, function_name: String) -> String:
 	var source_name := source.get_file().get_basename()
 	if source_name.is_empty():
-		return "[%s]" % function_name if not function_name.is_empty() else ""
+		return function_name
 	if function_name.is_empty():
-		return "[%s]" % source_name
-	return "[%s.%s]" % [source_name, function_name]
+		return source_name
+	return "%s.%s" % [source_name, function_name]
 
 
 static func _timestamp() -> String:
