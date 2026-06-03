@@ -27,8 +27,6 @@ enum Level {
 	NONE,
 }
 
-static var _is_editor_feature := OS.has_feature("editor")
-
 # BBCode color applied to the timestamp and source tag prefix on the editor print path.
 const _PREFIX_COLOR := "#808080"
 
@@ -40,6 +38,8 @@ const _PREFIX_COLOR := "#808080"
 ## The callable receives [code](level: MimicLog.Level, message: String)[/code],
 ## where [code]message[/code] is the fully formatted log line without editor color markup.
 static var output_handler: Callable = Callable()
+
+static var _is_editor_feature := OS.has_feature("editor")
 
 
 ## Prints an informational Mimic log message when the current log level allows it.
