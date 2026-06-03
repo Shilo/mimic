@@ -10,6 +10,7 @@ $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $godotWrapper = Join-Path $PSScriptRoot "godot.ps1"
 $resultsDir = Join-Path $repoRoot "test/.output"
 $junitPath = Join-Path $resultsDir "gut-junit.xml"
+$gutConfigPath = Join-Path $repoRoot ".gutconfig.json"
 
 New-Item -ItemType Directory -Force -Path $resultsDir | Out-Null
 
@@ -87,8 +88,10 @@ Invoke-Godot @(
 	$repoRoot,
 	"-s",
 	"res://addons/gut/gut_cmdln.gd",
-	"-gconfig=res://.gutconfig.json",
-	"-gjunit_xml_file=$junitPath",
+	"-gconfig",
+	$gutConfigPath,
+	"-gjunit_xml_file",
+	$junitPath,
 	"-gexit"
 )
 
