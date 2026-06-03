@@ -114,6 +114,57 @@ func test_grid_selection_uses_reference_aspect() -> void:
 	assert_eq(grid, Vector2i(2, 1))
 
 
+func test_should_fit_requires_active_stretch_mode() -> void:
+	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
+	var reference_client_size := Vector2i(1152, 648)
+
+	assert_false(_should_fit(cell_rect, reference_client_size, "disabled", "keep"))
+	assert_false(_should_fit(cell_rect, reference_client_size, "canvas_items", "ignore"))
+	assert_false(_should_fit(cell_rect, reference_client_size, "viewport", "expand"))
+
+
+func test_should_fit_keep_when_cell_aspect_differs() -> void:
+	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
+	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
+	var reference_client_size := Vector2i(1152, 648)
+
+	assert_true(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep"))
+	assert_true(_should_fit(wide_cell_rect, reference_client_size, "viewport", "keep"))
+
+
+func test_should_fill_keep_when_cell_client_aspect_matches() -> void:
+	var reference_client_size := Vector2i(1152, 648)
+	var matching_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1154, 680))
+
+	assert_false(_should_fit(matching_cell_rect, reference_client_size, "canvas_items", "keep"))
+
+
+func test_should_fit_keep_width_only_when_cell_is_wider() -> void:
+	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
+	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
+	var reference_client_size := Vector2i(1152, 648)
+
+	assert_true(_should_fit(wide_cell_rect, reference_client_size, "canvas_items", "keep_width"))
+	assert_false(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep_width"))
+
+
+func test_should_fit_keep_height_only_when_cell_is_taller() -> void:
+	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
+	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
+	var reference_client_size := Vector2i(1152, 648)
+
+	assert_true(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep_height"))
+	assert_false(_should_fit(wide_cell_rect, reference_client_size, "canvas_items", "keep_height"))
+
+
+func test_should_fit_uses_unclamped_cell_aspect_for_tiny_cells() -> void:
+	var tiny_wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(100, 40))
+	var reference_client_size := Vector2i(1152, 648)
+
+	assert_true(_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_width"))
+	assert_false(_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_height"))
+
+
 func _get_client_aspect(
 	frame_rect: Rect2i,
 	titlebar_height: int,
@@ -124,3 +175,20 @@ func _get_client_aspect(
 		titlebar_height + frame_border_size.y
 	)
 	return float(client_size.x) / float(client_size.y)
+
+
+func _should_fit(
+	cell_rect: Rect2i,
+	reference_client_size: Vector2i,
+	stretch_mode: String,
+	stretch_aspect: String
+) -> bool:
+	return _grid.call(
+		"_should_fit_to_cell_for_stretch",
+		cell_rect,
+		reference_client_size,
+		31,
+		Vector2i(1, 1),
+		stretch_mode,
+		stretch_aspect
+	)

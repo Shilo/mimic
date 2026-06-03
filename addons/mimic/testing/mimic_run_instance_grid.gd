@@ -19,6 +19,13 @@ const _SETTLE_STEP := 0.15
 const _STABLE_SCANS := 3
 const _MIN_SIZE := Vector2i(96, 96)
 const _APPEND_WINDOW_INDEX := true
+const _STRETCH_MODE_SETTING := "display/window/stretch/mode"
+const _STRETCH_ASPECT_SETTING := "display/window/stretch/aspect"
+const _STRETCH_MODE_CANVAS_ITEMS := "canvas_items"
+const _STRETCH_MODE_VIEWPORT := "viewport"
+const _STRETCH_ASPECT_KEEP := "keep"
+const _STRETCH_ASPECT_KEEP_WIDTH := "keep_width"
+const _STRETCH_ASPECT_KEEP_HEIGHT := "keep_height"
 
 var _base_title := ""
 
@@ -95,15 +102,23 @@ func _tile(index: int, count: int) -> void:
 	var cell_rect := _get_cell_rect(index, count, area, reference_client_size)
 	var titlebar_height := _get_titlebar_height()
 	var frame_border_size := _get_frame_border_size()
-	var frame_rect := _fit_frame_rect_to_cell(
+	var should_fit_to_cell := _should_fit_to_cell(
 		cell_rect,
 		reference_client_size,
 		titlebar_height,
 		frame_border_size
 	)
+	var frame_rect := cell_rect
+	if should_fit_to_cell:
+		frame_rect = _fit_frame_rect_to_cell(
+			cell_rect,
+			reference_client_size,
+			titlebar_height,
+			frame_border_size
+		)
 
 	var applied_client_size := _set_frame_rect(frame_rect, titlebar_height, frame_border_size)
-	_log_tile(index, count, cell_rect, frame_rect, applied_client_size)
+	_log_tile(index, count, should_fit_to_cell, cell_rect, frame_rect, applied_client_size)
 
 
 func _get_cell_rect(index: int, count: int, area: Rect2i, reference_client_size: Vector2i) -> Rect2i:
@@ -151,22 +166,92 @@ func _get_frame_border_size() -> Vector2i:
 	return Vector2i.ZERO
 
 
+func _should_fit_to_cell(
+	cell_rect: Rect2i,
+	reference_client_size: Vector2i,
+	titlebar_height: int,
+	frame_border_size := Vector2i.ZERO
+) -> bool:
+	var stretch_mode := String(ProjectSettings.get_setting(_STRETCH_MODE_SETTING, "disabled"))
+	var stretch_aspect := String(ProjectSettings.get_setting(_STRETCH_ASPECT_SETTING, _STRETCH_ASPECT_KEEP))
+	return _should_fit_to_cell_for_stretch(
+		cell_rect,
+		reference_client_size,
+		titlebar_height,
+		frame_border_size,
+		stretch_mode,
+		stretch_aspect
+	)
+
+
+func _should_fit_to_cell_for_stretch(
+	cell_rect: Rect2i,
+	reference_client_size: Vector2i,
+	titlebar_height: int,
+	frame_border_size: Vector2i,
+	stretch_mode: String,
+	stretch_aspect: String
+) -> bool:
+	if stretch_mode != _STRETCH_MODE_CANVAS_ITEMS and stretch_mode != _STRETCH_MODE_VIEWPORT:
+		return false
+
+	var target_client_size := _get_unclamped_frame_client_size(
+		cell_rect.size,
+		titlebar_height,
+		frame_border_size
+	).max(Vector2i(1, 1))
+	var reference_aspect := _get_aspect(reference_client_size)
+	var target_aspect := _get_aspect(target_client_size)
+	if is_equal_approx(reference_aspect, target_aspect):
+		return false
+
+	if stretch_aspect == _STRETCH_ASPECT_KEEP:
+		return true
+	if stretch_aspect == _STRETCH_ASPECT_KEEP_WIDTH:
+		return target_aspect > reference_aspect
+	if stretch_aspect == _STRETCH_ASPECT_KEEP_HEIGHT:
+		return target_aspect < reference_aspect
+
+	return false
+
+
 func _fit_frame_rect_to_cell(
 	cell_rect: Rect2i,
 	reference_client_size: Vector2i,
 	titlebar_height: int,
 	frame_border_size := Vector2i.ZERO
 ) -> Rect2i:
-	var frame_chrome_size := Vector2i(
-		frame_border_size.x * 2,
-		titlebar_height + frame_border_size.y
+	var frame_chrome_size := _get_frame_chrome_size(titlebar_height, frame_border_size)
+	var available_client_size := _get_frame_client_size(
+		cell_rect.size,
+		titlebar_height,
+		frame_border_size
 	)
-	var available_client_size := (cell_rect.size - frame_chrome_size).max(_MIN_SIZE)
 	var fitted_client_size := _fit_size_to_aspect(available_client_size, reference_client_size)
 	var fitted_frame_size := fitted_client_size + frame_chrome_size
 	var fitted_frame_position := cell_rect.position + (cell_rect.size - fitted_frame_size) / 2
 
 	return Rect2i(fitted_frame_position, fitted_frame_size)
+
+
+func _get_frame_chrome_size(titlebar_height: int, frame_border_size := Vector2i.ZERO) -> Vector2i:
+	return Vector2i(frame_border_size.x * 2, titlebar_height + frame_border_size.y)
+
+
+func _get_frame_client_size(
+	frame_size: Vector2i,
+	titlebar_height: int,
+	frame_border_size := Vector2i.ZERO
+) -> Vector2i:
+	return _get_unclamped_frame_client_size(frame_size, titlebar_height, frame_border_size).max(_MIN_SIZE)
+
+
+func _get_unclamped_frame_client_size(
+	frame_size: Vector2i,
+	titlebar_height: int,
+	frame_border_size := Vector2i.ZERO
+) -> Vector2i:
+	return frame_size - _get_frame_chrome_size(titlebar_height, frame_border_size)
 
 
 func _fit_size_to_aspect(available_size: Vector2i, reference_size: Vector2i) -> Vector2i:
@@ -190,11 +275,8 @@ func _get_aspect(size: Vector2i) -> float:
 
 
 func _set_frame_rect(rect: Rect2i, titlebar_height: int, frame_border_size := Vector2i.ZERO) -> Vector2i:
-	var frame_chrome_size := Vector2i(
-		frame_border_size.x * 2,
-		titlebar_height + frame_border_size.y
-	)
-	var client_size := (rect.size - frame_chrome_size).max(_MIN_SIZE)
+	var frame_chrome_size := _get_frame_chrome_size(titlebar_height, frame_border_size)
+	var client_size := _get_frame_client_size(rect.size, titlebar_height, frame_border_size)
 	var frame_size := client_size + frame_chrome_size
 	var frame_position := rect.position + (rect.size - frame_size) / 2
 
@@ -204,11 +286,20 @@ func _set_frame_rect(rect: Rect2i, titlebar_height: int, frame_border_size := Ve
 	return client_size
 
 
-func _log_tile(index: int, count: int, cell_rect: Rect2i, frame_rect: Rect2i, client_size: Vector2i) -> void:
+func _log_tile(
+	index: int,
+	count: int,
+	should_fit_to_cell: bool,
+	cell_rect: Rect2i,
+	frame_rect: Rect2i,
+	client_size: Vector2i
+) -> void:
+	var layout_mode := "fit" if should_fit_to_cell else "fill"
 	MimicLog.log_forced(
-		"Run instance grid %d/%d: cell=%s frame=%s client=%s" % [
+		"Run instance grid %d/%d: %s cell=%s frame=%s client=%s" % [
 			index + 1,
 			count,
+			layout_mode,
 			str(cell_rect),
 			str(frame_rect),
 			str(client_size),
