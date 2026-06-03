@@ -91,21 +91,45 @@ func _get_markers(started_at: int) -> Array[String]:
 
 func _tile(index: int, count: int) -> void:
 	var area := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
-	var grid := _get_grid(count, area.size)
+	var reference_client_size := _get_reference_client_size()
+	var cell_rect := _get_cell_rect(index, count, area, reference_client_size)
+	var titlebar_height := _get_titlebar_height()
+	var frame_border_size := _get_frame_border_size()
+	var frame_rect := _fit_frame_rect_to_cell(
+		cell_rect,
+		reference_client_size,
+		titlebar_height,
+		frame_border_size
+	)
+
+	var applied_client_size := _set_frame_rect(frame_rect, titlebar_height, frame_border_size)
+	_log_tile(index, count, cell_rect, frame_rect, applied_client_size)
+
+
+func _get_cell_rect(index: int, count: int, area: Rect2i, reference_client_size: Vector2i) -> Rect2i:
+	var grid := _get_grid(count, area.size, _get_aspect(reference_client_size))
 	var cell := Vector2i(area.size.x / grid.x, area.size.y / grid.y)
 	var slot := Vector2i(index % grid.x, index / grid.x)
 
-	_set_outer_rect(Rect2i(area.position + slot * cell, cell))
+	return Rect2i(area.position + slot * cell, cell)
 
 
-func _get_grid(count: int, screen_size: Vector2i) -> Vector2i:
+func _get_reference_client_size() -> Vector2i:
+	var reference_size := get_window().content_scale_size
+	if reference_size.x <= 0 or reference_size.y <= 0:
+		reference_size = DisplayServer.window_get_size()
+
+	return reference_size.max(_MIN_SIZE)
+
+
+func _get_grid(count: int, screen_size: Vector2i, target_aspect := 16.0 / 9.0) -> Vector2i:
 	var best := Vector2i(count, 1)
 	var best_score := INF
 
 	for rows in range(1, count + 1):
 		var columns := ceili(float(count) / rows)
 		var cell := Vector2(float(screen_size.x) / columns, float(screen_size.y) / rows)
-		var score := abs(cell.aspect() - 16.0 / 9.0)
+		var score := abs(cell.aspect() - target_aspect)
 
 		if score < best_score:
 			best_score = score
@@ -114,19 +138,82 @@ func _get_grid(count: int, screen_size: Vector2i) -> Vector2i:
 	return best
 
 
-func _set_outer_rect(rect: Rect2i) -> void:
+func _get_titlebar_height() -> int:
 	var client_position := DisplayServer.window_get_position()
 	var outer_position := DisplayServer.window_get_position_with_decorations()
-	var client_size := DisplayServer.window_get_size()
-	var outer_size := DisplayServer.window_get_size_with_decorations()
+	return maxi(0, client_position.y - outer_position.y)
 
-	var decoration_offset := client_position - outer_position
-	var decoration_size := outer_size - client_size
-	var bottom_decoration := decoration_size.y - decoration_offset.y
-	var decorated_size := rect.size + Vector2i(decoration_size.x, bottom_decoration)
 
-	get_window().size = (decorated_size - decoration_size).max(_MIN_SIZE)
-	get_window().position = rect.position + Vector2i(0, decoration_offset.y)
+func _get_frame_border_size() -> Vector2i:
+	if OS.has_feature("windows"):
+		return Vector2i(1, 1)
+
+	return Vector2i.ZERO
+
+
+func _fit_frame_rect_to_cell(
+	cell_rect: Rect2i,
+	reference_client_size: Vector2i,
+	titlebar_height: int,
+	frame_border_size := Vector2i.ZERO
+) -> Rect2i:
+	var frame_chrome_size := Vector2i(
+		frame_border_size.x * 2,
+		titlebar_height + frame_border_size.y
+	)
+	var available_client_size := (cell_rect.size - frame_chrome_size).max(_MIN_SIZE)
+	var fitted_client_size := _fit_size_to_aspect(available_client_size, reference_client_size)
+	var fitted_frame_size := fitted_client_size + frame_chrome_size
+	var fitted_frame_position := cell_rect.position + (cell_rect.size - fitted_frame_size) / 2
+
+	return Rect2i(fitted_frame_position, fitted_frame_size)
+
+
+func _fit_size_to_aspect(available_size: Vector2i, reference_size: Vector2i) -> Vector2i:
+	if reference_size.x <= 0 or reference_size.y <= 0:
+		return available_size
+
+	var aspect := _get_aspect(reference_size)
+	var height_from_width := maxi(1, floori(float(available_size.x) / aspect))
+	if height_from_width <= available_size.y:
+		return Vector2i(available_size.x, height_from_width)
+
+	var width_from_height := maxi(1, floori(float(available_size.y) * aspect))
+	return Vector2i(width_from_height, available_size.y)
+
+
+func _get_aspect(size: Vector2i) -> float:
+	if size.y <= 0:
+		return 16.0 / 9.0
+
+	return float(size.x) / float(size.y)
+
+
+func _set_frame_rect(rect: Rect2i, titlebar_height: int, frame_border_size := Vector2i.ZERO) -> Vector2i:
+	var frame_chrome_size := Vector2i(
+		frame_border_size.x * 2,
+		titlebar_height + frame_border_size.y
+	)
+	var client_size := (rect.size - frame_chrome_size).max(_MIN_SIZE)
+	var frame_size := client_size + frame_chrome_size
+	var frame_position := rect.position + (rect.size - frame_size) / 2
+
+	get_window().size = client_size
+	get_window().position = frame_position + Vector2i(frame_border_size.x, titlebar_height)
+
+	return client_size
+
+
+func _log_tile(index: int, count: int, cell_rect: Rect2i, frame_rect: Rect2i, client_size: Vector2i) -> void:
+	MimicLog.log_forced(
+		"Run instance grid %d/%d: cell=%s frame=%s client=%s" % [
+			index + 1,
+			count,
+			str(cell_rect),
+			str(frame_rect),
+			str(client_size),
+		]
+	)
 
 
 func _now_ms() -> int:
