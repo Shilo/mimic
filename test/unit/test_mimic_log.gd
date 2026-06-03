@@ -10,11 +10,11 @@ var _saved_log_level: Variant = null
 func before_each() -> void:
 	_save_log_level()
 	_captured_lines.clear()
-	MimicLog._output_override = _capture_output
+	MimicLog.output_handler = _capture_output
 
 
 func after_each() -> void:
-	MimicLog._output_override = Callable()
+	MimicLog.output_handler = Callable()
 	_restore_log_level()
 
 
@@ -30,7 +30,7 @@ func test_log_formats_message_with_caller_tag() -> void:
 
 	_call_log()
 
-	_assert_captured_line("log", "[test_mimic_log._call_log]", "info 123")
+	_assert_captured_line(MimicLog.Level.ALL, "[test_mimic_log._call_log]", "info 123")
 
 
 func test_warning_formats_message_with_caller_tag() -> void:
@@ -38,7 +38,7 @@ func test_warning_formats_message_with_caller_tag() -> void:
 
 	_call_warning()
 
-	_assert_captured_line("warning", "[test_mimic_log._call_warning]", "warn 456")
+	_assert_captured_line(MimicLog.Level.WARNING, "[test_mimic_log._call_warning]", "warn 456")
 
 
 func test_error_formats_message_with_caller_tag() -> void:
@@ -46,15 +46,31 @@ func test_error_formats_message_with_caller_tag() -> void:
 
 	_call_error()
 
-	_assert_captured_line("error", "[test_mimic_log._call_error]", "err 789")
+	_assert_captured_line(MimicLog.Level.ERROR, "[test_mimic_log._call_error]", "err 789")
 
 
-func test_unfiltered_log_formats_message_with_caller_tag_when_logs_disabled() -> void:
+func test_forced_log_formats_message_with_caller_tag_when_logs_disabled() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
 
-	_call_unfiltered_log()
+	_call_forced_log()
 
-	_assert_captured_line("log", "[test_mimic_log._call_unfiltered_log]", "marker ok")
+	_assert_captured_line(MimicLog.Level.ALL, "[test_mimic_log._call_forced_log]", "marker ok")
+
+
+func test_forced_warning_formats_message_with_caller_tag_when_logs_disabled() -> void:
+	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+
+	_call_forced_warning()
+
+	_assert_captured_line(MimicLog.Level.WARNING, "[test_mimic_log._call_forced_warning]", "setup warning")
+
+
+func test_forced_error_formats_message_with_caller_tag_when_logs_disabled() -> void:
+	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+
+	_call_forced_error()
+
+	_assert_captured_line(MimicLog.Level.ERROR, "[test_mimic_log._call_forced_error]", "probe failure")
 
 
 func test_format_caller_tag_uses_source_and_function() -> void:
@@ -76,29 +92,37 @@ func _call_error() -> void:
 	MimicLog.error("err", 789)
 
 
-func _call_unfiltered_log() -> void:
-	MimicLog._log_unfiltered("marker", "ok")
+func _call_forced_log() -> void:
+	MimicLog.log_forced("marker", "ok")
 
 
-func _capture_output(level_name: String, line: String) -> void:
+func _call_forced_warning() -> void:
+	MimicLog.warning_forced("setup", "warning")
+
+
+func _call_forced_error() -> void:
+	MimicLog.error_forced("probe", "failure")
+
+
+func _capture_output(level: MimicLog.Level, message: String) -> void:
 	_captured_lines.append({
-		"level": level_name,
-		"line": line,
+		"level": level,
+		"message": message,
 	})
 
 
-func _assert_captured_line(level_name: String, caller_tag: String, message: String) -> void:
+func _assert_captured_line(level: MimicLog.Level, caller_tag: String, expected_message: String) -> void:
 	assert_eq(_captured_lines.size(), 1)
 	if _captured_lines.is_empty():
 		return
 
 	var captured_line := _captured_lines[0]
-	var line := String(captured_line["line"])
-	assert_eq(captured_line["level"], level_name)
-	_assert_timestamp_prefix(line)
-	assert_string_contains(line, "[Mimic]")
-	assert_string_contains(line, caller_tag)
-	assert_string_contains(line, message)
+	var message := String(captured_line["message"])
+	assert_eq(captured_line["level"], level)
+	_assert_timestamp_prefix(message)
+	assert_string_contains(message, "[Mimic]")
+	assert_string_contains(message, caller_tag)
+	assert_string_contains(message, expected_message)
 
 
 func _assert_timestamp_prefix(line: String) -> void:

@@ -20,7 +20,15 @@ enum Level {
 }
 
 static var _is_editor_feature := OS.has_feature("editor")
-static var _output_override := Callable()
+
+## Optional handler for formatted Mimic output.
+## [br][br]
+## When set to a valid [Callable], MimicLog sends output to this handler instead of
+## calling Godot's default [method @GlobalScope.prints],
+## [method @GlobalScope.push_warning], or [method @GlobalScope.push_error].
+## The callable receives [code](level: MimicLog.Level, message: String)[/code],
+## where [code]message[/code] is the fully formatted log line.
+static var output_handler: Callable = Callable()
 
 
 ## Prints an informational Mimic log message when the current log level allows it.
@@ -47,8 +55,19 @@ static func error(...objects: Array) -> void:
 	_push_error_line(_line(objects))
 
 
-static func _log_unfiltered(...objects: Array) -> void:
+## Prints an informational Mimic log message without checking the configured log level.
+static func log_forced(...objects: Array) -> void:
 	_print_line(_line(objects))
+
+
+## Pushes a Mimic warning without checking the configured log level.
+static func warning_forced(...objects: Array) -> void:
+	_push_warning_line(_line(objects))
+
+
+## Pushes a Mimic error without checking the configured log level.
+static func error_forced(...objects: Array) -> void:
+	_push_error_line(_line(objects))
 
 
 static func _should_log(message_level: Level) -> bool:
@@ -143,24 +162,24 @@ static func _join(objects: Array) -> String:
 
 
 static func _print_line(line: String) -> void:
-	if _output_override.is_valid():
-		_output_override.call("log", line)
+	if output_handler.is_valid():
+		output_handler.call(Level.ALL, line)
 		return
 
 	prints(line)
 
 
 static func _push_warning_line(line: String) -> void:
-	if _output_override.is_valid():
-		_output_override.call("warning", line)
+	if output_handler.is_valid():
+		output_handler.call(Level.WARNING, line)
 		return
 
 	push_warning(line)
 
 
 static func _push_error_line(line: String) -> void:
-	if _output_override.is_valid():
-		_output_override.call("error", line)
+	if output_handler.is_valid():
+		output_handler.call(Level.ERROR, line)
 		return
 
 	push_error(line)

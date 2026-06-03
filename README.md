@@ -339,6 +339,18 @@ Example log line:
 
 The number inside the Mimic tag appears only in editor-launched runs, and only when a connected multiplayer peer has a valid local peer ID. The caller tag appears when GDScript call stacks are available; release exports need `debug/settings/gdscript/always_track_call_stacks` enabled to include it.
 
+Use `MimicLog.log()`, `MimicLog.warning()`, and `MimicLog.error()` for messages that should respect `mimic_multiplayer/debug/log_level`. Use `MimicLog.log_forced()`, `MimicLog.warning_forced()`, and `MimicLog.error_forced()` for diagnostics that should always output logs.
+
+To route formatted Mimic output yourself, set `MimicLog.output_handler`:
+
+```gdscript
+var mimic_log_messages: PackedStringArray = []
+
+
+MimicLog.output_handler = func(level: MimicLog.Level, message: String) -> void:
+	mimic_log_messages.append(message)
+```
+
 ## Mimic Or NetFox?
 
 Mimic and NetFox are not trying to be the same thing.
