@@ -73,10 +73,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
@@ -84,12 +84,12 @@ jobs:
 
       - name: Setup Python
         id: setup-python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Cache bootstrapped quality tools
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: tools/.bin
           key: quality-tools-${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('tools/quality.ps1', 'tools/quality/gdstyle.toml', 'tools/quality/gdcruiser.json', 'tools/quality/requirements_quality.txt') }}
@@ -104,7 +104,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Godot
         uses: chickensoft-games/setup-godot@v2
