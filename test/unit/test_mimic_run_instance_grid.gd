@@ -3,15 +3,40 @@ extends GutTest
 const GRID_SCRIPT := preload("res://addons/mimic/testing/mimic_run_instance_grid.gd")
 
 var _grid = null
+var _custom_multiplayer_roots: Array[Node] = []
+var _custom_multiplayer_apis: Array[SceneMultiplayer] = []
+var _next_title_test_port := 19700
+var _saved_multiplayer_poll := true
+var _saved_window_title := ""
 
 
 func before_each() -> void:
 	_grid = GRID_SCRIPT.new()
+	_custom_multiplayer_roots.clear()
+	_custom_multiplayer_apis.clear()
+	_saved_multiplayer_poll = get_tree().is_multiplayer_poll_enabled()
+	_saved_window_title = get_window().title
+	get_tree().set_multiplayer_poll_enabled(true)
 
 
 func after_each() -> void:
-	_grid.free()
+	if is_instance_valid(_grid):
+		_grid.free()
 	_grid = null
+
+	for multiplayer_api in _custom_multiplayer_apis:
+		if multiplayer_api.multiplayer_peer != null:
+			multiplayer_api.multiplayer_peer.close()
+	_custom_multiplayer_apis.clear()
+
+	for root in _custom_multiplayer_roots:
+		if is_instance_valid(root):
+			get_tree().set_multiplayer(null, root.get_path())
+			root.free()
+	_custom_multiplayer_roots.clear()
+
+	get_tree().set_multiplayer_poll_enabled(_saved_multiplayer_poll)
+	get_window().title = _saved_window_title
 
 
 func test_fit_frame_rect_preserves_client_aspect_inside_tall_cell() -> void:
@@ -165,6 +190,55 @@ func test_should_fit_uses_unclamped_cell_aspect_for_tiny_cells() -> void:
 	assert_false(_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_height"))
 
 
+func test_window_index_title_uses_launch_order_until_connected() -> void:
+	var title: String = _grid.call("_format_window_index_title", "Mimic Multiplayer", 1, 3)
+
+	assert_eq(title, "Mimic Multiplayer [2/3]")
+
+
+func test_peer_title_replaces_launch_order_after_connection() -> void:
+	var title: String = _grid.call("_format_peer_title", "Mimic Multiplayer", 618443343)
+
+	assert_eq(title, "Mimic Multiplayer [618443343]")
+
+
+func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
+	var port := _next_title_test_port
+	_next_title_test_port += 1
+	var host := _create_multiplayer_root("TitleHost")
+	var client := _create_multiplayer_root("TitleClient")
+	var host_api: SceneMultiplayer = host["multiplayer_api"]
+	var client_api: SceneMultiplayer = client["multiplayer_api"]
+
+	client["root"].add_child(_grid)
+	_grid.set("_base_title", "Mimic Multiplayer")
+	_grid.call("_set_grid_title", 1, 2)
+	_grid.call("_connect_multiplayer_title_signals")
+
+	assert_eq(get_window().title, "Mimic Multiplayer [2/2]")
+
+	var host_peer := ENetMultiplayerPeer.new()
+	assert_eq(host_peer.create_server(port, 2), OK)
+	host_api.multiplayer_peer = host_peer
+
+	var client_peer := ENetMultiplayerPeer.new()
+	assert_eq(client_peer.create_client("127.0.0.1", port), OK)
+	client_api.multiplayer_peer = client_peer
+
+	var title_changed: bool = await wait_until(
+		func() -> bool:
+			var peer_id := client_api.get_unique_id()
+			return (
+				client_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
+				and peer_id > 1
+				and get_window().title == "Mimic Multiplayer [%d]" % peer_id
+			),
+		5.0
+	)
+
+	assert_true(title_changed)
+
+
 func _get_client_aspect(
 	frame_rect: Rect2i,
 	titlebar_height: int,
@@ -192,3 +266,19 @@ func _should_fit(
 		stretch_mode,
 		stretch_aspect
 	)
+
+
+func _create_multiplayer_root(root_label: String) -> Dictionary:
+	var root := Node.new()
+	root.name = "%s%d" % [root_label, _custom_multiplayer_roots.size()]
+	add_child(root)
+
+	var multiplayer_api := SceneMultiplayer.new()
+	get_tree().set_multiplayer(multiplayer_api, root.get_path())
+	_custom_multiplayer_roots.append(root)
+	_custom_multiplayer_apis.append(multiplayer_api)
+
+	return {
+		"root": root,
+		"multiplayer_api": multiplayer_api,
+	}

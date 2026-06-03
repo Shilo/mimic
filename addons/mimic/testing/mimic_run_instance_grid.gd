@@ -10,6 +10,14 @@ extends Node
 ## instances open as separate windows. Each run instance writes a short-lived
 ## marker file, discovers sibling instances from the same launch burst, then
 ## moves and resizes itself into a screen tile.
+## [br][br]
+## Window titles first show launch order. When a window has an active
+## multiplayer connection, the title shows its local peer ID so each session is
+## easier to identify.
+## [br][br]
+## "Fill" uses the whole grid cell as the window frame. "Fit" shrinks and
+## centers the window inside that cell so Godot's aspect-preserving stretch modes
+## do not create black bars inside the game viewport.
 
 const _DIR := "user://mimic/run_grid"
 const _GROUP_MS := 3000
@@ -28,6 +36,7 @@ const _STRETCH_ASPECT_KEEP_WIDTH := "keep_width"
 const _STRETCH_ASPECT_KEEP_HEIGHT := "keep_height"
 
 var _base_title := ""
+var _grid_title := ""
 
 
 func _ready() -> void:
@@ -51,7 +60,9 @@ func _ready() -> void:
 		return
 
 	if _APPEND_WINDOW_INDEX:
-		get_window().title = "%s [%d/%d]" % [_base_title, index + 1, markers.size()]
+		_set_grid_title(index, markers.size())
+		_connect_multiplayer_title_signals()
+		_refresh_connection_title()
 
 	_tile(index, markers.size())
 
@@ -102,6 +113,9 @@ func _tile(index: int, count: int) -> void:
 	var cell_rect := _get_cell_rect(index, count, area, reference_client_size)
 	var titlebar_height := _get_titlebar_height()
 	var frame_border_size := _get_frame_border_size()
+
+	# Fill uses the whole cell. Fit shrinks and centers the frame only when
+	# Godot would otherwise letterbox or pillarbox the game content.
 	var should_fit_to_cell := _should_fit_to_cell(
 		cell_rect,
 		reference_client_size,
@@ -117,8 +131,7 @@ func _tile(index: int, count: int) -> void:
 			frame_border_size
 		)
 
-	var applied_client_size := _set_frame_rect(frame_rect, titlebar_height, frame_border_size)
-	_log_tile(index, count, should_fit_to_cell, cell_rect, frame_rect, applied_client_size)
+	_set_frame_rect(frame_rect, titlebar_height, frame_border_size)
 
 
 func _get_cell_rect(index: int, count: int, area: Rect2i, reference_client_size: Vector2i) -> Rect2i:
@@ -205,6 +218,8 @@ func _should_fit_to_cell_for_stretch(
 	if is_equal_approx(reference_aspect, target_aspect):
 		return false
 
+	# Keep width/height modes only add bars in one direction; mirror Godot's
+	# Window content-scale aspect branches instead of fitting every keep variant.
 	if stretch_aspect == _STRETCH_ASPECT_KEEP:
 		return true
 	if stretch_aspect == _STRETCH_ASPECT_KEEP_WIDTH:
@@ -286,25 +301,64 @@ func _set_frame_rect(rect: Rect2i, titlebar_height: int, frame_border_size := Ve
 	return client_size
 
 
-func _log_tile(
-	index: int,
-	count: int,
-	should_fit_to_cell: bool,
-	cell_rect: Rect2i,
-	frame_rect: Rect2i,
-	client_size: Vector2i
-) -> void:
-	var layout_mode := "fit" if should_fit_to_cell else "fill"
-	MimicLog.log_forced(
-		"Run instance grid %d/%d: %s cell=%s frame=%s client=%s" % [
-			index + 1,
-			count,
-			layout_mode,
-			str(cell_rect),
-			str(frame_rect),
-			str(client_size),
-		]
-	)
+func _connect_multiplayer_title_signals() -> void:
+	var multiplayer_api := multiplayer
+	if multiplayer_api == null:
+		return
+
+	if not multiplayer_api.connected_to_server.is_connected(_on_multiplayer_state_changed):
+		multiplayer_api.connected_to_server.connect(_on_multiplayer_state_changed)
+	if not multiplayer_api.connection_failed.is_connected(_on_multiplayer_state_changed):
+		multiplayer_api.connection_failed.connect(_on_multiplayer_state_changed)
+	if not multiplayer_api.server_disconnected.is_connected(_on_multiplayer_state_changed):
+		multiplayer_api.server_disconnected.connect(_on_multiplayer_state_changed)
+	if not multiplayer_api.peer_connected.is_connected(_on_multiplayer_peer_connection_changed):
+		multiplayer_api.peer_connected.connect(_on_multiplayer_peer_connection_changed)
+	if not multiplayer_api.peer_disconnected.is_connected(_on_multiplayer_peer_connection_changed):
+		multiplayer_api.peer_disconnected.connect(_on_multiplayer_peer_connection_changed)
+
+
+func _set_grid_title(index: int, count: int) -> void:
+	_grid_title = _format_window_index_title(_base_title, index, count)
+	get_window().title = _grid_title
+
+
+func _refresh_connection_title() -> void:
+	var peer_id := _get_multiplayer_peer_id()
+	if peer_id > 0:
+		get_window().title = _format_peer_title(_base_title, peer_id)
+	elif not _grid_title.is_empty():
+		get_window().title = _grid_title
+
+
+func _get_multiplayer_peer_id() -> int:
+	var multiplayer_api := multiplayer
+	if multiplayer_api == null or not multiplayer_api.has_multiplayer_peer():
+		return 0
+
+	var current_peer := multiplayer_api.multiplayer_peer
+	if current_peer == null or current_peer is OfflineMultiplayerPeer:
+		return 0
+	if current_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return 0
+
+	return multiplayer_api.get_unique_id()
+
+
+func _format_window_index_title(base_title: String, index: int, count: int) -> String:
+	return "%s [%d/%d]" % [base_title, index + 1, count]
+
+
+func _format_peer_title(base_title: String, peer_id: int) -> String:
+	return "%s [%d]" % [base_title, peer_id]
+
+
+func _on_multiplayer_state_changed() -> void:
+	_refresh_connection_title()
+
+
+func _on_multiplayer_peer_connection_changed(_peer_id: int) -> void:
+	_refresh_connection_title()
 
 
 func _now_ms() -> int:
