@@ -81,6 +81,38 @@ func test_format_caller_name_uses_source_and_function() -> void:
 	assert_eq(MimicLog._format_caller_name("", ""), "")
 
 
+func test_timestamp_is_wrapped_in_brackets() -> void:
+	var timestamp := MimicLog._timestamp()
+
+	assert_true(timestamp.begins_with("["))
+	assert_true(timestamp.ends_with("]"))
+
+
+func test_dim_wraps_text_in_color_tag_for_editor_output() -> void:
+	assert_eq(MimicLog._dim("[01-02 03:04:05] [tag]"), "[color=#808080][01-02 03:04:05] [tag][/color]")
+
+
+func test_message_is_not_safe_for_print_rich_when_it_contains_opening_bracket() -> void:
+	assert_true(MimicLog._message_is_safe_for_print_rich("plain message"))
+	assert_true(MimicLog._message_is_safe_for_print_rich("plain message ]"))
+	assert_false(MimicLog._message_is_safe_for_print_rich("[b]literal[/b]"))
+	assert_false(MimicLog._message_is_safe_for_print_rich("value [1]"))
+
+
+func test_editor_line_dims_prefix_for_plain_message() -> void:
+	assert_eq(
+		MimicLog._editor_line("[01-02 03:04:05] [tag]", "plain message"),
+		"[color=#808080][01-02 03:04:05] [tag][/color] plain message"
+	)
+
+
+func test_editor_line_stays_plain_when_message_contains_opening_bracket() -> void:
+	assert_eq(
+		MimicLog._editor_line("[01-02 03:04:05] [tag]", "[b]literal[/b]"),
+		"[01-02 03:04:05] [tag] [b]literal[/b]"
+	)
+
+
 func test_format_source_tag_uses_peer_id_prefix_when_available() -> void:
 	assert_eq(MimicLog._format_source_tag("mimic._on_connected_to_server", 2), "[2 mimic._on_connected_to_server]")
 	assert_eq(MimicLog._format_source_tag("mimic._start_server", 0), "[mimic._start_server]")
@@ -133,20 +165,22 @@ func _assert_captured_line(level: MimicLog.Level, source_tag: String, expected_m
 
 
 func _assert_timestamp_prefix(line: String) -> void:
-	assert_gt(line.length(), 15)
-	if line.length() <= 15:
+	assert_gt(line.length(), 17)
+	if line.length() <= 17:
 		return
 
-	assert_true(line.substr(0, 2).is_valid_int())
-	assert_eq(line.substr(2, 1), "-")
-	assert_true(line.substr(3, 2).is_valid_int())
-	assert_eq(line.substr(5, 1), " ")
-	assert_true(line.substr(6, 2).is_valid_int())
-	assert_eq(line.substr(8, 1), ":")
-	assert_true(line.substr(9, 2).is_valid_int())
-	assert_eq(line.substr(11, 1), ":")
-	assert_true(line.substr(12, 2).is_valid_int())
-	assert_eq(line.substr(14, 1), " ")
+	assert_eq(line.substr(0, 1), "[")
+	assert_true(line.substr(1, 2).is_valid_int())
+	assert_eq(line.substr(3, 1), "-")
+	assert_true(line.substr(4, 2).is_valid_int())
+	assert_eq(line.substr(6, 1), " ")
+	assert_true(line.substr(7, 2).is_valid_int())
+	assert_eq(line.substr(9, 1), ":")
+	assert_true(line.substr(10, 2).is_valid_int())
+	assert_eq(line.substr(12, 1), ":")
+	assert_true(line.substr(13, 2).is_valid_int())
+	assert_eq(line.substr(15, 1), "]")
+	assert_eq(line.substr(16, 1), " ")
 
 
 func _make_logged_line_from_test() -> String:
