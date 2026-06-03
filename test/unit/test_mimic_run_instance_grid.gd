@@ -157,6 +157,23 @@ func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> voi
 	assert_lte(fitted_rect.end.y, cell_rect.end.y)
 
 
+func test_frame_border_is_hardcoded_not_measured_to_avoid_window_gaps() -> void:
+	# Regression guard: the side/bottom window border MUST stay a small hardcoded
+	# value. Measuring it from window_get_*_with_decorations() picks up the
+	# invisible ~7px Windows DWM resize border and reintroduces a visible gap
+	# between tiled windows. See _get_frame_border_size for the full explanation.
+	var border: Vector2i = _grid.call("_get_frame_border_size")
+
+	if OS.has_feature("windows"):
+		assert_eq(
+			border,
+			Vector2i(1, 1),
+			"Windows frame border must stay hardcoded at 1px; a measured value reintroduces window gaps"
+		)
+	else:
+		assert_eq(border, Vector2i.ZERO)
+
+
 func test_grid_selection_uses_reference_aspect() -> void:
 	var screen_size := Vector2i(1200, 900)
 	var portrait_aspect := 9.0 / 16.0

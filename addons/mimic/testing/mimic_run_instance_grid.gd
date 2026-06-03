@@ -166,16 +166,35 @@ func _get_grid(count: int, screen_size: Vector2i, target_aspect := 16.0 / 9.0) -
 
 
 func _get_frame_decoration_margins() -> Vector4i:
-	var client_position := DisplayServer.window_get_position()
-	var frame_position := DisplayServer.window_get_position_with_decorations()
-	var client_size := DisplayServer.window_get_size()
-	var frame_size := DisplayServer.window_get_size_with_decorations()
-	var left := maxi(0, client_position.x - frame_position.x)
-	var top := maxi(0, client_position.y - frame_position.y)
-	var right := maxi(0, frame_size.x - client_size.x - left)
-	var bottom := maxi(0, frame_size.y - client_size.y - top)
+	# Only the titlebar height (top) is measured from the OS frame. The
+	# left/right/bottom borders are deliberately hardcoded — see
+	# _get_frame_border_size for the recurring regression this avoids.
+	var client_top := DisplayServer.window_get_position().y
+	var frame_top := DisplayServer.window_get_position_with_decorations().y
+	var titlebar_height := maxi(0, client_top - frame_top)
+	var border := _get_frame_border_size()
 
-	return Vector4i(left, top, right, bottom)
+	return Vector4i(border.x, titlebar_height, border.x, border.y)
+
+
+func _get_frame_border_size() -> Vector2i:
+	# RECURRING REGRESSION — READ BEFORE CHANGING. Returns the VISIBLE window
+	# border thickness (x = left and right, y = bottom).
+	#
+	# Do NOT replace this with a value measured from
+	# DisplayServer.window_get_*_with_decorations(). On Windows those return
+	# GetWindowRect (Godot platform/windows/display_server_windows.cpp ->
+	# window_get_position_with_decorations / window_get_size_with_decorations),
+	# which INCLUDES the invisible DWM resize border (~7 px per side on Windows
+	# 10/11). That phantom border is not part of the visible window, so
+	# subtracting it from each grid cell insets every window and leaves a visible
+	# gap between tiled windows. The visible border is ~1 px; only the titlebar
+	# (top) is safe to measure. This gap has been reintroduced several times by
+	# "just measure the real decorations" refactors — keep it hardcoded.
+	if OS.has_feature("windows"):
+		return Vector2i(1, 1)
+
+	return Vector2i.ZERO
 
 
 func _should_fit_to_cell(
