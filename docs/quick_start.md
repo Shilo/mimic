@@ -1,6 +1,6 @@
 # Quick Start
 
-This path gets two local Godot instances talking to each other with the current connection MVP.
+This path gets two local editor-launched Godot instances talking to each other with the current connection MVP.
 
 ## Configure Defaults
 
@@ -10,21 +10,16 @@ Use these values:
 
 ```text
 mimic_multiplayer/connection/transport = ENet
+mimic_multiplayer/connection/editor_auto_connect = Server Then Client
 mimic_multiplayer/connection/address = 127.0.0.1
 mimic_multiplayer/connection/port = 15490
 ```
 
-## Add A Connector
-
-Add a `MimicConnector` node to your startup scene.
-
-Set `auto_connect_mode` to:
-
-```text
-Server If First Else Client
-```
+## Run Two Instances
 
 Run two game instances. The first instance should bind the port and become the server. The second instance should fail the local server bind preflight and connect as a client.
+
+Project Settings auto-connect only runs when Godot has the `editor` feature tag. Exported builds should start connections from game code or UI.
 
 ## Start From Code Instead
 
@@ -53,7 +48,7 @@ Mimic.stop()
 Use the same quick local auto-connect behavior from code:
 
 ```gdscript
-Mimic.start_server_if_first_else_client()
+Mimic.start_server_or_client()
 ```
 
 Cancel a client while it is still connecting:

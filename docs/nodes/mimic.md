@@ -39,15 +39,30 @@ Mimic.cancel_connection()
 
 `stop()` closes the active peer, returns Mimic to `OFFLINE`, and requests deletion of owned UPnP mappings when that setting is enabled. `cancel_connection()` only stops an in-progress client connection.
 
-## Start Server If First Else Client
+## Server Or Client Helper
 
 ```gdscript
-var error := Mimic.start_server_if_first_else_client()
+var error := Mimic.start_server_or_client()
 if error != OK:
 	push_error("Unable to auto-connect: %s" % error_string(error))
 ```
 
 This helper is meant for local multi-instance testing. With ENet, Mimic first performs a best-effort local bind preflight so later instances can fall back to client mode without noisy ENet bind errors. The fallback is skipped on dedicated/server exports.
+
+## Auto-Connect
+
+Set `mimic_multiplayer/connection/editor_auto_connect` in Project Settings when you want the `Mimic` autoload to start networking during editor-launched local testing:
+
+```text
+Disabled
+Server Then Client
+Client
+Server
+```
+
+`Server Then Client` uses the same behavior as `Mimic.start_server_or_client()`.
+
+Auto-connect only runs when Godot has the `editor` feature tag. Exported builds should start connections from game code or UI.
 
 ## State Helpers
 

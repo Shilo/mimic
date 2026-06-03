@@ -11,6 +11,7 @@ Settings marked Advanced are hidden unless **Advanced Settings** is enabled in P
 | Setting | Default | Visibility | Meaning |
 | --- | --- | --- | --- |
 | `mimic_multiplayer/connection/transport` | `ENet` | Basic | Selects Offline, ENet, WebSocket, or WebRTC (Unsupported). Offline and WebRTC do not start network peers in the current MVP. |
+| `mimic_multiplayer/connection/editor_auto_connect` | `Disabled` | Basic | Editor-only startup action for editor-launched runs. Values are Disabled, Server Then Client, Client, and Server. Exported builds ignore this setting. |
 | `mimic_multiplayer/connection/address` | `127.0.0.1` | Basic | Default client address used by `Mimic.start_client()`. |
 | `mimic_multiplayer/connection/port` | `15490` | Basic | Server/client port. Must be between `1` and `65535`. |
 | `mimic_multiplayer/connection/max_clients` | `32` | Basic | Maximum ENet clients accepted by `Mimic.start_server()`. |

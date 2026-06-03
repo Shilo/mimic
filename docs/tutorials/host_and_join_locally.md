@@ -2,19 +2,13 @@
 
 Use this tutorial when you want a fast local smoke test with one server and one client on the same machine.
 
-## Scene Setup
-
-1. Open your startup scene.
-2. Add a `MimicConnector` node.
-3. In the inspector, set `auto_connect_mode` to **Server If First Else Client**.
-4. Save the scene.
-
 ## Project Settings
 
 Set:
 
 ```text
 mimic_multiplayer/connection/transport = ENet
+mimic_multiplayer/connection/editor_auto_connect = Server Then Client
 mimic_multiplayer/connection/address = 127.0.0.1
 mimic_multiplayer/connection/port = 15490
 ```

@@ -7,7 +7,7 @@
 
 Clone-and-play multiplayer for Godot. Drop in a MimicSync node and make your scenes network-aware, with high-level nodes for connection and gameplay.
 
-Mimic Multiplayer is currently a small connection and configuration addon for Godot 4. It manages a `Mimic` autoload, exposes typed Project Settings, starts ENet and WebSocket peers, and provides `MimicConnector` plus `MimicSync` nodes for scene-level authoring.
+Mimic Multiplayer is currently a small connection and configuration addon for Godot 4. It manages a `Mimic` autoload, exposes typed Project Settings, starts ENet and WebSocket peers, reserves `MimicConnector` for connection UI, and provides `MimicSync` for scene-level authoring.
 
 This project is intentionally smaller than full networking frameworks. Mimic is for developers who want a lightweight helper around Godot's built-in high-level multiplayer API, not a prediction, rollback, interpolation, lag compensation, relay, or full gameplay framework.
 
@@ -46,7 +46,8 @@ Working now:
 - WebRTC transport selection reserved for future signaling support, currently unsupported.
 - Optional UPnP port forwarding.
 - Runtime connection state, status helpers, and lifecycle signals.
-- `MimicConnector` component for simple host/join/stop calls and auto-connect.
+- Project Settings auto-connect for startup scenes and local multi-instance testing.
+- `MimicConnector` placeholder for future connection form UI.
 - `MimicSync` component that subclasses Godot's `MultiplayerSynchronizer`.
 
 Not ready yet:
@@ -93,6 +94,7 @@ Connection:
 
 ```text
 mimic_multiplayer/connection/transport: Offline, ENet, WebSocket, or WebRTC (Unsupported)
+mimic_multiplayer/connection/editor_auto_connect: Disabled, Server Then Client, Client, or Server
 mimic_multiplayer/connection/address: Client address, default 127.0.0.1
 mimic_multiplayer/connection/port: Server/client port, default 15490
 mimic_multiplayer/connection/max_clients: Max ENet server clients, default 32
@@ -195,10 +197,12 @@ Mimic.cancel_connection()
 Start as server if possible, otherwise connect as a client:
 
 ```gdscript
-Mimic.start_server_if_first_else_client()
+Mimic.start_server_or_client()
 ```
 
 This is useful for quick local multi-instance testing. The first running instance usually binds the port and becomes server; later instances fail to bind and fall back to client.
+
+Project Settings auto-connect only runs when Godot has the `editor` feature tag, so exported builds should start connections from game code or UI.
 
 ## Listen For Connection Events
 
@@ -278,36 +282,31 @@ Mimic.get_external_address()
 
 ## Use MimicConnector
 
-Add a `MimicConnector` node to a scene when you want a simple component that starts and stops networking for you.
+`MimicConnector` is reserved for a future drag-and-drop connection form with an IP field, port field, Host button, Join button, and Stop button. It does not start networking on its own.
 
-Call it from scripts:
+For now, wire your own UI directly to the `Mimic` singleton:
 
 ```gdscript
-@onready var connector: MimicConnector = $MimicConnector
-
-
 func _on_host_pressed() -> void:
-	connector.host()
+	Mimic.start_server()
 
 
 func _on_join_pressed() -> void:
-	connector.join()
+	Mimic.start_client()
 
 
 func _on_stop_pressed() -> void:
-	connector.stop()
+	Mimic.stop()
 ```
 
-Set `auto_connect_mode` in the inspector:
+Use Project Settings for editor-only startup auto-connect:
 
 ```text
-Disabled: Do nothing on ready.
-Server: Start a server on ready.
-Client: Start a client on ready.
-Server If First Else Client: Try server first, then fall back to client.
+mimic_multiplayer/connection/editor_auto_connect = Disabled
+mimic_multiplayer/connection/editor_auto_connect = Server Then Client
+mimic_multiplayer/connection/editor_auto_connect = Client
+mimic_multiplayer/connection/editor_auto_connect = Server
 ```
-
-This is meant to support a future drag-and-drop UI flow with an IP field, port field, Host button, Join button, and Stop button. For now, bring your own UI and call `host()`, `join()`, and `stop()`.
 
 ## Use MimicSync
 
@@ -379,11 +378,10 @@ NetFox is the better fit when your game needs advanced netcode features. Mimic i
 ## Minimal Local Test
 
 1. Set `mimic_multiplayer/connection/transport` to `ENet`.
-2. Set `mimic_multiplayer/connection/address` to `127.0.0.1`.
-3. Set `mimic_multiplayer/connection/port` to `15490`.
-4. Add a `MimicConnector` node to your startup scene.
-5. Set `auto_connect_mode` to `Server If First Else Client`.
-6. Run two game instances.
+2. Set `mimic_multiplayer/connection/editor_auto_connect` to `Server Then Client`.
+3. Set `mimic_multiplayer/connection/address` to `127.0.0.1`.
+4. Set `mimic_multiplayer/connection/port` to `15490`.
+5. Run two game instances.
 
 Expected result:
 
@@ -419,7 +417,7 @@ The verification pass does six things:
 - Runs GUT unit regression tests from `res://test/unit/`.
 - Runs a minimal project startup probe headlessly without opening a network peer.
 - Runs a two-instance ENet explicit host/client smoke test through `res://test/integration/mimic_connection_probe.tscn`.
-- Runs a two-instance ENet `Server If First Else Client` smoke test.
+- Runs a two-instance ENet `Server Then Client` smoke test.
 - Runs a two-instance WebSocket explicit host/client smoke test.
 
 Run just the unit tests:
@@ -432,7 +430,7 @@ Run just the two-instance connection smoke test:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode explicit -Port 18910
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode server_if_first_else_client -Port 18911
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport enet -ConnectMode server_then_client -Port 18911
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_two_instances.ps1 -Transport websocket -ConnectMode explicit -Port 18912
 ```
 

@@ -3,6 +3,7 @@ extends GutTest
 const MIMIC_SCRIPT := preload("res://addons/mimic/mimic.gd")
 
 const TRANSPORT := "mimic_multiplayer/connection/transport"
+const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const ADDRESS := "mimic_multiplayer/connection/address"
 const PORT := "mimic_multiplayer/connection/port"
 const MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
@@ -26,6 +27,7 @@ const UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
 const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 const SETTING_NAMES := [
 	TRANSPORT,
+	EDITOR_AUTO_CONNECT,
 	ADDRESS,
 	PORT,
 	MAX_CLIENTS,
@@ -129,15 +131,15 @@ func test_websocket_client_connection_can_be_canceled_before_handshake_finishes(
 	await _assert_client_connection_can_be_canceled(Mimic.TransportType.WEBSOCKET)
 
 
-func test_enet_server_if_first_else_client_preflight_allows_available_port() -> void:
+func test_enet_server_then_client_preflight_allows_available_port() -> void:
 	var port := _next_test_port()
 	_configure_transport(Mimic.TransportType.ENET, port)
 	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
 
-	assert_eq(Mimic._get_server_if_first_preflight_error(), OK)
+	assert_eq(Mimic._get_server_or_client_preflight_error(), OK)
 
 
-func test_enet_server_if_first_else_client_preflights_occupied_server_port() -> void:
+func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 	var port := _next_test_port()
 	_configure_transport(Mimic.TransportType.ENET, port)
 	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
@@ -145,8 +147,8 @@ func test_enet_server_if_first_else_client_preflights_occupied_server_port() -> 
 	assert_eq(occupying_peer.bind(port, "127.0.0.1"), OK)
 	watch_signals(Mimic)
 
-	assert_eq(Mimic._get_server_if_first_preflight_error(), ERR_CANT_CREATE)
-	var start_error := Mimic.start_server_if_first_else_client()
+	assert_eq(Mimic._get_server_or_client_preflight_error(), ERR_CANT_CREATE)
+	var start_error := Mimic.start_server_or_client()
 	occupying_peer.close()
 
 	assert_eq(start_error, OK)
@@ -158,10 +160,10 @@ func test_enet_server_if_first_else_client_preflights_occupied_server_port() -> 
 	await wait_process_frames(2)
 
 
-func test_server_if_first_else_client_preflight_skips_websocket_transport() -> void:
+func test_server_then_client_preflight_skips_websocket_transport() -> void:
 	_configure_transport(Mimic.TransportType.WEBSOCKET, _next_test_port())
 
-	assert_eq(Mimic._get_server_if_first_preflight_error(), OK)
+	assert_eq(Mimic._get_server_or_client_preflight_error(), OK)
 
 
 func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
@@ -366,6 +368,7 @@ func _replace_mimic_port_mapper(port_mapper: MimicPortMapper) -> void:
 
 func _configure_transport(transport: int, port: int) -> void:
 	ProjectSettings.set_setting(TRANSPORT, transport)
+	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.DISABLED)
 	ProjectSettings.set_setting(ADDRESS, "127.0.0.1")
 	ProjectSettings.set_setting(PORT, port)
 	ProjectSettings.set_setting(MAX_CLIENTS, 8)

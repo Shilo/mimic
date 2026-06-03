@@ -1,6 +1,7 @@
 extends GutTest
 
 const TRANSPORT := "mimic_multiplayer/connection/transport"
+const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const ADDRESS := "mimic_multiplayer/connection/address"
 const PORT := "mimic_multiplayer/connection/port"
 const MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
@@ -24,6 +25,7 @@ const UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
 const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 const SETTING_NAMES := [
 	TRANSPORT,
+	EDITOR_AUTO_CONNECT,
 	ADDRESS,
 	PORT,
 	MAX_CLIENTS,
@@ -62,6 +64,7 @@ func after_each() -> void:
 
 func test_accessors_return_defaults_when_settings_are_missing() -> void:
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
+	assert_eq(MimicProjectSettings.editor_auto_connect, Mimic.EditorAutoConnectMode.DISABLED)
 	assert_eq(MimicProjectSettings.address, "127.0.0.1")
 	assert_eq(MimicProjectSettings.port, 15490)
 	assert_eq(MimicProjectSettings.max_clients, 32)
@@ -81,6 +84,10 @@ func test_accessors_return_defaults_when_settings_are_missing() -> void:
 	assert_eq(MimicProjectSettings.upnp_discover_timeout_ms, 2000)
 	assert_eq(MimicProjectSettings.upnp_discover_ttl, 2)
 	assert_eq(MimicProjectSettings.log_level, MimicLog.Level.WARNING)
+	assert_eq(Mimic.EditorAutoConnectMode.DISABLED, 0)
+	assert_eq(Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT, 1)
+	assert_eq(Mimic.EditorAutoConnectMode.CLIENT, 2)
+	assert_eq(Mimic.EditorAutoConnectMode.SERVER, 3)
 
 
 func test_register_adds_missing_settings_without_overwriting_existing_values() -> void:
@@ -92,12 +99,14 @@ func test_register_adds_missing_settings_without_overwriting_existing_values() -
 	assert_eq(MimicProjectSettings.address, "10.0.0.55")
 	assert_eq(MimicProjectSettings.port, 19001)
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
+	assert_true(ProjectSettings.has_setting(EDITOR_AUTO_CONNECT))
 	assert_true(ProjectSettings.has_setting(MAX_CLIENTS))
 	assert_true(ProjectSettings.has_setting(LOG_LEVEL))
 
 
 func test_accessors_read_typed_project_settings_values() -> void:
 	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.WEBSOCKET)
+	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT)
 	ProjectSettings.set_setting(ADDRESS, "example.test")
 	ProjectSettings.set_setting(PORT, 19002)
 	ProjectSettings.set_setting(MAX_CLIENTS, 12)
@@ -119,6 +128,7 @@ func test_accessors_read_typed_project_settings_values() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ERROR)
 
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.WEBSOCKET)
+	assert_eq(MimicProjectSettings.editor_auto_connect, Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT)
 	assert_eq(MimicProjectSettings.address, "example.test")
 	assert_eq(MimicProjectSettings.port, 19002)
 	assert_eq(MimicProjectSettings.max_clients, 12)

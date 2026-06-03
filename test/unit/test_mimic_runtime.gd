@@ -1,6 +1,7 @@
 extends GutTest
 
 const TRANSPORT := "mimic_multiplayer/connection/transport"
+const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const ADDRESS := "mimic_multiplayer/connection/address"
 const PORT := "mimic_multiplayer/connection/port"
 const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
@@ -63,16 +64,10 @@ func test_empty_client_address_fails_cleanly_and_emits_start_failed() -> void:
 	)
 
 
-func test_connector_host_and_stop_forward_to_mimic() -> void:
-	var connector: MimicConnector = add_child_autoqfree(MimicConnector.new())
-	var port := _next_test_port()
-
-	var error: Error = connector.host(port, "127.0.0.1")
-
-	assert_eq(error, OK)
-	assert_true(Mimic.is_server())
-
-	connector.stop()
+func test_connector_does_not_start_networking_when_added() -> void:
+	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.SERVER)
+	add_child_autoqfree(MimicConnector.new())
+	await wait_process_frames(2)
 
 	assert_true(Mimic.is_offline())
 
@@ -98,6 +93,7 @@ func test_mimic_sync_remains_a_multiplayer_synchronizer() -> void:
 
 func _configure_enet(port: int) -> void:
 	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.ENET)
+	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.DISABLED)
 	ProjectSettings.set_setting(ADDRESS, "127.0.0.1")
 	ProjectSettings.set_setting(PORT, port)
 	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, false)
@@ -110,7 +106,7 @@ func _next_test_port() -> int:
 
 
 func _save_settings() -> void:
-	for setting_name in [TRANSPORT, ADDRESS, PORT, PORT_FORWARDING_ENABLED, LOG_LEVEL]:
+	for setting_name in [TRANSPORT, EDITOR_AUTO_CONNECT, ADDRESS, PORT, PORT_FORWARDING_ENABLED, LOG_LEVEL]:
 		_saved_settings[setting_name] = {
 			"exists": ProjectSettings.has_setting(setting_name),
 			"value": ProjectSettings.get_setting(setting_name),

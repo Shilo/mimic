@@ -43,6 +43,17 @@ enum TransportType {
 	## Reserved for future WebRTC signaling support.
 	WEBRTC,
 }
+## Editor-only connection action run automatically when the Mimic autoload starts.
+enum EditorAutoConnectMode {
+	## Do not start networking automatically.
+	DISABLED,
+	## Try server mode first, then join as a client on expected local hosting failures.
+	SERVER_THEN_CLIENT,
+	## Start a client automatically.
+	CLIENT,
+	## Start a server automatically.
+	SERVER,
+}
 ## Coarse connection lifecycle state for the local peer.
 enum NetworkState {
 	## No active network peer.
@@ -66,6 +77,8 @@ enum PortMappingProtocol {
 	TCP_AND_UDP,
 }
 
+const _EDITOR_AUTO_CONNECT_TOOLING_ARGS := ["--doctool", "--import", "-s", "--script"]
+
 var _state: NetworkState = NetworkState.OFFLINE
 var _last_client_address := ""
 var _last_client_port := 0
@@ -76,6 +89,9 @@ func _ready() -> void:
 	_connect_multiplayer_signals()
 	if not _port_mapper.finished.is_connected(_finish_port_mapping):
 		_port_mapper.finished.connect(_finish_port_mapping)
+
+	if OS.has_feature("editor"):
+		_start_editor_auto_connect.call_deferred()
 
 
 func _exit_tree() -> void:
@@ -169,10 +185,10 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 ## Tries to start a server, then falls back to [method start_client] on expected local hosting
 ## failures.
 ## Fallback is skipped on dedicated/server exports.
-func start_server_if_first_else_client() -> Error:
+func start_server_or_client() -> Error:
 	# This avoids Godot's noisy ENet bind error when the local port is already occupied.
 	# The real _start_server call below remains authoritative when the best-effort probe passes.
-	var preflight_error := _get_server_if_first_preflight_error()
+	var preflight_error := _get_server_or_client_preflight_error()
 	if preflight_error != OK:
 		if not _can_fallback_to_client_after_server_failure(preflight_error):
 			return preflight_error
@@ -311,6 +327,27 @@ func _start_server(
 	return OK
 
 
+func _start_editor_auto_connect() -> void:
+	if _is_editor_auto_connect_tooling_run() or not is_inside_tree() or not is_offline() or _has_active_peer():
+		return
+
+	match MimicProjectSettings.editor_auto_connect:
+		EditorAutoConnectMode.SERVER_THEN_CLIENT:
+			start_server_or_client()
+		EditorAutoConnectMode.CLIENT:
+			start_client()
+		EditorAutoConnectMode.SERVER:
+			start_server()
+
+
+func _is_editor_auto_connect_tooling_run() -> bool:
+	for argument in OS.get_cmdline_args():
+		if argument in _EDITOR_AUTO_CONNECT_TOOLING_ARGS:
+			return true
+
+	return false
+
+
 func _validate_start(state: NetworkState, port: int) -> Error:
 	var transport := _get_transport_type()
 
@@ -409,7 +446,7 @@ func _fail_unavailable_transport(state: NetworkState) -> Error:
 			return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
 
 
-func _get_server_if_first_preflight_error() -> Error:
+func _get_server_or_client_preflight_error() -> Error:
 	if _get_transport_type() != TransportType.ENET:
 		return OK
 	if _has_active_peer() or OS.has_feature("web"):

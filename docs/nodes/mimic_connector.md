@@ -1,44 +1,35 @@
 # MimicConnector
 
-`MimicConnector` is a scene component that starts and stops Mimic connections. Add it to a startup scene when you want inspector-driven auto-connect or a simple script target for host, join, and stop buttons.
+`MimicConnector` is reserved for future built-in connection UI. It is the intended home for a drag-and-drop form with address, port, Host, Join, and Stop controls.
 
-## Auto-Connect Modes
+It does not start networking automatically. Configure editor-only startup behavior with Project Settings instead:
 
 ```text
-Disabled: Do nothing on ready.
-Server: Start a server on ready.
-Client: Start a client on ready.
-Server If First Else Client: Try server first, then fall back to client.
+mimic_multiplayer/connection/editor_auto_connect = Disabled
+mimic_multiplayer/connection/editor_auto_connect = Server Then Client
+mimic_multiplayer/connection/editor_auto_connect = Client
+mimic_multiplayer/connection/editor_auto_connect = Server
 ```
 
-Auto-connect runs after the node enters the scene tree. The server-first fallback is designed for quick local multi-instance testing and follows the same dedicated/server export guard as `Mimic.start_server_if_first_else_client()`.
+Exported builds should start connections from game code or UI.
 
-## Button UI Example
+## Button UI
+
+Until MimicConnector renders controls, wire your own buttons directly to the `Mimic` singleton:
 
 ```gdscript
-@onready var connector: MimicConnector = $MimicConnector
-
 
 func _on_host_pressed() -> void:
-	connector.host()
+	Mimic.start_server()
 
 
 func _on_join_pressed() -> void:
-	connector.join()
+	Mimic.start_client()
 
 
 func _on_stop_pressed() -> void:
-	connector.stop()
+	Mimic.stop()
 ```
-
-Pass explicit connection values when the UI has address or port fields:
-
-```gdscript
-connector.host(15490, "0.0.0.0")
-connector.join("127.0.0.1", 15490)
-```
-
-`MimicConnector` does not render buttons, fields, or panels yet. Add your own UI and call `host()`, `join()`, or `stop()`.
 
 ## API
 

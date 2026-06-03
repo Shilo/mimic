@@ -86,7 +86,7 @@ Write-Output "Running two-instance ENet auto-connect smoke test..."
 $twoInstanceArgs = @{
 	Port = ($IntegrationPort + 1)
 	Transport = "enet"
-	ConnectMode = "server_if_first_else_client"
+	ConnectMode = "server_then_client"
 	ResultsDir = $resultsDir
 }
 if (-not [string]::IsNullOrWhiteSpace($GodotPath)) {

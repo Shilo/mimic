@@ -3,7 +3,7 @@ param(
 	[int] $Port = 18910,
 	[ValidateSet("enet", "websocket")]
 	[string] $Transport = "enet",
-	[ValidateSet("explicit", "server_if_first_else_client")]
+	[ValidateSet("explicit", "server_then_client")]
 	[string] $ConnectMode = "explicit",
 	[int] $TimeoutSeconds = 12,
 	[string] $ResultsDir = ""
@@ -53,7 +53,7 @@ function New-GodotArgumentList {
 	param([string] $Role)
 
 	$probeRole = $Role
-	if ($ConnectMode -eq "server_if_first_else_client") {
+	if ($ConnectMode -eq "server_then_client") {
 		$probeRole = "auto"
 	}
 
@@ -190,7 +190,7 @@ if (-not $serverConnected -or -not $clientConnected) {
 	exit 1
 }
 
-if ($Transport -eq "enet" -and $ConnectMode -eq "server_if_first_else_client") {
+if ($Transport -eq "enet" -and $ConnectMode -eq "server_then_client") {
 	Assert-ForbiddenLogLinesAbsent `
 		-Paths @($serverOut, $serverErr, $clientOut, $clientErr) `
 		-Patterns @("Couldn't create an ENet host", 'Parameter "host" is null')

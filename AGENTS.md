@@ -6,7 +6,7 @@ Technical description: Mimic Multiplayer is a Godot 4 addon for making Godot's h
 
 Goals: The intended authoring shape is that a user adds one MimicSync node to a networked scene/entity, while Mimic handles network lifecycle concerns that would otherwise require separate spawner setup. Dynamic synced objects should eventually be spawnable anywhere in the scene tree as long as the same parent path exists on each peer. Runtime property replication should continue to lean on Godot's native MultiplayerSynchronizer and SceneReplicationConfig wherever possible instead of replacing Godot's replication system.
 
-Current focus: The current implementation has pivoted toward a small connection and configuration MVP. The plugin manages the Mimic autoload and project settings, Mimic exposes connection helpers for ENet/WebSocket/offline states plus stop/cancel/status helpers, MimicConnector provides simple auto-connect entry points, MimicProjectSettings owns typed ProjectSettings accessors, and MimicLog provides compact connection logging. Keep this layer explicit and stable before reintroducing custom spawn/despawn behavior.
+Current focus: The current implementation has pivoted toward a small connection and configuration MVP. The plugin manages the Mimic autoload and project settings, Mimic exposes connection helpers for ENet/WebSocket/offline states plus stop/cancel/status helpers, MimicProjectSettings owns typed ProjectSettings accessors including editor-only startup auto-connect, MimicConnector is reserved for future connection form UI, and MimicLog provides compact connection logging. Keep this layer explicit and stable before reintroducing custom spawn/despawn behavior.
 
 Boundaries: Avoid adding gameplay scenes, player scenes, resources, input maps, art, custom inspectors, docks, debug UI, prediction, rollback, interpolation, time sync, command/event systems, client spawn requests, authority transfer, or raw packet protocols unless explicitly requested. Ask before adding files outside the addon/example structure or changing the core design away from the Mimic autoload plus MimicSync component direction. Do not add migration shims, deprecated-name aliases, compatibility wrappers, or fallback behavior anywhere in the project unless explicitly requested; update callers, scenes, docs, and settings to the current Mimic model instead.
 
@@ -15,6 +15,8 @@ Discovery: Prioritize progressive discovery over token usage. Read only the file
 Source references: Use `C:\Programming_Files\Godot\godot-master` as the local Godot engine source reference when implementing or improving behavior that depends on Godot multiplayer internals, editor/plugin behavior, GDScript APIs, CLI behavior, project settings, or testing hooks. Use `C:\Programming_Files\Godot\netfox-main` as an inspiration/reference point for multiplayer library architecture, tests, and tradeoffs, while preserving Mimic's different vision: a small helper around Godot's native high-level multiplayer rather than a prediction/rollback/netcode framework.
 
 Documentation: User-facing docs live in docs/. Keep docs phrased for Mimic users. Use `brand/logo/mimic_m_multiplayer.svg` as the preferred full-logo asset, with `brand/logo/mimic_m_multiplayer.png` as the fallback when SVG is not supported. Documentation pages that reference Mimo should show the primary product icon from `brand/icon/mimic.svg`, with `brand/icon/mimic.png` as the fallback when SVG is not supported. When the icon appears on a Mimic Mint surface, use the inverted icon from `brand/icon/mimic_invert.svg`, with `brand/icon/mimic_invert.png` as the fallback.
+
+Consistency updates: When changing public behavior, public API, Project Settings, scene structure, examples, or automation flags, search the repository for the affected names and concepts. Update callers, scenes, tests, README/docs, generated API inputs, examples, project settings, and local automation in the same change so no stale workflow remains.
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
@@ -55,7 +57,7 @@ addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
 addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
 addons/mimic/nodes/: Public user-facing scene-tree nodes developers add to scenes.
-addons/mimic/nodes/mimic_connector.gd: CanvasLayer connector that calls Mimic connection helpers and supports future UI plus auto-connect modes.
+addons/mimic/nodes/mimic_connector.gd: CanvasLayer placeholder reserved for future Mimic connection form UI.
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
@@ -82,6 +84,6 @@ test/integration/mimic_connection_probe.gd: Explicit server/client probe script 
 tools/: Local PowerShell automation entry points.
 tools/godot.ps1: Repo-local Godot CLI wrapper with Godot 4.6.3 fallback.
 tools/verify.ps1: Full local verification pass for import, unit tests, startup smoke, ENet explicit/auto-connect smoke, and WebSocket smoke.
-tools/run_two_instances.ps1: Explicit ENet/WebSocket server/client smoke test runner.
+tools/run_two_instances.ps1: Explicit ENet/WebSocket server/client and auto-connect smoke test runner.
 tools/mkdocs_hooks.py: MkDocs hook that generates API docs and copies SVG/PNG brand assets into the built documentation site.
 ```

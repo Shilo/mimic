@@ -10,7 +10,7 @@ res://examples/single_to_multiplayer/single_to_multiplayer.tscn
 
 The example is intentionally small. It exists to show the current connection and component flow, not to demonstrate prediction, rollback, interpolation, matchmaking, or production networking.
 
-The startup scene contains a `MimicConnector` with `auto_connect_mode` set to `Server If First Else Client`, then logs Mimic connection signals from its scene script. The folder also includes a tiny movable player scene as single-player material to adapt later; it is not a complete networked gameplay scene yet.
+Set `mimic_multiplayer/connection/editor_auto_connect = Server Then Client` for local multi-instance testing, then the startup scene logs Mimic connection signals from its scene script. The folder also includes a tiny movable player scene as single-player material to adapt later; it is not a complete networked gameplay scene yet.
 
 ## Playable Web Build
 

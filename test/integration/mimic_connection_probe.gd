@@ -1,6 +1,7 @@
 extends Node
 
 const TRANSPORT := "mimic_multiplayer/connection/transport"
+const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const ADDRESS := "mimic_multiplayer/connection/address"
 const PORT := "mimic_multiplayer/connection/port"
 const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
@@ -12,6 +13,8 @@ var _address := "127.0.0.1"
 var _port := 18910
 var _timeout := 10.0
 var _finished := false
+var _saved_editor_auto_connect_exists := false
+var _saved_editor_auto_connect: Variant = null
 
 
 func _ready() -> void:
@@ -26,7 +29,7 @@ func _ready() -> void:
 		"client":
 			_start_client()
 		"auto":
-			_start_server_if_first_else_client()
+			_finish_project_editor_auto_connect.call_deferred()
 		_:
 			_fail("Unknown role '%s'. Use server, client, or auto." % _role)
 
@@ -46,7 +49,17 @@ func _parse_user_args() -> void:
 
 
 func _configure_mimic() -> void:
+	_saved_editor_auto_connect_exists = ProjectSettings.has_setting(EDITOR_AUTO_CONNECT)
+	if _saved_editor_auto_connect_exists:
+		_saved_editor_auto_connect = ProjectSettings.get_setting(EDITOR_AUTO_CONNECT)
+
 	ProjectSettings.set_setting(TRANSPORT, _get_transport_type())
+	var editor_auto_connect := (
+		Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT
+		if _role == "auto"
+		else Mimic.EditorAutoConnectMode.DISABLED
+	)
+	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, editor_auto_connect)
 	ProjectSettings.set_setting(ADDRESS, _address)
 	ProjectSettings.set_setting(PORT, _port)
 	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, false)
@@ -88,11 +101,8 @@ func _start_client() -> void:
 	print("MIMIC_TEST_READY client transport=%s port=%d" % [_transport, _port])
 
 
-func _start_server_if_first_else_client() -> void:
-	var error := Mimic.start_server_if_first_else_client()
-	if error != OK:
-		_fail("Auto-connect start failed: %s." % error_string(error))
-		return
+func _finish_project_editor_auto_connect() -> void:
+	await get_tree().process_frame
 
 	if Mimic.is_server():
 		_role = "server"
@@ -140,6 +150,7 @@ func _succeed() -> void:
 	_finished = true
 	await get_tree().create_timer(0.25).timeout
 	Mimic.stop()
+	_restore_editor_auto_connect()
 	get_tree().quit(0)
 
 
@@ -150,4 +161,12 @@ func _fail(message: String) -> void:
 	print("MIMIC_TEST_FAILED %s %s" % [_role, message])
 	push_error(message)
 	Mimic.stop()
+	_restore_editor_auto_connect()
 	get_tree().quit(1)
+
+
+func _restore_editor_auto_connect() -> void:
+	if _saved_editor_auto_connect_exists:
+		ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, _saved_editor_auto_connect)
+	elif ProjectSettings.has_setting(EDITOR_AUTO_CONNECT):
+		ProjectSettings.clear(EDITOR_AUTO_CONNECT)

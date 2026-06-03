@@ -33,4 +33,4 @@ res://addons/mimic/nodes/
 
 ## After Installing
 
-Open Project Settings and search for **Mimic Multiplayer**. The default transport is ENet, the default address is `127.0.0.1`, and the default port is `15490`.
+Open Project Settings and search for **Mimic Multiplayer**. The default transport is ENet, auto-connect is disabled, the default address is `127.0.0.1`, and the default port is `15490`.

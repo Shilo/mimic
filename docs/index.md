@@ -7,7 +7,7 @@
 
 Clone-and-play multiplayer for Godot. Drop in a `MimicSync` node and make your scenes network-aware, with high-level nodes for connection and gameplay.
 
-Mimic Multiplayer is a Godot 4 addon for making the first steps of high-level multiplayer easier to author. Add Mimic to a project, use the `Mimic` singleton or `MimicConnector` to host and join, and keep scene synchronization close to Godot's native `MultiplayerSynchronizer` workflow.
+Mimic Multiplayer is a Godot 4 addon for making the first steps of high-level multiplayer easier to author. Add Mimic to a project, use the `Mimic` singleton and Project Settings to host and join, and keep scene synchronization close to Godot's native `MultiplayerSynchronizer` workflow.
 
 <div class="mimic-hero-actions">
 <p>
@@ -29,9 +29,10 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 - Provides an offline state, stop/cancel helpers, and status helpers.
 - Keeps Offline and WebRTC transport selections explicit: Offline does not start a peer, and WebRTC is reserved but unsupported.
 - Exposes typed Project Settings for connection defaults.
+- Supports Project Settings auto-connect for startup scenes.
 - Can request optional UPnP port forwarding when hosting.
 - Emits compact connection lifecycle signals.
-- Provides `MimicConnector` for simple host/join/stop entry points.
+- Reserves `MimicConnector` for future connection form UI.
 - Provides `MimicSync`, a visible per-entity component that subclasses `MultiplayerSynchronizer`.
 
 ## What Mimic Does Not Do Yet
@@ -47,6 +48,6 @@ Mimic is intentionally smaller than full netcode frameworks. It helps with conne
 - [Installation](installation.md) if Mimic is not in your project yet.
 - [Quick Start](quick_start.md) to run a local host/client pair.
 - <a href="https://shilo.github.io/mimic/play/" title="Play Showcase" aria-label="Play Showcase" target="_blank" rel="noopener">Play Showcase</a> to launch the web export when you want to try Mimic before opening the project.
-- [MimicConnector](nodes/mimic_connector.md) if you want scene-driven connection startup.
+- [MimicConnector](nodes/mimic_connector.md) if you want to track the future connection form surface.
 - [MimicSync](nodes/mimic_sync.md) if you are preparing entities for synchronization.
 - [Netfox](other_multiplayer_addons/netfox.md) if you are choosing between Mimic and a larger multiplayer framework.

@@ -5,6 +5,7 @@ class_name MimicProjectSettings extends Object
 ## Settings are registered by the editor plugin and read by the Mimic runtime.
 
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
+const _EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const _ADDRESS := "mimic_multiplayer/connection/address"
 const _PORT := "mimic_multiplayer/connection/port"
 const _MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
@@ -48,10 +49,12 @@ enum _LogLevel {
 }
 
 const _TRANSPORT_HINT := "Offline,ENet,WebSocket,WebRTC (Unsupported)"
+const _EDITOR_AUTO_CONNECT_HINT := "Disabled,Server Then Client,Client,Server"
 const _PORT_MAPPING_PROTOCOL_HINT := "Transport Default,TCP,UDP,TCP and UDP"
 const _LOG_LEVEL_HINT := "All,Warning,Error,None"
 
 const _DEFAULT_TRANSPORT := _TransportType.ENET
+const _DEFAULT_EDITOR_AUTO_CONNECT := 0
 const _DEFAULT_ADDRESS := "127.0.0.1"
 const _DEFAULT_PORT := 15490
 const _DEFAULT_MAX_CLIENTS := 32
@@ -79,6 +82,13 @@ const _SETTINGS := [
 		"type": TYPE_INT,
 		"hint": PROPERTY_HINT_ENUM,
 		"hint_string": _TRANSPORT_HINT,
+	},
+	{
+		"name": _EDITOR_AUTO_CONNECT,
+		"default": _DEFAULT_EDITOR_AUTO_CONNECT,
+		"type": TYPE_INT,
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": _EDITOR_AUTO_CONNECT_HINT,
 	},
 	{
 		"name": _ADDRESS,
@@ -218,6 +228,11 @@ const _SETTINGS := [
 static var transport: int:
 	get:
 		return _get_int(_TRANSPORT, _DEFAULT_TRANSPORT)
+
+## Editor-only connection startup action run by the Mimic autoload. See [enum Mimic.EditorAutoConnectMode].
+static var editor_auto_connect: int:
+	get:
+		return _get_int(_EDITOR_AUTO_CONNECT, _DEFAULT_EDITOR_AUTO_CONNECT)
 
 ## Default client address used by [method Mimic.start_client].
 static var address: String:
