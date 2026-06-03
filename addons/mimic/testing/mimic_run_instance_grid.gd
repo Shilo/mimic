@@ -239,7 +239,9 @@ func _fit_frame_rect_to_cell(
 		frame_margins
 	)
 	var fitted_client_size := _fit_size_to_aspect(available_client_size, reference_client_size)
-	var fitted_frame_size := fitted_client_size + frame_chrome_size
+	# A cell smaller than the window chrome cannot preserve aspect; clamp so the
+	# fitted frame never spills out of its cell and overlaps a neighbor.
+	var fitted_frame_size := (fitted_client_size + frame_chrome_size).min(cell_rect.size)
 	var fitted_frame_position := cell_rect.position + (cell_rect.size - fitted_frame_size) / 2
 
 	return Rect2i(fitted_frame_position, fitted_frame_size)

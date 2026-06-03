@@ -139,6 +139,24 @@ func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
 	assert_lte(fitted_rect.end.y, cell_rect.end.y)
 
 
+func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> void:
+	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 30))
+	var reference_client_size := Vector2i(1152, 648)
+	var frame_margins := Vector4i(4, 28, 4, 4)
+
+	var fitted_rect: Rect2i = _grid.call(
+		"_fit_frame_rect_to_cell",
+		cell_rect,
+		reference_client_size,
+		frame_margins
+	)
+
+	assert_gte(fitted_rect.position.x, cell_rect.position.x)
+	assert_gte(fitted_rect.position.y, cell_rect.position.y)
+	assert_lte(fitted_rect.end.x, cell_rect.end.x)
+	assert_lte(fitted_rect.end.y, cell_rect.end.y)
+
+
 func test_grid_selection_uses_reference_aspect() -> void:
 	var screen_size := Vector2i(1200, 900)
 	var portrait_aspect := 9.0 / 16.0
