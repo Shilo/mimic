@@ -42,20 +42,18 @@ func after_each() -> void:
 func test_fit_frame_rect_preserves_client_aspect_inside_tall_cell() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
 	var reference_client_size := Vector2i(1152, 648)
-	var titlebar_height := 31
-	var frame_border_size := Vector2i(1, 1)
+	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 
 	assert_eq(fitted_rect, Rect2i(Vector2i(0, 255), Vector2i(960, 570)))
 	assert_almost_eq(
-		_get_client_aspect(fitted_rect, titlebar_height, frame_border_size),
+		_get_client_aspect(fitted_rect, frame_margins),
 		16.0 / 9.0,
 		0.01
 	)
@@ -64,20 +62,18 @@ func test_fit_frame_rect_preserves_client_aspect_inside_tall_cell() -> void:
 func test_fit_frame_rect_centers_window_inside_wide_cell() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
 	var reference_client_size := Vector2i(1152, 648)
-	var titlebar_height := 31
-	var frame_border_size := Vector2i(1, 1)
+	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 
 	assert_eq(fitted_rect, Rect2i(Vector2i(507, 0), Vector2i(905, 540)))
 	assert_almost_eq(
-		_get_client_aspect(fitted_rect, titlebar_height, frame_border_size),
+		_get_client_aspect(fitted_rect, frame_margins),
 		16.0 / 9.0,
 		0.01
 	)
@@ -87,39 +83,54 @@ func test_fit_frame_rect_keeps_adjacent_frames_at_cell_seam() -> void:
 	var left_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1032))
 	var right_cell_rect := Rect2i(Vector2i(960, 0), Vector2i(960, 1032))
 	var reference_client_size := Vector2i(1152, 648)
-	var titlebar_height := 31
-	var frame_border_size := Vector2i(1, 1)
+	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var left_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		left_cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 	var right_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		right_cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 
 	assert_eq(left_rect.end.x, right_rect.position.x)
 
 
-func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
-	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 40))
+func test_fit_frame_rect_accounts_for_asymmetric_window_decorations() -> void:
+	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 516))
 	var reference_client_size := Vector2i(1152, 648)
-	var titlebar_height := 28
-	var frame_border_size := Vector2i(4, 4)
+	var frame_margins := Vector4i(8, 31, 12, 7)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
+	)
+
+	assert_eq(fitted_rect, Rect2i(Vector2i(45, 0), Vector2i(869, 516)))
+	assert_almost_eq(
+		_get_client_aspect(fitted_rect, frame_margins),
+		16.0 / 9.0,
+		0.01
+	)
+
+
+func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
+	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 40))
+	var reference_client_size := Vector2i(1152, 648)
+	var frame_margins := Vector4i(4, 28, 4, 4)
+
+	var fitted_rect: Rect2i = _grid.call(
+		"_fit_frame_rect_to_cell",
+		cell_rect,
+		reference_client_size,
+		frame_margins
 	)
 
 	assert_gte(fitted_rect.position.x, cell_rect.position.x)
@@ -131,15 +142,13 @@ func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
 func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 30))
 	var reference_client_size := Vector2i(1152, 648)
-	var titlebar_height := 28
-	var frame_border_size := Vector2i(4, 4)
+	var frame_margins := Vector4i(4, 28, 4, 4)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
 		reference_client_size,
-		titlebar_height,
-		frame_border_size
+		frame_margins
 	)
 
 	assert_gte(fitted_rect.position.x, cell_rect.position.x)
@@ -277,12 +286,11 @@ func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
 
 func _get_client_aspect(
 	frame_rect: Rect2i,
-	titlebar_height: int,
-	frame_border_size: Vector2i
+	frame_margins: Vector4i
 ) -> float:
 	var client_size := frame_rect.size - Vector2i(
-		frame_border_size.x * 2,
-		titlebar_height + frame_border_size.y
+		frame_margins.x + frame_margins.z,
+		frame_margins.y + frame_margins.w
 	)
 	return float(client_size.x) / float(client_size.y)
 
@@ -297,8 +305,7 @@ func _should_fit(
 		"_should_fit_to_cell_for_stretch",
 		cell_rect,
 		reference_client_size,
-		31,
-		Vector2i(1, 1),
+		Vector4i(1, 31, 1, 1),
 		stretch_mode,
 		stretch_aspect
 	)
