@@ -1,6 +1,9 @@
 extends GutTest
 
 const GRID_SCRIPT := preload("res://addons/mimic/testing/mimic_run_instance_grid.gd")
+const REFERENCE_CLIENT_SIZE := Vector2i(1152, 648)
+const TALL_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
+const WIDE_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
 
 var _grid: Node = null
 var _custom_multiplayer_roots: Array[Node] = []
@@ -41,13 +44,12 @@ func after_each() -> void:
 
 func test_fit_frame_rect_preserves_client_aspect_inside_tall_cell() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
-		reference_client_size,
+		REFERENCE_CLIENT_SIZE,
 		frame_margins
 	)
 
@@ -61,13 +63,12 @@ func test_fit_frame_rect_preserves_client_aspect_inside_tall_cell() -> void:
 
 func test_fit_frame_rect_centers_window_inside_wide_cell() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
-		reference_client_size,
+		REFERENCE_CLIENT_SIZE,
 		frame_margins
 	)
 
@@ -82,19 +83,18 @@ func test_fit_frame_rect_centers_window_inside_wide_cell() -> void:
 func test_fit_frame_rect_keeps_adjacent_frames_at_cell_seam() -> void:
 	var left_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1032))
 	var right_cell_rect := Rect2i(Vector2i(960, 0), Vector2i(960, 1032))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(1, 31, 1, 1)
 
 	var left_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		left_cell_rect,
-		reference_client_size,
+		REFERENCE_CLIENT_SIZE,
 		frame_margins
 	)
 	var right_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		right_cell_rect,
-		reference_client_size,
+		REFERENCE_CLIENT_SIZE,
 		frame_margins
 	)
 
@@ -103,13 +103,12 @@ func test_fit_frame_rect_keeps_adjacent_frames_at_cell_seam() -> void:
 
 func test_fit_frame_rect_accounts_for_asymmetric_window_decorations() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 516))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(8, 31, 12, 7)
 
 	var fitted_rect: Rect2i = _grid.call(
 		"_fit_frame_rect_to_cell",
 		cell_rect,
-		reference_client_size,
+		REFERENCE_CLIENT_SIZE,
 		frame_margins
 	)
 
@@ -123,18 +122,16 @@ func test_fit_frame_rect_accounts_for_asymmetric_window_decorations() -> void:
 
 func test_fit_frame_rect_stays_inside_tiny_cell() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 40))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(4, 28, 4, 4)
 
-	_assert_fit_frame_rect_inside_cell(cell_rect, reference_client_size, frame_margins)
+	_assert_fit_frame_rect_inside_cell(cell_rect, REFERENCE_CLIENT_SIZE, frame_margins)
 
 
 func test_fit_frame_rect_clamps_when_cell_is_smaller_than_window_chrome() -> void:
 	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(80, 30))
-	var reference_client_size := Vector2i(1152, 648)
 	var frame_margins := Vector4i(4, 28, 4, 4)
 
-	_assert_fit_frame_rect_inside_cell(cell_rect, reference_client_size, frame_margins)
+	_assert_fit_frame_rect_inside_cell(cell_rect, REFERENCE_CLIENT_SIZE, frame_margins)
 
 
 func test_frame_border_is_hardcoded_not_measured_to_avoid_window_gaps() -> void:
@@ -167,57 +164,40 @@ func test_grid_selection_uses_reference_aspect() -> void:
 
 
 func test_should_fit_requires_active_stretch_mode() -> void:
-	var cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
-	var reference_client_size := Vector2i(1152, 648)
-
-	assert_false(_should_fit(cell_rect, reference_client_size, "disabled", "keep"))
-	assert_false(_should_fit(cell_rect, reference_client_size, "canvas_items", "ignore"))
-	assert_false(_should_fit(cell_rect, reference_client_size, "viewport", "expand"))
+	assert_false(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "disabled", "keep"))
+	assert_false(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "ignore"))
+	assert_false(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "viewport", "expand"))
 
 
 func test_should_fit_keep_when_cell_aspect_differs() -> void:
-	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
-	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
-	var reference_client_size := Vector2i(1152, 648)
-
-	assert_true(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep"))
-	assert_true(_should_fit(wide_cell_rect, reference_client_size, "viewport", "keep"))
+	assert_true(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "keep"))
+	assert_true(_should_fit(WIDE_CELL_RECT, REFERENCE_CLIENT_SIZE, "viewport", "keep"))
 
 
 func test_should_fill_keep_when_cell_client_aspect_matches() -> void:
-	var reference_client_size := Vector2i(1152, 648)
 	var matching_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1154, 680))
 
-	assert_false(_should_fit(matching_cell_rect, reference_client_size, "canvas_items", "keep"))
+	assert_false(_should_fit(matching_cell_rect, REFERENCE_CLIENT_SIZE, "canvas_items", "keep"))
 
 
 func test_should_fit_keep_width_only_when_cell_is_wider() -> void:
-	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
-	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
-	var reference_client_size := Vector2i(1152, 648)
-
-	assert_true(_should_fit(wide_cell_rect, reference_client_size, "canvas_items", "keep_width"))
-	assert_false(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep_width"))
+	assert_true(_should_fit(WIDE_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_width"))
+	assert_false(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_width"))
 
 
 func test_should_fit_keep_height_only_when_cell_is_taller() -> void:
-	var tall_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
-	var wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
-	var reference_client_size := Vector2i(1152, 648)
-
-	assert_true(_should_fit(tall_cell_rect, reference_client_size, "canvas_items", "keep_height"))
-	assert_false(_should_fit(wide_cell_rect, reference_client_size, "canvas_items", "keep_height"))
+	assert_true(_should_fit(TALL_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_height"))
+	assert_false(_should_fit(WIDE_CELL_RECT, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_height"))
 
 
 func test_should_fit_uses_unclamped_cell_aspect_for_tiny_cells() -> void:
 	var tiny_wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(100, 40))
-	var reference_client_size := Vector2i(1152, 648)
 
 	assert_true(
-		_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_width")
+		_should_fit(tiny_wide_cell_rect, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_width")
 	)
 	assert_false(
-		_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_height")
+		_should_fit(tiny_wide_cell_rect, REFERENCE_CLIENT_SIZE, "canvas_items", "keep_height")
 	)
 
 

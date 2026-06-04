@@ -95,37 +95,11 @@ func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
 
 
 func test_enet_server_requests_udp_port_mapping_when_enabled() -> void:
-	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(
-		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
-		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
-	)
-	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.ENET)
-	var port := _next_test_port()
-
-	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
-
-	assert_eq(fake.add_requests.size(), 1)
-	assert_eq(fake.add_requests[0]["port"], port)
-	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), ["UDP"])
+	_assert_server_requests_transport_default_port_mapping(Mimic.TransportType.ENET, ["UDP"])
 
 
 func test_websocket_server_requests_tcp_port_mapping_when_enabled() -> void:
-	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(
-		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
-		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
-	)
-	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.WEBSOCKET)
-	var port := _next_test_port()
-
-	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
-
-	assert_eq(fake.add_requests.size(), 1)
-	assert_eq(fake.add_requests[0]["port"], port)
-	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), ["TCP"])
+	_assert_server_requests_transport_default_port_mapping(Mimic.TransportType.WEBSOCKET, ["TCP"])
 
 
 func test_port_mapping_protocol_override_can_map_tcp_and_udp() -> void:
@@ -290,6 +264,26 @@ func _replace_mimic_port_mapper(port_mapper: MimicPortMapper) -> void:
 	Mimic._port_mapper = port_mapper
 	if not Mimic._port_mapper.finished.is_connected(Mimic._finish_port_mapping):
 		Mimic._port_mapper.finished.connect(Mimic._finish_port_mapping)
+
+
+func _assert_server_requests_transport_default_port_mapping(
+	transport: int,
+	expected_protocols: Array
+) -> void:
+	var fake := _install_fake_port_mapper()
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, transport)
+	var port := _next_test_port()
+
+	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
+
+	assert_eq(fake.add_requests.size(), 1)
+	assert_eq(fake.add_requests[0]["port"], port)
+	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), expected_protocols)
 
 
 func _configure_transport(transport: int, port: int) -> void:
