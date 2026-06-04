@@ -33,10 +33,8 @@ const _EDITOR_AUTO_CONNECT_HINT := "Disabled,Server Then Client,Client,Server"
 const _PORT_MAPPING_PROTOCOL_HINT := "Transport Default,TCP,UDP,TCP and UDP"
 const _LOG_LEVEL_HINT := "All,Warning,Error,None"
 
-# Mimic.TransportType.ENET.
-const _DEFAULT_TRANSPORT := 1
-# Mimic.EditorAutoConnectMode.DISABLED.
-const _DEFAULT_EDITOR_AUTO_CONNECT := 0
+const _DEFAULT_TRANSPORT := 1 # Mimic.TransportType.ENET
+const _DEFAULT_EDITOR_AUTO_CONNECT := 0 # Mimic.EditorAutoConnectMode.DISABLED
 const _DEFAULT_ADDRESS := "127.0.0.1"
 const _DEFAULT_PORT := 15_490
 const _DEFAULT_MAX_CLIENTS := 32
@@ -51,13 +49,11 @@ const _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT := 3.0
 const _DEFAULT_PORT_FORWARDING_ENABLED := false
 const _DEFAULT_PORT_MAPPING_DELETE_ON_STOP := true
 const _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := true
-# Mimic.PortMappingProtocol.TRANSPORT_DEFAULT.
-const _DEFAULT_PORT_MAPPING_PROTOCOL := 0
+const _DEFAULT_PORT_MAPPING_PROTOCOL := 0 # Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
 const _DEFAULT_PORT_MAPPING_DURATION := 7200
 const _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS := 2000
 const _DEFAULT_UPNP_DISCOVER_TTL := 2
-# MimicLog.Level.WARNING.
-const _DEFAULT_LOG_LEVEL := 1
+const _DEFAULT_LOG_LEVEL := 1 # MimicLog.Level.WARNING
 
 const _SETTINGS := [
 	{
