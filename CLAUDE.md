@@ -8,6 +8,8 @@ Goals: The intended authoring shape is that a user adds one MimicSync node to a 
 
 Current focus: The current implementation has pivoted toward a small connection and configuration MVP. The plugin manages the Mimic autoload and project settings, Mimic exposes connection helpers for ENet/WebSocket/offline states plus stop/cancel/status helpers, MimicProjectSettings owns typed ProjectSettings accessors including editor-only startup auto-connect, MimicConnector is reserved for future connection form UI, and MimicLog provides compact connection logging. Keep this layer explicit and stable before reintroducing custom spawn/despawn behavior.
 
+Autoload shape: `addons/mimic/mimic.gd` is the user-facing `Mimic` singleton and should stay focused on high-level public API, state, signals, and orchestration. Extract non-facing transport, editor, fallback, worker, or policy logic into small helper files when that keeps the autoload clearer.
+
 Boundaries: Avoid adding gameplay scenes, player scenes, resources, input maps, art, custom inspectors, docks, debug UI, prediction, rollback, interpolation, time sync, command/event systems, client spawn requests, authority transfer, or raw packet protocols unless explicitly requested. Ask before adding files outside the addon/example structure or changing the core design away from the Mimic autoload plus MimicSync component direction. Do not add migration shims, deprecated-name aliases, compatibility wrappers, or fallback behavior anywhere in the project unless explicitly requested; update callers, scenes, docs, and settings to the current Mimic model instead.
 
 Discovery: Prioritize progressive discovery over token usage. Read only the files needed for the current task, then expand outward when the code path requires it. Challenge and verify important ideas before changing the codebase, especially when a request affects architecture, public API, project settings, networking behavior, editor behavior, or file structure. Check local Godot docs/source when behavior depends on MultiplayerAPI, MultiplayerPeer, SceneMultiplayer, MultiplayerSynchronizer, MultiplayerSpawner, SceneReplicationConfig, GDScript syntax, or Godot 4 API style details.
@@ -55,11 +57,14 @@ addons/mimic/: Mimic addon source folder.
 addons/mimic/icon.svg: Mimic addon icon used as the project icon and public node icon.
 addons/mimic/plugin.cfg: Godot editor plugin manifest.
 addons/mimic/plugin.gd: Editor plugin that registers Mimic project settings and manages the Mimic autoload.
-addons/mimic/mimic.gd: Runtime Mimic autoload for connection helpers, network state, transport startup, shutdown, and port forwarding.
+addons/mimic/mimic.gd: User-facing runtime Mimic autoload for high-level connection helpers, network state, lifecycle signals, shutdown, and orchestration.
 addons/mimic/nodes/: Public user-facing scene-tree nodes developers add to scenes.
 addons/mimic/nodes/mimic_connector.gd: CanvasLayer placeholder reserved for future Mimic connection form UI.
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
+addons/mimic/connection/mimic_transport.gd: Internal transport helper for ENet/WebSocket peer startup, bind addresses, transport labels, and WebSocket URL formatting.
+addons/mimic/connection/mimic_local_auto_connect.gd: Internal local auto-connect fallback and ENet preflight policy used by `Mimic.start_server_or_client()`.
+addons/mimic/connection/mimic_editor_auto_connector.gd: Internal editor-only auto-connect dispatcher used by the Mimic autoload.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
 addons/mimic/settings/: Project settings registration and typed settings access.
 addons/mimic/settings/mimic_project_settings.gd: Static ProjectSettings helper with typed property accessors for Mimic settings.
