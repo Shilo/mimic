@@ -67,7 +67,7 @@ func _configure_mimic() -> void:
 	Mimic.stop()
 
 
-func _get_transport_type() -> int:
+func _get_transport_type() -> Mimic.TransportType:
 	match _transport:
 		"enet":
 			return Mimic.TransportType.ENET
@@ -138,7 +138,7 @@ func _on_client_connection_failed(message: String) -> void:
 		_fail(message)
 
 
-func _on_start_failed(_state: int, error: int, message: String) -> void:
+func _on_start_failed(_state: Mimic.NetworkState, error: Error, message: String) -> void:
 	_fail("%s (%s)." % [message, error_string(error)])
 
 

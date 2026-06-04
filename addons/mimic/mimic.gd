@@ -7,10 +7,10 @@ extends Node
 
 ## Emitted when Mimic changes connection state.
 ## [param state] and [param previous_state] are [enum NetworkState] values.
-signal state_changed(state: int, previous_state: int)
+signal state_changed(state: NetworkState, previous_state: NetworkState)
 ## Emitted when a server or client start attempt fails before reaching its target state.
 ## [param attempted_state] is a [enum NetworkState] value.
-signal start_failed(attempted_state: int, error: int, message: String)
+signal start_failed(attempted_state: NetworkState, error: Error, message: String)
 ## Emitted after a server peer starts listening.
 signal server_started(port: int)
 ## Emitted after a client peer begins connecting.
@@ -30,7 +30,8 @@ signal peer_disconnected(peer_id: int)
 ## [signal client_connection_failed] to react to involuntary disconnects.
 signal stopped()
 ## Emitted after a background UPnP port mapping attempt succeeds or fails.
-signal port_mapping_finished(result: int, external_address: String)
+## [param result] is a [enum UPNP.UPNPResult] value.
+signal port_mapping_finished(result: UPNP.UPNPResult, external_address: String)
 
 ## Transport backends Mimic can start.
 enum TransportType {
@@ -76,8 +77,6 @@ enum PortMappingProtocol {
 	## Map both TCP and UDP.
 	TCP_AND_UDP,
 }
-
-const _EDITOR_AUTO_CONNECT_TOOLING_ARGS := ["--doctool", "--import", "-s", "--script"]
 
 var _state: NetworkState = NetworkState.OFFLINE
 var _last_client_address := ""
@@ -141,32 +140,19 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 		"port",
 		port,
 		"using",
-		_get_transport_name(transport)
+		MimicTransport.get_display_name(transport)
 	)
-	match transport:
-		TransportType.ENET:
-			var enet_peer := ENetMultiplayerPeer.new()
-			var bind_address := MimicProjectSettings.bind_address
-			if not bind_address.is_empty() and bind_address != "*":
-				enet_peer.set_bind_ip(bind_address)
-			error = enet_peer.create_client(
-				address,
-				port,
-				MimicProjectSettings.enet_channel_count,
-				MimicProjectSettings.enet_in_bandwidth,
-				MimicProjectSettings.enet_out_bandwidth,
-				MimicProjectSettings.enet_client_local_port
-			)
-			peer = enet_peer
-		TransportType.WEBSOCKET:
-			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = MimicProjectSettings.websocket_handshake_timeout
-			error = websocket_peer.create_client(_get_websocket_url(address, port))
-			peer = websocket_peer
-		TransportType.OFFLINE, TransportType.WEBRTC:
+	var transport_result: MimicTransport.PeerResult = MimicTransport.create_client_peer(
+		transport,
+		address,
+		port
+	)
+	error = transport_result.error
+	peer = transport_result.peer
+	if peer == null:
+		if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
 			return _fail_unavailable_transport(NetworkState.CLIENT_CONNECTING)
-		_:
-			return _fail_unsupported_transport(NetworkState.CLIENT_CONNECTING)
+		return _fail_unsupported_transport(NetworkState.CLIENT_CONNECTING)
 
 	if error != OK:
 		peer.close()
@@ -188,9 +174,14 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 func start_server_or_client() -> Error:
 	# This avoids Godot's noisy ENet bind error when the local port is already occupied.
 	# The real _start_server call below remains authoritative when the best-effort probe passes.
-	var preflight_error := _get_server_or_client_preflight_error()
+	var preflight_error := MimicLocalAutoConnect.get_host_preflight_error(
+		_get_transport_type(),
+		MimicProjectSettings.port,
+		MimicTransport.get_bind_address(),
+		_has_active_peer()
+	)
 	if preflight_error != OK:
-		if not _can_fallback_to_client_after_server_failure(preflight_error):
+		if not MimicLocalAutoConnect.can_fallback_to_client(preflight_error, _has_active_peer()):
 			return preflight_error
 
 		return start_client()
@@ -198,7 +189,7 @@ func start_server_or_client() -> Error:
 	var server_error := _start_server(-1, "", true)
 	if server_error == OK:
 		return OK
-	if not _can_fallback_to_client_after_server_failure(server_error):
+	if not MimicLocalAutoConnect.can_fallback_to_client(server_error, _has_active_peer()):
 		return server_error
 
 	return start_client()
@@ -223,7 +214,7 @@ func cancel_connection() -> void:
 
 
 ## Returns the current [enum NetworkState].
-func get_state() -> int:
+func get_state() -> NetworkState:
 	return _state
 
 
@@ -286,35 +277,24 @@ func _start_server(
 		"Starting server on port",
 		port,
 		"using",
-		_get_transport_name(transport)
+		MimicTransport.get_display_name(transport)
 	)
-	match transport:
-		TransportType.ENET:
-			var enet_peer := ENetMultiplayerPeer.new()
-			var bind_address := _get_bind_address(bind_address_override)
-			if not bind_address.is_empty() and bind_address != "*":
-				enet_peer.set_bind_ip(bind_address)
-			error = enet_peer.create_server(
-				port,
-				MimicProjectSettings.max_clients,
-				MimicProjectSettings.enet_channel_count,
-				MimicProjectSettings.enet_in_bandwidth,
-				MimicProjectSettings.enet_out_bandwidth
-			)
-			peer = enet_peer
-		TransportType.WEBSOCKET:
-			var websocket_peer := WebSocketMultiplayerPeer.new()
-			websocket_peer.handshake_timeout = MimicProjectSettings.websocket_handshake_timeout
-			error = websocket_peer.create_server(port, _get_bind_address(bind_address_override))
-			peer = websocket_peer
-		TransportType.OFFLINE, TransportType.WEBRTC:
+	var bind_address := MimicTransport.get_bind_address(bind_address_override)
+	var transport_result: MimicTransport.PeerResult = MimicTransport.create_server_peer(
+		transport,
+		port,
+		bind_address
+	)
+	error = transport_result.error
+	peer = transport_result.peer
+	if peer == null:
+		if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
 			return _fail_unavailable_transport(NetworkState.SERVER_LISTENING)
-		_:
-			return _fail_unsupported_transport(NetworkState.SERVER_LISTENING)
+		return _fail_unsupported_transport(NetworkState.SERVER_LISTENING)
 
 	if error != OK:
 		peer.close()
-		if quiet_expected_failure and _should_fallback_to_client(error):
+		if quiet_expected_failure and MimicLocalAutoConnect.is_expected_host_failure(error):
 			return error
 		var message := "Unable to start server: %s." % error_string(error)
 		return _fail_start(NetworkState.SERVER_LISTENING, error, message)
@@ -328,30 +308,14 @@ func _start_server(
 
 
 func _start_editor_auto_connect() -> void:
-	if _is_editor_auto_connect_tooling_run():
-		return
-	if not is_inside_tree():
-		return
-	if not is_offline():
-		return
-	if _has_active_peer():
-		return
-
-	match MimicProjectSettings.editor_auto_connect:
-		EditorAutoConnectMode.SERVER_THEN_CLIENT:
-			start_server_or_client()
-		EditorAutoConnectMode.CLIENT:
-			start_client()
-		EditorAutoConnectMode.SERVER:
-			start_server()
-
-
-func _is_editor_auto_connect_tooling_run() -> bool:
-	for argument in OS.get_cmdline_args():
-		if argument in _EDITOR_AUTO_CONNECT_TOOLING_ARGS:
-			return true
-
-	return false
+	MimicEditorAutoConnector.try_start(
+		is_inside_tree(),
+		is_offline(),
+		_has_active_peer(),
+		start_server_or_client,
+		start_client,
+		start_server
+	)
 
 
 func _validate_start(state: NetworkState, port: int) -> Error:
@@ -359,6 +323,9 @@ func _validate_start(state: NetworkState, port: int) -> Error:
 
 	if port < 1 or port > 65_535:
 		return _fail_start(state, ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
+
+	if not _is_known_transport(transport):
+		return _fail_unsupported_transport(state)
 
 	if transport == TransportType.ENET and OS.has_feature("web"):
 		return _fail_start(
@@ -432,7 +399,7 @@ func _change_state(state: NetworkState) -> void:
 	state_changed.emit(_state, previous_state)
 
 
-func _fail_start(state: NetworkState, error: int, message: String) -> Error:
+func _fail_start(state: NetworkState, error: Error, message: String) -> Error:
 	MimicLog.warning(message)
 	start_failed.emit(state, error, message)
 	return error
@@ -460,48 +427,12 @@ func _fail_unsupported_transport(state: NetworkState) -> Error:
 	return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
 
 
-func _get_server_or_client_preflight_error() -> Error:
-	if _get_transport_type() != TransportType.ENET:
-		return OK
-	if _has_active_peer() or OS.has_feature("web"):
-		return OK
-
-	var port := MimicProjectSettings.port
-	if port < 1 or port > 65_535:
-		return OK
-
-	var bind_address := _get_bind_address()
-	if bind_address != "*" and not bind_address.is_valid_ip_address():
-		# PacketPeerUDP can only probe literal bind addresses; let ENet validate other values.
-		return OK
-
-	return _get_enet_server_bind_preflight_error(port, bind_address)
-
-
-func _get_enet_server_bind_preflight_error(port: int, bind_address: String) -> Error:
-	var udp_probe := PacketPeerUDP.new()
-	var error: Error = udp_probe.bind(port, bind_address)
-	udp_probe.close()
-	if error == OK:
-		return OK
-
-	# PacketPeerUDP is a heuristic probe; ENet's create_server remains the authoritative bind.
-	# Match ENet's create_server bind-failure error so fallback policy stays centralized.
-	return ERR_CANT_CREATE
-
-
-func _should_fallback_to_client(error: Error) -> bool:
-	return error == ERR_ALREADY_IN_USE or error == ERR_CANT_CREATE or error == ERR_CANT_OPEN
-
-
-func _can_fallback_to_client_after_server_failure(error: Error) -> bool:
-	if not _should_fallback_to_client(error):
-		return false
-	if _has_active_peer():
-		return false
-	if OS.has_feature("dedicated_server") or OS.has_feature("server"):
-		return false
-	return true
+func _is_known_transport(transport: TransportType) -> bool:
+	match transport:
+		TransportType.OFFLINE, TransportType.ENET, TransportType.WEBSOCKET, TransportType.WEBRTC:
+			return true
+		_:
+			return false
 
 
 func _has_active_peer() -> bool:
@@ -536,44 +467,9 @@ func _reset_peer_state() -> void:
 	_change_state(NetworkState.OFFLINE)
 
 
-func _get_transport_type() -> int:
-	return MimicProjectSettings.transport
-
-
-func _get_transport_name(type: int) -> String:
-	match type:
-		TransportType.OFFLINE:
-			return "Offline"
-		TransportType.ENET:
-			return "ENet"
-		TransportType.WEBSOCKET:
-			return "WebSocket"
-		TransportType.WEBRTC:
-			return "WebRTC"
-	return "Unknown"
-
-
-func _get_bind_address(bind_address_override: String = "") -> String:
-	if not bind_address_override.is_empty():
-		return bind_address_override
-	var bind_address := MimicProjectSettings.bind_address
-	return "*" if bind_address.is_empty() else bind_address
-
-
-func _get_websocket_url(address: String, port: int) -> String:
-	if address.begins_with("ws://") or address.begins_with("wss://"):
-		return address
-
-	var formatted_address := address
-	if formatted_address.split(":").size() > 2 and not formatted_address.begins_with("["):
-		formatted_address = "[%s]" % formatted_address
-
-	var path := MimicProjectSettings.websocket_path.strip_edges()
-	if not path.is_empty() and not path.begins_with("/"):
-		path = "/" + path
-
-	var scheme := "wss" if MimicProjectSettings.websocket_client_use_tls else "ws"
-	return "%s://%s:%d%s" % [scheme, formatted_address, port, path]
+func _get_transport_type() -> TransportType:
+	var transport: TransportType = MimicProjectSettings.transport
+	return transport
 
 
 func _add_port_mapping(port: int) -> void:
@@ -584,7 +480,7 @@ func _add_port_mapping(port: int) -> void:
 	)
 
 
-func _finish_port_mapping(error: int, external_address: String) -> void:
+func _finish_port_mapping(error: UPNP.UPNPResult, external_address: String) -> void:
 	if error != UPNP.UPNP_RESULT_SUCCESS:
 		MimicLog.warning("UPnP port forwarding failed:", error)
 	else:
@@ -599,7 +495,8 @@ func _delete_port_mappings() -> void:
 func _get_port_mapping_protocols() -> PackedStringArray:
 	var protocols := PackedStringArray()
 	var transport := _get_transport_type()
-	match MimicProjectSettings.port_mapping_protocol:
+	var mapping_protocol: PortMappingProtocol = MimicProjectSettings.port_mapping_protocol
+	match mapping_protocol:
 		PortMappingProtocol.TRANSPORT_DEFAULT:
 			protocols.append("TCP" if transport == TransportType.WEBSOCKET else "UDP")
 		PortMappingProtocol.TCP:

@@ -65,7 +65,15 @@ func test_enet_server_then_client_preflight_allows_available_port() -> void:
 	_configure_transport(Mimic.TransportType.ENET, port)
 	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "127.0.0.1")
 
-	assert_eq(Mimic._get_server_or_client_preflight_error(), OK)
+	assert_eq(
+		MimicLocalAutoConnect.get_host_preflight_error(
+			Mimic.TransportType.ENET,
+			port,
+			"127.0.0.1",
+			false
+		),
+		OK
+	)
 
 
 func test_enet_server_then_client_preflights_occupied_server_port() -> void:
@@ -76,7 +84,15 @@ func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 	assert_eq(occupying_peer.bind(port, "127.0.0.1"), OK)
 	watch_signals(Mimic)
 
-	assert_eq(Mimic._get_server_or_client_preflight_error(), ERR_CANT_CREATE)
+	assert_eq(
+		MimicLocalAutoConnect.get_host_preflight_error(
+			Mimic.TransportType.ENET,
+			port,
+			"127.0.0.1",
+			false
+		),
+		ERR_CANT_CREATE
+	)
 	var start_error := Mimic.start_server_or_client()
 	occupying_peer.close()
 
@@ -90,9 +106,18 @@ func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 
 
 func test_server_then_client_preflight_skips_websocket_transport() -> void:
-	_configure_transport(Mimic.TransportType.WEBSOCKET, _next_test_port())
+	var port := _next_test_port()
+	_configure_transport(Mimic.TransportType.WEBSOCKET, port)
 
-	assert_eq(Mimic._get_server_or_client_preflight_error(), OK)
+	assert_eq(
+		MimicLocalAutoConnect.get_host_preflight_error(
+			Mimic.TransportType.WEBSOCKET,
+			port,
+			"*",
+			false
+		),
+		OK
+	)
 
 
 func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
@@ -193,8 +218,14 @@ func test_websocket_url_builder_adds_scheme_port_path_and_ipv6_brackets() -> voi
 	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_CLIENT_USE_TLS, true)
 	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "mimic")
 
-	assert_eq(Mimic._get_websocket_url("example.test", 443), "wss://example.test:443/mimic")
-	assert_eq(Mimic._get_websocket_url("2001:db8::1", 443), "wss://[2001:db8::1]:443/mimic")
+	assert_eq(
+		MimicTransport.get_websocket_url("example.test", 443),
+		"wss://example.test:443/mimic"
+	)
+	assert_eq(
+		MimicTransport.get_websocket_url("2001:db8::1", 443),
+		"wss://[2001:db8::1]:443/mimic"
+	)
 
 
 func test_websocket_url_builder_preserves_explicit_websocket_url() -> void:
@@ -202,12 +233,15 @@ func test_websocket_url_builder_preserves_explicit_websocket_url() -> void:
 	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "ignored")
 
 	assert_eq(
-		Mimic._get_websocket_url("ws://example.test:19000/custom", 19_000),
+		MimicTransport.get_websocket_url(
+			"ws://example.test:19000/custom",
+			19_000
+		),
 		"ws://example.test:19000/custom"
 	)
 
 
-func _assert_transport_connects(transport: int) -> void:
+func _assert_transport_connects(transport: Mimic.TransportType) -> void:
 	var port := _next_test_port()
 	_configure_transport(transport, port)
 	var host := _create_mimic_instance("Host")
@@ -234,7 +268,7 @@ func _assert_transport_connects(transport: int) -> void:
 	assert_signal_emitted(host, "peer_connected")
 
 
-func _assert_client_connection_can_be_canceled(transport: int) -> void:
+func _assert_client_connection_can_be_canceled(transport: Mimic.TransportType) -> void:
 	var port := _next_test_port()
 	_configure_transport(transport, port)
 	watch_signals(Mimic)
@@ -282,7 +316,7 @@ func _replace_mimic_port_mapper(port_mapper: MimicPortMapper) -> void:
 
 
 func _assert_server_requests_transport_default_port_mapping(
-	transport: int,
+	transport: Mimic.TransportType,
 	expected_protocols: Array
 ) -> void:
 	var fake := _install_fake_port_mapper()
@@ -302,7 +336,7 @@ func _assert_server_requests_transport_default_port_mapping(
 	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), expected_protocols)
 
 
-func _configure_transport(transport: int, port: int) -> void:
+func _configure_transport(transport: Mimic.TransportType, port: int) -> void:
 	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, transport)
 	ProjectSettings.set_setting(
 		MIMIC_SETTINGS.EDITOR_AUTO_CONNECT,

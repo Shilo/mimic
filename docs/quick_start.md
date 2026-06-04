@@ -72,7 +72,7 @@ func _ready() -> void:
 	Mimic.stopped.connect(_on_stopped)
 
 
-func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
+func _on_start_failed(_attempted_state: Mimic.NetworkState, error: Error, message: String) -> void:
 	MimicLog.warning("%s (%s)" % [message, error_string(error)])
 
 

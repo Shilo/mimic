@@ -222,11 +222,11 @@ func _ready() -> void:
 	Mimic.port_mapping_finished.connect(_on_port_mapping_finished)
 
 
-func _on_state_changed(state: int, previous_state: int) -> void:
+func _on_state_changed(state: Mimic.NetworkState, previous_state: Mimic.NetworkState) -> void:
 	MimicLog.log("State changed from", previous_state, "to", state)
 
 
-func _on_start_failed(_attempted_state: int, error: int, message: String) -> void:
+func _on_start_failed(_attempted_state: Mimic.NetworkState, error: Error, message: String) -> void:
 	MimicLog.warning("%s (%s)" % [message, error_string(error)])
 
 
@@ -262,7 +262,7 @@ func _on_stopped() -> void:
 	MimicLog.log("Networking stopped")
 
 
-func _on_port_mapping_finished(result: int, external_address: String) -> void:
+func _on_port_mapping_finished(result: UPNP.UPNPResult, external_address: String) -> void:
 	MimicLog.log("Port mapping result:", result, external_address)
 ```
 

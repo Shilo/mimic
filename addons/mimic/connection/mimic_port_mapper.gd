@@ -6,7 +6,7 @@ class_name MimicPortMapper extends RefCounted
 ## singleton instead.
 
 ## Emitted after a background UPnP add-mapping attempt succeeds or fails.
-signal finished(error: int, external_address: String)
+signal finished(error: UPNP.UPNPResult, external_address: String)
 
 var _external_address := ""
 var _mapped_port := 0
@@ -111,7 +111,7 @@ func _run_request(request: Dictionary) -> Dictionary:
 
 func _execute_request(request: Dictionary) -> Dictionary:
 	var upnp := UPNP.new()
-	var discover_error := upnp.discover(
+	var discover_error: UPNP.UPNPResult = upnp.discover(
 		int(request["discover_timeout_ms"]),
 		int(request["discover_ttl"])
 	)
@@ -123,7 +123,7 @@ func _execute_request(request: Dictionary) -> Dictionary:
 		return _result(request, UPNP.UPNP_RESULT_NO_GATEWAY)
 
 	var port := int(request["port"])
-	var protocols := request["protocols"] as PackedStringArray
+	var protocols: PackedStringArray = request["protocols"]
 	if String(request["operation"]) == "delete":
 		for protocol in protocols:
 			upnp.delete_port_mapping(port, protocol)
@@ -131,7 +131,7 @@ func _execute_request(request: Dictionary) -> Dictionary:
 
 	var mapped_protocols := PackedStringArray()
 	for protocol in protocols:
-		var mapping_error := upnp.add_port_mapping(
+		var mapping_error: UPNP.UPNPResult = upnp.add_port_mapping(
 			port,
 			port,
 			String(request["description"]),
@@ -163,12 +163,12 @@ func _finish_completed_request() -> void:
 	if _thread == null:
 		return
 
-	var thread_result := _thread.wait_to_finish() as Dictionary
+	var thread_result: Dictionary = _thread.wait_to_finish()
 	_thread = null
 
 	# Worker threads only compute results; tracked port-mapping state mutates here.
 	var request_id := int(thread_result["id"])
-	var result := thread_result["result"] as Dictionary
+	var result: Dictionary = thread_result["result"]
 
 	if request_id != _request_id:
 		return
@@ -184,10 +184,10 @@ func _finish_completed_request() -> void:
 		_start_queued_request()
 		return
 
-	var error := int(result["error"])
+	var error: UPNP.UPNPResult = result["error"]
 	if error == UPNP.UPNP_RESULT_SUCCESS:
 		_mapped_port = int(result["mapped_port"])
-		_mapped_protocols = result["mapped_protocols"] as PackedStringArray
+		_mapped_protocols = result["mapped_protocols"]
 		_external_address = String(result["external_address"])
 
 	if _delete_after_thread:
@@ -211,7 +211,7 @@ func _start_queued_request() -> void:
 
 func _result(
 	request: Dictionary,
-	error: int,
+	error: UPNP.UPNPResult,
 	mapped_address: String = "",
 	mapped_port: int = 0,
 	mapped_protocols: PackedStringArray = PackedStringArray()

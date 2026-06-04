@@ -44,6 +44,18 @@ func test_invalid_server_start_does_not_stop_existing_server() -> void:
 	assert_eq(Mimic.get_state(), Mimic.NetworkState.SERVER_LISTENING)
 
 
+func test_invalid_transport_start_does_not_stop_existing_server() -> void:
+	var port := _next_test_port()
+	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, 999)
+
+	var error := Mimic.start_server()
+
+	assert_eq(error, ERR_UNAVAILABLE)
+	assert_true(Mimic.is_server())
+	assert_eq(Mimic.get_state(), Mimic.NetworkState.SERVER_LISTENING)
+
+
 func test_empty_client_address_fails_cleanly_and_emits_start_failed() -> void:
 	watch_signals(Mimic)
 	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "")

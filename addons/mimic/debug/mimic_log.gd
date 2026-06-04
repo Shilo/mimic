@@ -82,7 +82,8 @@ static func error_forced(...objects: Array) -> void:
 
 
 static func _should_log(message_level: Level) -> bool:
-	return MimicProjectSettings.log_level <= message_level
+	var log_level: Level = MimicProjectSettings.log_level
+	return log_level <= message_level
 
 
 static func _line(objects: Array) -> String:
@@ -161,7 +162,7 @@ static func _timestamp() -> String:
 
 
 static func _get_local_peer_id() -> int:
-	var tree := Engine.get_main_loop() as SceneTree
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return 0
 
