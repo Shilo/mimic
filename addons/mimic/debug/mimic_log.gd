@@ -47,7 +47,7 @@ static func log(...objects: Array) -> void:
 	if not _should_log(Level.ALL):
 		return
 
-	_print_line(_prefix(), _join(objects))
+	log_forced.callv(objects)
 
 
 ## Pushes a Mimic warning when the current log level allows it.
@@ -55,7 +55,7 @@ static func warning(...objects: Array) -> void:
 	if not _should_log(Level.WARNING):
 		return
 
-	_push_warning_line(_prefix(), _join(objects))
+	warning_forced.callv(objects)
 
 
 ## Pushes a Mimic error when the current log level allows it.
@@ -63,7 +63,7 @@ static func error(...objects: Array) -> void:
 	if not _should_log(Level.ERROR):
 		return
 
-	_push_error_line(_prefix(), _join(objects))
+	error_forced.callv(objects)
 
 
 ## Prints an informational Mimic log message without checking the configured log level.
