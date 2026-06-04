@@ -17,10 +17,34 @@ var _delete_after_thread := false
 var _queued_request := {}
 
 
-## Starts a background UPnP add-mapping request.
+## Returns the UPnP protocols to map for a transport and protocol policy.
+static func get_protocols(
+	transport: Mimic.TransportType,
+	protocol: Mimic.PortMappingProtocol
+) -> PackedStringArray:
+	var protocols := PackedStringArray()
+	match protocol:
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT:
+			protocols.append("TCP" if transport == Mimic.TransportType.WEBSOCKET else "UDP")
+		Mimic.PortMappingProtocol.TCP:
+			protocols.append("TCP")
+		Mimic.PortMappingProtocol.UDP:
+			protocols.append("UDP")
+		Mimic.PortMappingProtocol.TCP_AND_UDP:
+			protocols.append("TCP")
+			protocols.append("UDP")
+	return protocols
+
+
+## Returns the UPnP mapping description, falling back to [code]"Mimic"[/code] when empty.
+static func get_description(project_name: String) -> String:
+	return "Mimic" if project_name.is_empty() else project_name
+
+
+## Starts a background UPnP add-mapping request for the configured transport policy.
 ## [br][br]
 ## Does nothing when [member MimicProjectSettings.port_forwarding_enabled] is [code]false[/code].
-func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+func add_mapping(port: int) -> void:
 	if not MimicProjectSettings.port_forwarding_enabled:
 		return
 
@@ -28,11 +52,14 @@ func add_mapping(port: int, protocols: PackedStringArray, description: String) -
 	_mapped_port = 0
 	_mapped_protocols.clear()
 
+	var transport: Mimic.TransportType = MimicProjectSettings.transport
+	var protocol: Mimic.PortMappingProtocol = MimicProjectSettings.port_mapping_protocol
+	var project_name := String(ProjectSettings.get_setting("application/config/name", ""))
 	_start_thread({
 		"operation": "add",
 		"port": port,
-		"protocols": protocols,
-		"description": description,
+		"protocols": get_protocols(transport, protocol),
+		"description": get_description(project_name),
 		"duration": MimicProjectSettings.port_mapping_duration,
 		"query_external_address": MimicProjectSettings.port_mapping_query_external_address,
 		"discover_timeout_ms": MimicProjectSettings.upnp_discover_timeout_ms,

@@ -66,7 +66,7 @@ func test_enet_server_then_client_preflight_allows_available_port() -> void:
 	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "127.0.0.1")
 
 	assert_eq(
-		MimicLocalAutoConnect.get_host_preflight_error(
+		MimicAutoConnect.get_host_preflight_error(
 			Mimic.TransportType.ENET,
 			port,
 			"127.0.0.1",
@@ -85,7 +85,7 @@ func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 	watch_signals(Mimic)
 
 	assert_eq(
-		MimicLocalAutoConnect.get_host_preflight_error(
+		MimicAutoConnect.get_host_preflight_error(
 			Mimic.TransportType.ENET,
 			port,
 			"127.0.0.1",
@@ -110,7 +110,7 @@ func test_server_then_client_preflight_skips_websocket_transport() -> void:
 	_configure_transport(Mimic.TransportType.WEBSOCKET, port)
 
 	assert_eq(
-		MimicLocalAutoConnect.get_host_preflight_error(
+		MimicAutoConnect.get_host_preflight_error(
 			Mimic.TransportType.WEBSOCKET,
 			port,
 			"*",
@@ -131,27 +131,53 @@ func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
 	assert_signal_not_emitted(Mimic, "stopped")
 
 
-func test_enet_server_requests_udp_port_mapping_when_enabled() -> void:
-	_assert_server_requests_transport_default_port_mapping(Mimic.TransportType.ENET, ["UDP"])
-
-
-func test_websocket_server_requests_tcp_port_mapping_when_enabled() -> void:
-	_assert_server_requests_transport_default_port_mapping(Mimic.TransportType.WEBSOCKET, ["TCP"])
-
-
-func test_port_mapping_protocol_override_can_map_tcp_and_udp() -> void:
-	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(
-		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
-		Mimic.PortMappingProtocol.TCP_AND_UDP
+func test_get_protocols_uses_udp_for_enet_transport_default() -> void:
+	assert_eq(
+		_protocols_to_array(MimicPortMapper.get_protocols(
+			Mimic.TransportType.ENET,
+			Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+		)),
+		["UDP"]
 	)
-	var port := _next_test_port()
 
-	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
 
-	assert_eq(fake.add_requests.size(), 1)
-	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), ["TCP", "UDP"])
+func test_get_protocols_uses_tcp_for_websocket_transport_default() -> void:
+	assert_eq(
+		_protocols_to_array(MimicPortMapper.get_protocols(
+			Mimic.TransportType.WEBSOCKET,
+			Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+		)),
+		["TCP"]
+	)
+
+
+func test_get_protocols_honors_explicit_protocol_overrides() -> void:
+	assert_eq(
+		_protocols_to_array(MimicPortMapper.get_protocols(
+			Mimic.TransportType.ENET,
+			Mimic.PortMappingProtocol.TCP
+		)),
+		["TCP"]
+	)
+	assert_eq(
+		_protocols_to_array(MimicPortMapper.get_protocols(
+			Mimic.TransportType.ENET,
+			Mimic.PortMappingProtocol.UDP
+		)),
+		["UDP"]
+	)
+	assert_eq(
+		_protocols_to_array(MimicPortMapper.get_protocols(
+			Mimic.TransportType.ENET,
+			Mimic.PortMappingProtocol.TCP_AND_UDP
+		)),
+		["TCP", "UDP"]
+	)
+
+
+func test_get_description_falls_back_to_mimic_when_project_name_is_empty() -> void:
+	assert_eq(MimicPortMapper.get_description(""), "Mimic")
+	assert_eq(MimicPortMapper.get_description("My Game"), "My Game")
 
 
 func test_stopping_server_requests_port_mapping_delete() -> void:
@@ -241,6 +267,32 @@ func test_websocket_url_builder_preserves_explicit_websocket_url() -> void:
 	)
 
 
+func test_check_start_allows_supported_transports() -> void:
+	assert_eq(MimicTransport.check_start(Mimic.TransportType.ENET, 9000).error, OK)
+	assert_eq(MimicTransport.check_start(Mimic.TransportType.WEBSOCKET, 9000).error, OK)
+
+
+func test_check_start_rejects_out_of_range_port() -> void:
+	assert_eq(
+		MimicTransport.check_start(Mimic.TransportType.ENET, 0).error,
+		ERR_PARAMETER_RANGE_ERROR
+	)
+	assert_eq(
+		MimicTransport.check_start(Mimic.TransportType.ENET, 70_000).error,
+		ERR_PARAMETER_RANGE_ERROR
+	)
+
+
+func test_check_start_rejects_unstartable_transports() -> void:
+	var offline_result := MimicTransport.check_start(Mimic.TransportType.OFFLINE, 9000)
+	assert_eq(offline_result.error, ERR_UNAVAILABLE)
+	assert_false(offline_result.message.is_empty())
+	assert_eq(
+		MimicTransport.check_start(Mimic.TransportType.WEBRTC, 9000).error,
+		ERR_UNAVAILABLE
+	)
+
+
 func _assert_transport_connects(transport: Mimic.TransportType) -> void:
 	var port := _next_test_port()
 	_configure_transport(transport, port)
@@ -315,27 +367,6 @@ func _replace_mimic_port_mapper(port_mapper: MimicPortMapper) -> void:
 		Mimic._port_mapper.finished.connect(Mimic._finish_port_mapping)
 
 
-func _assert_server_requests_transport_default_port_mapping(
-	transport: Mimic.TransportType,
-	expected_protocols: Array
-) -> void:
-	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(
-		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
-		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
-	)
-	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, transport)
-	var port := _next_test_port()
-
-	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
-
-	assert_eq(fake.add_call_count, 1)
-	assert_eq(fake.add_requests.size(), 1)
-	assert_eq(fake.add_requests[0]["port"], port)
-	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), expected_protocols)
-
-
 func _configure_transport(transport: Mimic.TransportType, port: int) -> void:
 	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, transport)
 	ProjectSettings.set_setting(
@@ -388,15 +419,13 @@ class FakePortMapper extends MimicPortMapper:
 	var emit_on_add := false
 
 
-	func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+	func add_mapping(port: int) -> void:
 		add_call_count += 1
 		if not MimicProjectSettings.port_forwarding_enabled:
 			return
 
 		add_requests.append({
 			"port": port,
-			"protocols": protocols.duplicate(),
-			"description": description,
 		})
 		if emit_on_add:
 			finished.emit(next_error, next_external_address)

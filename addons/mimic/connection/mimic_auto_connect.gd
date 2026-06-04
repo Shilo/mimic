@@ -1,9 +1,27 @@
-class_name MimicLocalAutoConnect extends Object
-## Internal local auto-connect fallback helpers used by the Mimic autoload.
+class_name MimicAutoConnect extends Object
+## Internal auto-connect policy helpers used by the Mimic autoload.
 ## [br][br]
-## This class owns the best-effort host preflight and fallback rules behind
-## [method Mimic.start_server_or_client]. Gameplay code should call the
-## [code]Mimic[/code] singleton instead.
+## These pure checks gate editor startup auto-connect and steer the host-or-client
+## fallback behind [method Mimic.start_server_or_client]. Gameplay code should call
+## the [code]Mimic[/code] singleton instead.
+
+const _TOOLING_ARGS := ["--doctool", "--import", "-s", "--script"]
+
+
+## Returns [code]true[/code] when Mimic runs under a non-gameplay tooling command.
+## [br][br]
+## Editor auto-connect is skipped for tooling runs such as [code]--doctool[/code],
+## [code]--import[/code], [code]-s[/code], and [code]--script[/code]. Pass
+## [param cmdline_args] to override the live [method OS.get_cmdline_args] values.
+static func is_tooling_run(cmdline_args: PackedStringArray = PackedStringArray()) -> bool:
+	if cmdline_args.is_empty():
+		cmdline_args = OS.get_cmdline_args()
+
+	for argument in cmdline_args:
+		if argument in _TOOLING_ARGS:
+			return true
+
+	return false
 
 
 ## Returns a best-effort local host preflight error, or [constant OK].

@@ -7,12 +7,12 @@ class_name MimicTransport extends Object
 
 ## Creates an unassigned server [MultiplayerPeer] for the selected Mimic transport.
 ## [br][br]
-## Returns a typed [class PeerResult].
+## Returns a typed [MimicPeerResult].
 static func create_server_peer(
 	transport: Mimic.TransportType,
 	port: int,
 	bind_address: String
-) -> PeerResult:
+) -> MimicPeerResult:
 	var error: Error = OK
 	var peer: MultiplayerPeer = null
 
@@ -37,24 +37,24 @@ static func create_server_peer(
 		_:
 			error = ERR_UNAVAILABLE
 
-	return PeerResult.new(error, peer)
+	return MimicPeerResult.new(error, peer)
 
 
 ## Creates an unassigned client [MultiplayerPeer] for the selected Mimic transport.
 ## [br][br]
-## Returns a typed [class PeerResult].
+## Returns a typed [MimicPeerResult].
 static func create_client_peer(
 	transport: Mimic.TransportType,
 	address: String,
 	port: int
-) -> PeerResult:
+) -> MimicPeerResult:
 	var error: Error = OK
 	var peer: MultiplayerPeer = null
 
 	match transport:
 		Mimic.TransportType.ENET:
 			var enet_peer := ENetMultiplayerPeer.new()
-			var bind_address := MimicProjectSettings.bind_address
+			var bind_address := get_bind_address()
 			if not bind_address.is_empty() and bind_address != "*":
 				enet_peer.set_bind_ip(bind_address)
 			error = enet_peer.create_client(
@@ -74,7 +74,38 @@ static func create_client_peer(
 		_:
 			error = ERR_UNAVAILABLE
 
-	return PeerResult.new(error, peer)
+	return MimicPeerResult.new(error, peer)
+
+
+## Checks whether the selected transport and port can start.
+## [br][br]
+## The returned [MimicResult] has [constant OK] and an empty message when a start may proceed.
+static func check_start(transport: Mimic.TransportType, port: int) -> MimicResult:
+	if port < 1 or port > 65_535:
+		return MimicResult.new(ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
+
+	match transport:
+		Mimic.TransportType.ENET:
+			if OS.has_feature("web"):
+				return MimicResult.new(
+					ERR_UNAVAILABLE,
+					"ENet is not available on web exports. Use WebSocket instead."
+				)
+			return MimicResult.new(OK)
+		Mimic.TransportType.WEBSOCKET:
+			return MimicResult.new(OK)
+		Mimic.TransportType.OFFLINE:
+			return MimicResult.new(
+				ERR_UNAVAILABLE,
+				"Offline transport cannot start network connections."
+			)
+		Mimic.TransportType.WEBRTC:
+			return MimicResult.new(
+				ERR_UNAVAILABLE,
+				"WebRTC transport needs signaling and is not implemented yet."
+			)
+		_:
+			return MimicResult.new(ERR_UNAVAILABLE, "Unsupported transport.")
 
 
 ## Returns the user-facing display name for a Mimic transport value.
@@ -114,16 +145,3 @@ static func get_websocket_url(address: String, port: int) -> String:
 
 	var scheme := "wss" if MimicProjectSettings.websocket_client_use_tls else "ws"
 	return "%s://%s:%d%s" % [scheme, formatted_address, port, path]
-
-
-## Typed result from a transport peer creation attempt.
-class PeerResult extends RefCounted:
-	var error: Error ## Error returned by the selected transport startup call.
-	## Created peer, or [code]null[/code] when the selected transport cannot create one.
-	var peer: MultiplayerPeer
-
-
-	## Creates a peer creation result.
-	func _init(result_error: Error, result_peer: MultiplayerPeer) -> void:
-		error = result_error
-		peer = result_peer

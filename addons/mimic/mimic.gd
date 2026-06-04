@@ -133,7 +133,6 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 	if error != OK:
 		return error
 
-	var peer: MultiplayerPeer = null
 	MimicLog.log(
 		"Connecting to",
 		address,
@@ -142,27 +141,22 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 		"using",
 		MimicTransport.get_display_name(transport)
 	)
-	var transport_result: MimicTransport.PeerResult = MimicTransport.create_client_peer(
+	var transport_result: MimicPeerResult = MimicTransport.create_client_peer(
 		transport,
 		address,
 		port
 	)
-	error = transport_result.error
-	peer = transport_result.peer
-	if peer == null:
-		if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
-			return _fail_unavailable_transport(NetworkState.CLIENT_CONNECTING)
-		return _fail_unsupported_transport(NetworkState.CLIENT_CONNECTING)
-
+	error = _apply_peer_start_result(
+		NetworkState.CLIENT_CONNECTING,
+		transport_result,
+		"Unable to start client",
+		false
+	)
 	if error != OK:
-		peer.close()
-		var message := "Unable to start client: %s." % error_string(error)
-		return _fail_start(NetworkState.CLIENT_CONNECTING, error, message)
+		return error
 
 	_last_client_address = address
 	_last_client_port = port
-	multiplayer.multiplayer_peer = peer
-	_change_state(NetworkState.CLIENT_CONNECTING)
 	MimicLog.log("Client connection started.")
 	client_started.emit(address, port)
 	return OK
@@ -174,14 +168,14 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 func start_server_or_client() -> Error:
 	# This avoids Godot's noisy ENet bind error when the local port is already occupied.
 	# The real _start_server call below remains authoritative when the best-effort probe passes.
-	var preflight_error := MimicLocalAutoConnect.get_host_preflight_error(
+	var preflight_error := MimicAutoConnect.get_host_preflight_error(
 		_get_transport_type(),
 		MimicProjectSettings.port,
 		MimicTransport.get_bind_address(),
 		_has_active_peer()
 	)
 	if preflight_error != OK:
-		if not MimicLocalAutoConnect.can_fallback_to_client(preflight_error, _has_active_peer()):
+		if not MimicAutoConnect.can_fallback_to_client(preflight_error, _has_active_peer()):
 			return preflight_error
 
 		return start_client()
@@ -189,7 +183,7 @@ func start_server_or_client() -> Error:
 	var server_error := _start_server(-1, "", true)
 	if server_error == OK:
 		return OK
-	if not MimicLocalAutoConnect.can_fallback_to_client(server_error, _has_active_peer()):
+	if not MimicAutoConnect.can_fallback_to_client(server_error, _has_active_peer()):
 		return server_error
 
 	return start_client()
@@ -227,16 +221,20 @@ func get_external_address() -> String:
 func get_local_peer_id() -> int:
 	if _state == NetworkState.OFFLINE or _state == NetworkState.CLIENT_CONNECTING:
 		return 0
-	if not multiplayer.has_multiplayer_peer():
+	var mp := multiplayer
+	if not mp.has_multiplayer_peer():
 		return 0
-	return multiplayer.get_unique_id()
+	return mp.get_unique_id()
 
 
 ## Returns connected remote peer IDs, or an empty array when no multiplayer peer is active.
 func get_peer_ids() -> PackedInt32Array:
-	if _state == NetworkState.OFFLINE or not multiplayer.has_multiplayer_peer():
+	if _state == NetworkState.OFFLINE:
 		return PackedInt32Array()
-	return multiplayer.get_peers()
+	var mp := multiplayer
+	if not mp.has_multiplayer_peer():
+		return PackedInt32Array()
+	return mp.get_peers()
 
 
 ## Returns [code]true[/code] while the local peer is listening as a server.
@@ -272,7 +270,6 @@ func _start_server(
 	if error != OK:
 		return error
 
-	var peer: MultiplayerPeer = null
 	MimicLog.log(
 		"Starting server on port",
 		port,
@@ -280,64 +277,48 @@ func _start_server(
 		MimicTransport.get_display_name(transport)
 	)
 	var bind_address := MimicTransport.get_bind_address(bind_address_override)
-	var transport_result: MimicTransport.PeerResult = MimicTransport.create_server_peer(
+	var transport_result: MimicPeerResult = MimicTransport.create_server_peer(
 		transport,
 		port,
 		bind_address
 	)
-	error = transport_result.error
-	peer = transport_result.peer
-	if peer == null:
-		if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
-			return _fail_unavailable_transport(NetworkState.SERVER_LISTENING)
-		return _fail_unsupported_transport(NetworkState.SERVER_LISTENING)
-
+	error = _apply_peer_start_result(
+		NetworkState.SERVER_LISTENING,
+		transport_result,
+		"Unable to start server",
+		quiet_expected_failure
+	)
 	if error != OK:
-		peer.close()
-		if quiet_expected_failure and MimicLocalAutoConnect.is_expected_host_failure(error):
-			return error
-		var message := "Unable to start server: %s." % error_string(error)
-		return _fail_start(NetworkState.SERVER_LISTENING, error, message)
+		return error
 
-	multiplayer.multiplayer_peer = peer
-	_change_state(NetworkState.SERVER_LISTENING)
-	_add_port_mapping(port)
+	_port_mapper.add_mapping(port)
 	MimicLog.log("Server listening on port", port)
 	server_started.emit(port)
 	return OK
 
 
 func _start_editor_auto_connect() -> void:
-	MimicEditorAutoConnector.try_start(
-		is_inside_tree(),
-		is_offline(),
-		_has_active_peer(),
-		start_server_or_client,
-		start_client,
-		start_server
-	)
+	if MimicAutoConnect.is_tooling_run():
+		return
+	if not is_inside_tree() or not is_offline() or _has_active_peer():
+		return
+
+	var mode: EditorAutoConnectMode = MimicProjectSettings.editor_auto_connect
+	match mode:
+		EditorAutoConnectMode.SERVER_THEN_CLIENT:
+			start_server_or_client()
+		EditorAutoConnectMode.CLIENT:
+			start_client()
+		EditorAutoConnectMode.SERVER:
+			start_server()
 
 
 func _validate_start(state: NetworkState, port: int) -> Error:
-	var transport := _get_transport_type()
+	var start_check := MimicTransport.check_start(_get_transport_type(), port)
+	if start_check.error != OK:
+		return _fail_start(state, start_check.error, start_check.message)
 
-	if port < 1 or port > 65_535:
-		return _fail_start(state, ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
-
-	if not _is_known_transport(transport):
-		return _fail_unsupported_transport(state)
-
-	if transport == TransportType.ENET and OS.has_feature("web"):
-		return _fail_start(
-			state,
-			ERR_UNAVAILABLE,
-			"ENet is not available on web exports. Use WebSocket instead."
-		)
-
-	# Invalid start requests do not tear down a currently working peer.
-	if transport == TransportType.OFFLINE or transport == TransportType.WEBRTC:
-		return _fail_unavailable_transport(state)
-
+	# Tear down an active peer only after validation passes, so a rejected start keeps it.
 	if _has_active_peer():
 		_delete_port_mappings()
 		_reset_peer_state()
@@ -345,18 +326,40 @@ func _validate_start(state: NetworkState, port: int) -> Error:
 	return OK
 
 
+# Installs a freshly created peer and advances state, or fails cleanly when creation errored.
+# Returns OK once the peer is installed, or the error a start method should propagate.
+func _apply_peer_start_result(
+	state: NetworkState,
+	result: MimicPeerResult,
+	failure_summary: String,
+	quiet_expected_failure: bool
+) -> Error:
+	if result.error != OK:
+		if result.peer:
+			result.peer.close()
+		if quiet_expected_failure and MimicAutoConnect.is_expected_host_failure(result.error):
+			return result.error
+		var message := "%s: %s." % [failure_summary, error_string(result.error)]
+		return _fail_start(state, result.error, message)
+
+	multiplayer.multiplayer_peer = result.peer
+	_change_state(state)
+	return OK
+
+
 func _connect_multiplayer_signals() -> void:
 	# Re-arm these before start attempts in case the active MultiplayerAPI changed.
-	if not multiplayer.peer_connected.is_connected(_on_peer_connected):
-		multiplayer.peer_connected.connect(_on_peer_connected)
-	if not multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
-		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	if not multiplayer.connected_to_server.is_connected(_on_connected_to_server):
-		multiplayer.connected_to_server.connect(_on_connected_to_server)
-	if not multiplayer.connection_failed.is_connected(_on_connection_failed):
-		multiplayer.connection_failed.connect(_on_connection_failed)
-	if not multiplayer.server_disconnected.is_connected(_on_server_disconnected):
-		multiplayer.server_disconnected.connect(_on_server_disconnected)
+	var mp := multiplayer
+	if not mp.peer_connected.is_connected(_on_peer_connected):
+		mp.peer_connected.connect(_on_peer_connected)
+	if not mp.peer_disconnected.is_connected(_on_peer_disconnected):
+		mp.peer_disconnected.connect(_on_peer_disconnected)
+	if not mp.connected_to_server.is_connected(_on_connected_to_server):
+		mp.connected_to_server.connect(_on_connected_to_server)
+	if not mp.connection_failed.is_connected(_on_connection_failed):
+		mp.connection_failed.connect(_on_connection_failed)
+	if not mp.server_disconnected.is_connected(_on_server_disconnected):
+		mp.server_disconnected.connect(_on_server_disconnected)
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -405,43 +408,14 @@ func _fail_start(state: NetworkState, error: Error, message: String) -> Error:
 	return error
 
 
-func _fail_unavailable_transport(state: NetworkState) -> Error:
-	match _get_transport_type():
-		TransportType.OFFLINE:
-			return _fail_start(
-				state,
-				ERR_UNAVAILABLE,
-				"Offline transport cannot start network connections."
-			)
-		TransportType.WEBRTC:
-			return _fail_start(
-				state,
-				ERR_UNAVAILABLE,
-				"WebRTC transport needs signaling and is not implemented yet."
-			)
-		_:
-			return _fail_unsupported_transport(state)
-
-
-func _fail_unsupported_transport(state: NetworkState) -> Error:
-	return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
-
-
-func _is_known_transport(transport: TransportType) -> bool:
-	match transport:
-		TransportType.OFFLINE, TransportType.ENET, TransportType.WEBSOCKET, TransportType.WEBRTC:
-			return true
-		_:
-			return false
-
-
 func _has_active_peer() -> bool:
 	if _state != NetworkState.OFFLINE:
 		return true
-	if not multiplayer.has_multiplayer_peer():
+	var mp := multiplayer
+	if not mp.has_multiplayer_peer():
 		return false
 
-	var current_peer := multiplayer.multiplayer_peer
+	var current_peer := mp.multiplayer_peer
 	if current_peer == null or current_peer is OfflineMultiplayerPeer:
 		return false
 
@@ -449,12 +423,13 @@ func _has_active_peer() -> bool:
 
 
 func _close_peer() -> void:
-	var current_peer := multiplayer.multiplayer_peer if multiplayer.has_multiplayer_peer() else null
+	var mp := multiplayer
+	var current_peer := mp.multiplayer_peer if mp.has_multiplayer_peer() else null
 	if current_peer is OfflineMultiplayerPeer:
 		return
 
 	# Install the offline peer before closing so close-side effects cannot observe stale state.
-	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	mp.multiplayer_peer = OfflineMultiplayerPeer.new()
 	if current_peer != null:
 		current_peer.close()
 
@@ -472,14 +447,6 @@ func _get_transport_type() -> TransportType:
 	return transport
 
 
-func _add_port_mapping(port: int) -> void:
-	_port_mapper.add_mapping(
-		port,
-		_get_port_mapping_protocols(),
-		_get_port_mapping_description()
-	)
-
-
 func _finish_port_mapping(error: UPNP.UPNPResult, external_address: String) -> void:
 	if error != UPNP.UPNP_RESULT_SUCCESS:
 		MimicLog.warning("UPnP port forwarding failed:", error)
@@ -490,25 +457,3 @@ func _finish_port_mapping(error: UPNP.UPNPResult, external_address: String) -> v
 
 func _delete_port_mappings() -> void:
 	_port_mapper.delete_mapping()
-
-
-func _get_port_mapping_protocols() -> PackedStringArray:
-	var protocols := PackedStringArray()
-	var transport := _get_transport_type()
-	var mapping_protocol: PortMappingProtocol = MimicProjectSettings.port_mapping_protocol
-	match mapping_protocol:
-		PortMappingProtocol.TRANSPORT_DEFAULT:
-			protocols.append("TCP" if transport == TransportType.WEBSOCKET else "UDP")
-		PortMappingProtocol.TCP:
-			protocols.append("TCP")
-		PortMappingProtocol.UDP:
-			protocols.append("UDP")
-		PortMappingProtocol.TCP_AND_UDP:
-			protocols.append("TCP")
-			protocols.append("UDP")
-	return protocols
-
-
-func _get_port_mapping_description() -> String:
-	var project_name := String(ProjectSettings.get_setting("application/config/name", "Mimic"))
-	return "Mimic" if project_name.is_empty() else project_name

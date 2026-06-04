@@ -65,6 +65,8 @@ addons/mimic/nodes/mimic_connector.gd: CanvasLayer placeholder reserved for futu
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
 addons/mimic/connection/mimic_transport.gd: Internal transport helper for ENet/WebSocket peer startup, bind addresses, transport labels, and WebSocket URL formatting.
+addons/mimic/connection/mimic_result.gd: Internal typed result pairing a Godot Error with a human-readable message.
+addons/mimic/connection/mimic_peer_result.gd: Internal typed result pairing a created MultiplayerPeer with its startup Error.
 addons/mimic/connection/mimic_auto_connect.gd: Internal auto-connect policy for editor startup gating and the host-or-client fallback behind `Mimic.start_server_or_client()`.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
 addons/mimic/settings/: Project settings registration and typed settings access.
