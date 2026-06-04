@@ -1,9 +1,9 @@
 extends GutTest
 
 const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
+const MIMIC_TEST_PORTS := preload("res://test/unit/support/mimic_test_ports.gd")
 
 var _saved_settings := {}
-var _next_port := 19_100
 
 
 func before_each() -> void:
@@ -71,15 +71,11 @@ func test_connector_does_not_start_networking_when_added() -> void:
 
 
 func test_stop_is_noop_when_already_offline() -> void:
-	var stopped_count := 0
-	Mimic.stopped.connect(
-		func() -> void:
-			stopped_count += 1
-	)
+	watch_signals(Mimic)
 
 	Mimic.stop()
 
-	assert_eq(stopped_count, 0)
+	assert_signal_not_emitted(Mimic, "stopped")
 	assert_true(Mimic.is_offline())
 
 
@@ -102,5 +98,4 @@ func _configure_enet(port: int) -> void:
 
 
 func _next_test_port() -> int:
-	_next_port += 1
-	return _next_port
+	return MIMIC_TEST_PORTS.next_port()

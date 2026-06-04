@@ -2,11 +2,12 @@ extends GutTest
 
 const MIMIC_SCRIPT := preload("res://addons/mimic/mimic.gd")
 const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
+const MIMIC_TEST_PORTS := preload("res://test/unit/support/mimic_test_ports.gd")
 
 var _saved_settings := {}
 var _saved_multiplayer_poll := true
 var _custom_multiplayer_roots: Array[Node] = []
-var _next_port := 19_200
+var _custom_mimic_instances: Array[Node] = []
 
 
 func before_each() -> void:
@@ -15,11 +16,17 @@ func before_each() -> void:
 	_saved_multiplayer_poll = get_tree().is_multiplayer_poll_enabled()
 	get_tree().set_multiplayer_poll_enabled(true)
 	_custom_multiplayer_roots.clear()
+	_custom_mimic_instances.clear()
 	_configure_transport(Mimic.TransportType.ENET, _next_test_port())
 	_replace_mimic_port_mapper(MimicPortMapper.new())
 
 
 func after_each() -> void:
+	for mimic in _custom_mimic_instances:
+		if is_instance_valid(mimic):
+			mimic.stop()
+	_custom_mimic_instances.clear()
+
 	for root in _custom_multiplayer_roots:
 		if is_instance_valid(root):
 			get_tree().set_multiplayer(null, root.get_path())
@@ -74,7 +81,7 @@ func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 	assert_signal_not_emitted(Mimic, "start_failed")
 	assert_signal_emitted_with_parameters(Mimic, "client_started", ["127.0.0.1", port])
 	Mimic.cancel_connection()
-	await wait_process_frames(2)
+	await wait_seconds(0.25)
 
 
 func test_server_then_client_preflight_skips_websocket_transport() -> void:
@@ -125,6 +132,7 @@ func test_stopping_server_requests_port_mapping_delete() -> void:
 	assert_eq(Mimic.start_server(_next_test_port(), "127.0.0.1"), OK)
 	Mimic.stop()
 
+	assert_eq(fake.delete_call_count, 1)
 	assert_eq(fake.delete_count, 1)
 	assert_true(Mimic.is_offline())
 
@@ -139,6 +147,7 @@ func test_restart_server_deletes_previous_port_mapping_before_new_mapping() -> v
 	assert_eq(Mimic.start_server(first_port, "127.0.0.1"), OK)
 	assert_eq(Mimic.start_server(second_port, "127.0.0.1"), OK)
 
+	assert_eq(fake.delete_call_count, 1)
 	assert_eq(fake.delete_count, 1)
 	assert_eq(fake.add_requests.size(), 2)
 	assert_eq(fake.add_requests[0]["port"], first_port)
@@ -153,6 +162,7 @@ func test_stop_does_not_delete_port_mapping_when_delete_on_stop_is_disabled() ->
 	assert_eq(Mimic.start_server(_next_test_port(), "127.0.0.1"), OK)
 	Mimic.stop()
 
+	assert_eq(fake.delete_call_count, 1)
 	assert_eq(fake.delete_count, 0)
 	assert_true(Mimic.is_offline())
 
@@ -229,7 +239,7 @@ func _assert_client_connection_can_be_canceled(transport: int) -> void:
 	assert_eq(Mimic.get_local_peer_id(), 0)
 
 	Mimic.cancel_connection()
-	await wait_process_frames(2)
+	await wait_seconds(0.25)
 
 	assert_true(Mimic.is_offline())
 	assert_eq(Mimic.get_local_peer_id(), 0)
@@ -248,6 +258,7 @@ func _create_mimic_instance(root_label: String) -> Node:
 	var mimic: Node = MIMIC_SCRIPT.new()
 	root.add_child(mimic)
 	_custom_multiplayer_roots.append(root)
+	_custom_mimic_instances.append(mimic)
 	return mimic
 
 
@@ -281,6 +292,7 @@ func _assert_server_requests_transport_default_port_mapping(
 
 	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
 
+	assert_eq(fake.add_call_count, 1)
 	assert_eq(fake.add_requests.size(), 1)
 	assert_eq(fake.add_requests[0]["port"], port)
 	assert_eq(_protocols_to_array(fake.add_requests[0]["protocols"]), expected_protocols)
@@ -324,12 +336,13 @@ func _protocols_to_array(protocols: PackedStringArray) -> Array:
 
 
 func _next_test_port() -> int:
-	_next_port += 1
-	return _next_port
+	return MIMIC_TEST_PORTS.next_port()
 
 
 class FakePortMapper extends MimicPortMapper:
+	var add_call_count := 0
 	var add_requests: Array[Dictionary] = []
+	var delete_call_count := 0
 	var delete_count := 0
 	var wait_count := 0
 	var next_error := UPNP.UPNP_RESULT_SUCCESS
@@ -338,6 +351,7 @@ class FakePortMapper extends MimicPortMapper:
 
 
 	func add_mapping(port: int, protocols: PackedStringArray, description: String) -> void:
+		add_call_count += 1
 		if not MimicProjectSettings.port_forwarding_enabled:
 			return
 
@@ -351,6 +365,7 @@ class FakePortMapper extends MimicPortMapper:
 
 
 	func delete_mapping() -> void:
+		delete_call_count += 1
 		if not MimicProjectSettings.port_mapping_delete_on_stop:
 			return
 

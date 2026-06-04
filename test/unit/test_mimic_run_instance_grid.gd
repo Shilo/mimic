@@ -1,6 +1,7 @@
 extends GutTest
 
 const GRID_SCRIPT := preload("res://addons/mimic/testing/mimic_run_instance_grid.gd")
+const MIMIC_TEST_PORTS := preload("res://test/unit/support/mimic_test_ports.gd")
 const REFERENCE_CLIENT_SIZE := Vector2i(1152, 648)
 const TALL_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
 const WIDE_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
@@ -8,7 +9,6 @@ const WIDE_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(1920, 540))
 var _grid: Node = null
 var _custom_multiplayer_roots: Array[Node] = []
 var _custom_multiplayer_apis: Array[SceneMultiplayer] = []
-var _next_title_test_port := 19_700
 var _saved_multiplayer_poll := true
 var _saved_window_title := ""
 
@@ -218,8 +218,7 @@ func test_peer_title_appends_peer_id_to_launch_order_after_connection() -> void:
 
 
 func test_window_title_switches_to_peer_id_when_multiplayer_connects() -> void:
-	var port := _next_title_test_port
-	_next_title_test_port += 1
+	var port: int = MIMIC_TEST_PORTS.next_port()
 	var host := _create_multiplayer_root("TitleHost")
 	var client := _create_multiplayer_root("TitleClient")
 	var host_api: SceneMultiplayer = host["multiplayer_api"]
@@ -294,6 +293,8 @@ func _assert_fit_frame_rect_inside_cell(
 	assert_gte(fitted_rect.position.y, cell_rect.position.y)
 	assert_lte(fitted_rect.end.x, cell_rect.end.x)
 	assert_lte(fitted_rect.end.y, cell_rect.end.y)
+	assert_gt(fitted_rect.size.x, 0)
+	assert_gt(fitted_rect.size.y, 0)
 
 
 func _attach_grid_to_multiplayer_root(root: Node, index: int, count: int) -> void:
