@@ -1,53 +1,7 @@
 extends GutTest
 
 const MIMIC_SCRIPT := preload("res://addons/mimic/mimic.gd")
-
-const TRANSPORT := "mimic_multiplayer/connection/transport"
-const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
-const ADDRESS := "mimic_multiplayer/connection/address"
-const PORT := "mimic_multiplayer/connection/port"
-const MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
-const BIND_ADDRESS := "mimic_multiplayer/connection/bind_address"
-const ENET_CHANNEL_COUNT := "mimic_multiplayer/enet/channel_count"
-const ENET_IN_BANDWIDTH := "mimic_multiplayer/enet/in_bandwidth"
-const ENET_OUT_BANDWIDTH := "mimic_multiplayer/enet/out_bandwidth"
-const ENET_CLIENT_LOCAL_PORT := "mimic_multiplayer/enet/client_local_port"
-const WEBSOCKET_CLIENT_USE_TLS := "mimic_multiplayer/websocket/client_use_tls"
-const WEBSOCKET_PATH := "mimic_multiplayer/websocket/path"
-const WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic_multiplayer/websocket/handshake_timeout"
-const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
-const PORT_MAPPING_DELETE_ON_STOP := "mimic_multiplayer/port_forwarding/delete_mapping_on_stop"
-const PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := (
-	"mimic_multiplayer/port_forwarding/query_external_address"
-)
-const PORT_MAPPING_PROTOCOL := "mimic_multiplayer/port_forwarding/protocol"
-const PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
-const UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_timeout_ms"
-const UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
-const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
-const SETTING_NAMES := [
-	TRANSPORT,
-	EDITOR_AUTO_CONNECT,
-	ADDRESS,
-	PORT,
-	MAX_CLIENTS,
-	BIND_ADDRESS,
-	ENET_CHANNEL_COUNT,
-	ENET_IN_BANDWIDTH,
-	ENET_OUT_BANDWIDTH,
-	ENET_CLIENT_LOCAL_PORT,
-	WEBSOCKET_CLIENT_USE_TLS,
-	WEBSOCKET_PATH,
-	WEBSOCKET_HANDSHAKE_TIMEOUT,
-	PORT_FORWARDING_ENABLED,
-	PORT_MAPPING_DELETE_ON_STOP,
-	PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
-	PORT_MAPPING_PROTOCOL,
-	PORT_MAPPING_DURATION,
-	UPNP_DISCOVER_TIMEOUT_MS,
-	UPNP_DISCOVER_TTL,
-	LOG_LEVEL,
-]
+const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
 
 var _saved_settings := {}
 var _saved_multiplayer_poll := true
@@ -57,7 +11,7 @@ var _next_port := 19_200
 
 func before_each() -> void:
 	Mimic.stop()
-	_save_settings()
+	_saved_settings = MIMIC_SETTINGS.save_settings()
 	_saved_multiplayer_poll = get_tree().is_multiplayer_poll_enabled()
 	get_tree().set_multiplayer_poll_enabled(true)
 	_custom_multiplayer_roots.clear()
@@ -74,7 +28,7 @@ func after_each() -> void:
 
 	Mimic.stop()
 	_replace_mimic_port_mapper(MimicPortMapper.new())
-	_restore_settings()
+	MIMIC_SETTINGS.restore_settings(_saved_settings)
 	get_tree().set_multiplayer_poll_enabled(_saved_multiplayer_poll)
 
 
@@ -97,7 +51,7 @@ func test_websocket_client_connection_can_be_canceled_before_handshake_finishes(
 func test_enet_server_then_client_preflight_allows_available_port() -> void:
 	var port := _next_test_port()
 	_configure_transport(Mimic.TransportType.ENET, port)
-	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "127.0.0.1")
 
 	assert_eq(Mimic._get_server_or_client_preflight_error(), OK)
 
@@ -105,7 +59,7 @@ func test_enet_server_then_client_preflight_allows_available_port() -> void:
 func test_enet_server_then_client_preflights_occupied_server_port() -> void:
 	var port := _next_test_port()
 	_configure_transport(Mimic.TransportType.ENET, port)
-	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "127.0.0.1")
 	var occupying_peer := PacketPeerUDP.new()
 	assert_eq(occupying_peer.bind(port, "127.0.0.1"), OK)
 	watch_signals(Mimic)
@@ -142,9 +96,12 @@ func test_cancel_connection_is_noop_unless_client_is_connecting() -> void:
 
 func test_enet_server_requests_udp_port_mapping_when_enabled() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_PROTOCOL, Mimic.PortMappingProtocol.TRANSPORT_DEFAULT)
-	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.ENET)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.ENET)
 	var port := _next_test_port()
 
 	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
@@ -156,9 +113,12 @@ func test_enet_server_requests_udp_port_mapping_when_enabled() -> void:
 
 func test_websocket_server_requests_tcp_port_mapping_when_enabled() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_PROTOCOL, Mimic.PortMappingProtocol.TRANSPORT_DEFAULT)
-	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.WEBSOCKET)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.WEBSOCKET)
 	var port := _next_test_port()
 
 	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
@@ -170,8 +130,11 @@ func test_websocket_server_requests_tcp_port_mapping_when_enabled() -> void:
 
 func test_port_mapping_protocol_override_can_map_tcp_and_udp() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_PROTOCOL, Mimic.PortMappingProtocol.TCP_AND_UDP)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TCP_AND_UDP
+	)
 	var port := _next_test_port()
 
 	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
@@ -182,8 +145,8 @@ func test_port_mapping_protocol_override_can_map_tcp_and_udp() -> void:
 
 func test_stopping_server_requests_port_mapping_delete() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_DELETE_ON_STOP, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DELETE_ON_STOP, true)
 
 	assert_eq(Mimic.start_server(_next_test_port(), "127.0.0.1"), OK)
 	Mimic.stop()
@@ -194,8 +157,8 @@ func test_stopping_server_requests_port_mapping_delete() -> void:
 
 func test_restart_server_deletes_previous_port_mapping_before_new_mapping() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_DELETE_ON_STOP, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DELETE_ON_STOP, true)
 	var first_port := _next_test_port()
 	var second_port := _next_test_port()
 
@@ -210,8 +173,8 @@ func test_restart_server_deletes_previous_port_mapping_before_new_mapping() -> v
 
 func test_stop_does_not_delete_port_mapping_when_delete_on_stop_is_disabled() -> void:
 	var fake := _install_fake_port_mapper()
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_DELETE_ON_STOP, false)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DELETE_ON_STOP, false)
 
 	assert_eq(Mimic.start_server(_next_test_port(), "127.0.0.1"), OK)
 	Mimic.stop()
@@ -224,7 +187,7 @@ func test_port_mapping_finished_reemits_result_for_ui_and_status() -> void:
 	var fake := _install_fake_port_mapper()
 	fake.emit_on_add = true
 	fake.next_external_address = "203.0.113.8"
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
 	watch_signals(Mimic)
 
 	assert_eq(Mimic.start_server(_next_test_port(), "127.0.0.1"), OK)
@@ -238,16 +201,16 @@ func test_port_mapping_finished_reemits_result_for_ui_and_status() -> void:
 
 
 func test_websocket_url_builder_adds_scheme_port_path_and_ipv6_brackets() -> void:
-	ProjectSettings.set_setting(WEBSOCKET_CLIENT_USE_TLS, true)
-	ProjectSettings.set_setting(WEBSOCKET_PATH, "mimic")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_CLIENT_USE_TLS, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "mimic")
 
 	assert_eq(Mimic._get_websocket_url("example.test", 443), "wss://example.test:443/mimic")
 	assert_eq(Mimic._get_websocket_url("2001:db8::1", 443), "wss://[2001:db8::1]:443/mimic")
 
 
 func test_websocket_url_builder_preserves_explicit_websocket_url() -> void:
-	ProjectSettings.set_setting(WEBSOCKET_CLIENT_USE_TLS, true)
-	ProjectSettings.set_setting(WEBSOCKET_PATH, "ignored")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_CLIENT_USE_TLS, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "ignored")
 
 	assert_eq(
 		Mimic._get_websocket_url("ws://example.test:19000/custom", 19_000),
@@ -330,27 +293,33 @@ func _replace_mimic_port_mapper(port_mapper: MimicPortMapper) -> void:
 
 
 func _configure_transport(transport: int, port: int) -> void:
-	ProjectSettings.set_setting(TRANSPORT, transport)
-	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.DISABLED)
-	ProjectSettings.set_setting(ADDRESS, "127.0.0.1")
-	ProjectSettings.set_setting(PORT, port)
-	ProjectSettings.set_setting(MAX_CLIENTS, 8)
-	ProjectSettings.set_setting(BIND_ADDRESS, "*")
-	ProjectSettings.set_setting(ENET_CHANNEL_COUNT, 0)
-	ProjectSettings.set_setting(ENET_IN_BANDWIDTH, 0)
-	ProjectSettings.set_setting(ENET_OUT_BANDWIDTH, 0)
-	ProjectSettings.set_setting(ENET_CLIENT_LOCAL_PORT, 0)
-	ProjectSettings.set_setting(WEBSOCKET_CLIENT_USE_TLS, false)
-	ProjectSettings.set_setting(WEBSOCKET_PATH, "")
-	ProjectSettings.set_setting(WEBSOCKET_HANDSHAKE_TIMEOUT, 1.0)
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, false)
-	ProjectSettings.set_setting(PORT_MAPPING_DELETE_ON_STOP, true)
-	ProjectSettings.set_setting(PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, true)
-	ProjectSettings.set_setting(PORT_MAPPING_PROTOCOL, Mimic.PortMappingProtocol.TRANSPORT_DEFAULT)
-	ProjectSettings.set_setting(PORT_MAPPING_DURATION, 7200)
-	ProjectSettings.set_setting(UPNP_DISCOVER_TIMEOUT_MS, 1)
-	ProjectSettings.set_setting(UPNP_DISCOVER_TTL, 1)
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, transport)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.EDITOR_AUTO_CONNECT,
+		Mimic.EditorAutoConnectMode.DISABLED
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "127.0.0.1")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT, port)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.MAX_CLIENTS, 8)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "*")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_CHANNEL_COUNT, 0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_IN_BANDWIDTH, 0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_OUT_BANDWIDTH, 0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_CLIENT_LOCAL_PORT, 0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_CLIENT_USE_TLS, false)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_HANDSHAKE_TIMEOUT, 1.0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, false)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DELETE_ON_STOP, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, true)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DURATION, 7200)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.UPNP_DISCOVER_TIMEOUT_MS, 1)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.UPNP_DISCOVER_TTL, 1)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.NONE)
 
 
 func _protocols_to_array(protocols: PackedStringArray) -> Array:
@@ -363,24 +332,6 @@ func _protocols_to_array(protocols: PackedStringArray) -> Array:
 func _next_test_port() -> int:
 	_next_port += 1
 	return _next_port
-
-
-func _save_settings() -> void:
-	_saved_settings.clear()
-	for setting_name in SETTING_NAMES:
-		_saved_settings[setting_name] = {
-			"exists": ProjectSettings.has_setting(setting_name),
-			"value": ProjectSettings.get_setting(setting_name),
-		}
-
-
-func _restore_settings() -> void:
-	for setting_name in _saved_settings:
-		var saved_setting: Dictionary = _saved_settings[setting_name]
-		if bool(saved_setting["exists"]):
-			ProjectSettings.set_setting(setting_name, saved_setting["value"])
-		elif ProjectSettings.has_setting(setting_name):
-			ProjectSettings.clear(setting_name)
 
 
 class FakePortMapper extends MimicPortMapper:

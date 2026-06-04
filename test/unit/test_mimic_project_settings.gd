@@ -1,63 +1,18 @@
 extends GutTest
 
-const TRANSPORT := "mimic_multiplayer/connection/transport"
-const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
-const ADDRESS := "mimic_multiplayer/connection/address"
-const PORT := "mimic_multiplayer/connection/port"
-const MAX_CLIENTS := "mimic_multiplayer/connection/max_clients"
-const BIND_ADDRESS := "mimic_multiplayer/connection/bind_address"
-const ENET_CHANNEL_COUNT := "mimic_multiplayer/enet/channel_count"
-const ENET_IN_BANDWIDTH := "mimic_multiplayer/enet/in_bandwidth"
-const ENET_OUT_BANDWIDTH := "mimic_multiplayer/enet/out_bandwidth"
-const ENET_CLIENT_LOCAL_PORT := "mimic_multiplayer/enet/client_local_port"
-const WEBSOCKET_CLIENT_USE_TLS := "mimic_multiplayer/websocket/client_use_tls"
-const WEBSOCKET_PATH := "mimic_multiplayer/websocket/path"
-const WEBSOCKET_HANDSHAKE_TIMEOUT := "mimic_multiplayer/websocket/handshake_timeout"
-const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
-const PORT_MAPPING_DELETE_ON_STOP := "mimic_multiplayer/port_forwarding/delete_mapping_on_stop"
-const PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := (
-	"mimic_multiplayer/port_forwarding/query_external_address"
-)
-const PORT_MAPPING_PROTOCOL := "mimic_multiplayer/port_forwarding/protocol"
-const PORT_MAPPING_DURATION := "mimic_multiplayer/port_forwarding/duration"
-const UPNP_DISCOVER_TIMEOUT_MS := "mimic_multiplayer/port_forwarding/discover_timeout_ms"
-const UPNP_DISCOVER_TTL := "mimic_multiplayer/port_forwarding/discover_ttl"
-const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
-const SETTING_NAMES := [
-	TRANSPORT,
-	EDITOR_AUTO_CONNECT,
-	ADDRESS,
-	PORT,
-	MAX_CLIENTS,
-	BIND_ADDRESS,
-	ENET_CHANNEL_COUNT,
-	ENET_IN_BANDWIDTH,
-	ENET_OUT_BANDWIDTH,
-	ENET_CLIENT_LOCAL_PORT,
-	WEBSOCKET_CLIENT_USE_TLS,
-	WEBSOCKET_PATH,
-	WEBSOCKET_HANDSHAKE_TIMEOUT,
-	PORT_FORWARDING_ENABLED,
-	PORT_MAPPING_DELETE_ON_STOP,
-	PORT_MAPPING_QUERY_EXTERNAL_ADDRESS,
-	PORT_MAPPING_PROTOCOL,
-	PORT_MAPPING_DURATION,
-	UPNP_DISCOVER_TIMEOUT_MS,
-	UPNP_DISCOVER_TTL,
-	LOG_LEVEL,
-]
+const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
 
 var _saved_settings := {}
 
 
 func before_each() -> void:
-	_save_settings()
-	_clear_mimic_settings()
+	_saved_settings = MIMIC_SETTINGS.save_settings()
+	MIMIC_SETTINGS.clear_settings()
 	MimicProjectSettings.unregister()
 
 
 func after_each() -> void:
-	_restore_settings()
+	MIMIC_SETTINGS.restore_settings(_saved_settings)
 	MimicProjectSettings.unregister()
 	MimicProjectSettings.register()
 
@@ -94,41 +49,47 @@ func test_accessors_return_defaults_when_settings_are_missing() -> void:
 
 
 func test_register_adds_missing_settings_without_overwriting_existing_values() -> void:
-	ProjectSettings.set_setting(ADDRESS, "10.0.0.55")
-	ProjectSettings.set_setting(PORT, 19_001)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "10.0.0.55")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT, 19_001)
 
 	MimicProjectSettings.register()
 
 	assert_eq(MimicProjectSettings.address, "10.0.0.55")
 	assert_eq(MimicProjectSettings.port, 19_001)
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
-	assert_true(ProjectSettings.has_setting(EDITOR_AUTO_CONNECT))
-	assert_true(ProjectSettings.has_setting(MAX_CLIENTS))
-	assert_true(ProjectSettings.has_setting(LOG_LEVEL))
+	assert_true(ProjectSettings.has_setting(MIMIC_SETTINGS.EDITOR_AUTO_CONNECT))
+	assert_true(ProjectSettings.has_setting(MIMIC_SETTINGS.MAX_CLIENTS))
+	assert_true(ProjectSettings.has_setting(MIMIC_SETTINGS.LOG_LEVEL))
 
 
 func test_accessors_read_typed_project_settings_values() -> void:
-	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.WEBSOCKET)
-	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT)
-	ProjectSettings.set_setting(ADDRESS, "example.test")
-	ProjectSettings.set_setting(PORT, 19_002)
-	ProjectSettings.set_setting(MAX_CLIENTS, 12)
-	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
-	ProjectSettings.set_setting(ENET_CHANNEL_COUNT, 3)
-	ProjectSettings.set_setting(ENET_IN_BANDWIDTH, 1000)
-	ProjectSettings.set_setting(ENET_OUT_BANDWIDTH, 2000)
-	ProjectSettings.set_setting(ENET_CLIENT_LOCAL_PORT, 19_003)
-	ProjectSettings.set_setting(WEBSOCKET_CLIENT_USE_TLS, true)
-	ProjectSettings.set_setting(WEBSOCKET_PATH, "game")
-	ProjectSettings.set_setting(WEBSOCKET_HANDSHAKE_TIMEOUT, 5.5)
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, true)
-	ProjectSettings.set_setting(PORT_MAPPING_DELETE_ON_STOP, false)
-	ProjectSettings.set_setting(PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, false)
-	ProjectSettings.set_setting(PORT_MAPPING_PROTOCOL, Mimic.PortMappingProtocol.TCP_AND_UDP)
-	ProjectSettings.set_setting(PORT_MAPPING_DURATION, 60)
-	ProjectSettings.set_setting(UPNP_DISCOVER_TIMEOUT_MS, 500)
-	ProjectSettings.set_setting(UPNP_DISCOVER_TTL, 4)
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ERROR)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.WEBSOCKET)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.EDITOR_AUTO_CONNECT,
+		Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "example.test")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT, 19_002)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.MAX_CLIENTS, 12)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.BIND_ADDRESS, "127.0.0.1")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_CHANNEL_COUNT, 3)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_IN_BANDWIDTH, 1000)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_OUT_BANDWIDTH, 2000)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ENET_CLIENT_LOCAL_PORT, 19_003)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_CLIENT_USE_TLS, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_PATH, "game")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.WEBSOCKET_HANDSHAKE_TIMEOUT, 5.5)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, true)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DELETE_ON_STOP, false)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_QUERY_EXTERNAL_ADDRESS, false)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.PORT_MAPPING_PROTOCOL,
+		Mimic.PortMappingProtocol.TCP_AND_UDP
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_MAPPING_DURATION, 60)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.UPNP_DISCOVER_TIMEOUT_MS, 500)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.UPNP_DISCOVER_TTL, 4)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.ERROR)
 
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.WEBSOCKET)
 	assert_eq(
@@ -154,27 +115,3 @@ func test_accessors_read_typed_project_settings_values() -> void:
 	assert_eq(MimicProjectSettings.upnp_discover_timeout_ms, 500)
 	assert_eq(MimicProjectSettings.upnp_discover_ttl, 4)
 	assert_eq(MimicProjectSettings.log_level, MimicLog.Level.ERROR)
-
-
-func _save_settings() -> void:
-	_saved_settings.clear()
-	for setting_name in SETTING_NAMES:
-		_saved_settings[setting_name] = {
-			"exists": ProjectSettings.has_setting(setting_name),
-			"value": ProjectSettings.get_setting(setting_name),
-		}
-
-
-func _clear_mimic_settings() -> void:
-	for setting_name in SETTING_NAMES:
-		if ProjectSettings.has_setting(setting_name):
-			ProjectSettings.clear(setting_name)
-
-
-func _restore_settings() -> void:
-	for setting_name in SETTING_NAMES:
-		var saved_setting: Dictionary = _saved_settings[setting_name]
-		if bool(saved_setting["exists"]):
-			ProjectSettings.set_setting(setting_name, saved_setting["value"])
-		elif ProjectSettings.has_setting(setting_name):
-			ProjectSettings.clear(setting_name)

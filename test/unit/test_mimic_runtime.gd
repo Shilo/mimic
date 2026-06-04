@@ -1,11 +1,6 @@
 extends GutTest
 
-const TRANSPORT := "mimic_multiplayer/connection/transport"
-const EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
-const ADDRESS := "mimic_multiplayer/connection/address"
-const PORT := "mimic_multiplayer/connection/port"
-const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
-const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
+const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
 
 var _saved_settings := {}
 var _next_port := 19_100
@@ -13,13 +8,13 @@ var _next_port := 19_100
 
 func before_each() -> void:
 	Mimic.stop()
-	_save_settings()
+	_saved_settings = MIMIC_SETTINGS.save_settings()
 	_configure_enet(_next_test_port())
 
 
 func after_each() -> void:
 	Mimic.stop()
-	_restore_settings()
+	MIMIC_SETTINGS.restore_settings(_saved_settings)
 
 
 func test_start_server_sets_public_state_and_peer_helpers() -> void:
@@ -40,7 +35,7 @@ func test_start_server_sets_public_state_and_peer_helpers() -> void:
 func test_invalid_server_start_does_not_stop_existing_server() -> void:
 	var port := _next_test_port()
 	assert_eq(Mimic.start_server(port, "127.0.0.1"), OK)
-	ProjectSettings.set_setting(PORT, 0)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT, 0)
 
 	var error := Mimic.start_server()
 
@@ -51,7 +46,7 @@ func test_invalid_server_start_does_not_stop_existing_server() -> void:
 
 func test_empty_client_address_fails_cleanly_and_emits_start_failed() -> void:
 	watch_signals(Mimic)
-	ProjectSettings.set_setting(ADDRESS, "")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "")
 
 	var error := Mimic.start_client()
 
@@ -65,7 +60,10 @@ func test_empty_client_address_fails_cleanly_and_emits_start_failed() -> void:
 
 
 func test_connector_does_not_start_networking_when_added() -> void:
-	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.SERVER)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.EDITOR_AUTO_CONNECT,
+		Mimic.EditorAutoConnectMode.SERVER
+	)
 	add_child_autoqfree(MimicConnector.new())
 	await wait_process_frames(2)
 
@@ -92,39 +90,17 @@ func test_mimic_sync_remains_a_multiplayer_synchronizer() -> void:
 
 
 func _configure_enet(port: int) -> void:
-	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.ENET)
-	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.DISABLED)
-	ProjectSettings.set_setting(ADDRESS, "127.0.0.1")
-	ProjectSettings.set_setting(PORT, port)
-	ProjectSettings.set_setting(PORT_FORWARDING_ENABLED, false)
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.TRANSPORT, Mimic.TransportType.ENET)
+	ProjectSettings.set_setting(
+		MIMIC_SETTINGS.EDITOR_AUTO_CONNECT,
+		Mimic.EditorAutoConnectMode.DISABLED
+	)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.ADDRESS, "127.0.0.1")
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT, port)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.PORT_FORWARDING_ENABLED, false)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.NONE)
 
 
 func _next_test_port() -> int:
 	_next_port += 1
 	return _next_port
-
-
-func _save_settings() -> void:
-	var setting_names := [
-		TRANSPORT,
-		EDITOR_AUTO_CONNECT,
-		ADDRESS,
-		PORT,
-		PORT_FORWARDING_ENABLED,
-		LOG_LEVEL,
-	]
-	for setting_name in setting_names:
-		_saved_settings[setting_name] = {
-			"exists": ProjectSettings.has_setting(setting_name),
-			"value": ProjectSettings.get_setting(setting_name),
-		}
-
-
-func _restore_settings() -> void:
-	for setting_name in _saved_settings:
-		var saved_setting: Dictionary = _saved_settings[setting_name]
-		if bool(saved_setting["exists"]):
-			ProjectSettings.set_setting(setting_name, saved_setting["value"])
-		elif ProjectSettings.has_setting(setting_name):
-			ProjectSettings.clear(setting_name)
