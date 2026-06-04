@@ -22,7 +22,7 @@ Consistency updates: When changing public behavior, public API, Project Settings
 
 Godot MCP: Use the repo-local `.mcp.json` server named `godot` when an MCP-capable agent needs to query Godot, launch the editor, run the project, inspect project info, or capture debug output. The server is configured to run `npx -y @coding-solo/godot-mcp@latest` with `GODOT_PATH` set to `C:\Programming_Files\Godot\Godot_v4.6.3-stable_win64.exe\Godot_v4.6.3-stable_win64.exe`. Keep MCP configuration local to this repository unless explicitly requested otherwise.
 
-Testing and automation: Treat tests as regression guardrails for AI-assisted changes, not as a mandatory TDD ceremony. Add or update GUT tests in `res://test/unit/` when changing public Mimic behavior, fixing bugs, or touching connection lifecycle, project settings, editor plugin behavior, networking helpers, or example flows that should stay stable. For meaningful feature changes, behavior changes, and risky refactors, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1` before final response; for especially risky work, run it before and after the change to catch regressions early. Use `powershell -NoProfile -ExecutionPolicy Bypass -File tools/quality.ps1` for the fast AI-focused quality gate: Mimic policy and public API documentation checks, PowerShell syntax checks, lockfile-backed `jscpd@4.2.4` zero-clone duplicate-code detection, optional hash-locked `gdcruiser==1.7.0` dependency architecture checks, and optional checksum-verified `gdstyle v0.1.5` diagnostics. Do not add tests for docs-only edits, comments-only edits, or mechanical formatting with no behavior impact. Use `tools/run_two_instances.ps1` for explicit local ENet server/client smoke coverage; prefer these deterministic CLI scripts over MCP as the source of truth for CI-style verification.
+Testing and automation: Treat tests as regression guardrails for AI-assisted changes, not as a mandatory TDD ceremony. Add or update GUT tests in `res://test/unit/` when changing public Mimic behavior, fixing bugs, or touching connection lifecycle, project settings, editor plugin behavior, networking helpers, or example flows that should stay stable. For meaningful feature changes, behavior changes, and risky refactors, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/verify.ps1` before final response; for especially risky work, run it before and after the change to catch regressions early. Use `powershell -NoProfile -ExecutionPolicy Bypass -File tools/quality.ps1` for the fast AI-focused quality gate: Mimic policy and public API documentation checks, PowerShell syntax checks, lockfile-backed `jscpd@4.2.4` zero-clone duplicate-code detection, optional hash-locked `gdcruiser==1.7.0` dependency architecture checks, and optional checksum-verified `gdstyle v0.1.6` diagnostics. Do not add tests for docs-only edits, comments-only edits, or mechanical formatting with no behavior impact. Use `tools/run_two_instances.ps1` for explicit local ENet server/client smoke coverage; prefer these deterministic CLI scripts over MCP as the source of truth for CI-style verification.
 
 Git commits: Use Conventional Commits in type(scope): summary form, such as feat(mimic): add connection logging.
 
@@ -65,8 +65,7 @@ addons/mimic/nodes/mimic_connector.gd: CanvasLayer placeholder reserved for futu
 addons/mimic/nodes/mimic_sync.gd: Visible per-entity component that subclasses MultiplayerSynchronizer.
 addons/mimic/connection/: Internal connection infrastructure and transport helpers.
 addons/mimic/connection/mimic_transport.gd: Internal transport helper for ENet/WebSocket peer startup, bind addresses, transport labels, and WebSocket URL formatting.
-addons/mimic/connection/mimic_local_auto_connect.gd: Internal local auto-connect fallback and ENet preflight policy used by `Mimic.start_server_or_client()`.
-addons/mimic/connection/mimic_editor_auto_connector.gd: Internal editor-only auto-connect dispatcher used by the Mimic autoload.
+addons/mimic/connection/mimic_auto_connect.gd: Internal auto-connect policy for editor startup gating and the host-or-client fallback behind `Mimic.start_server_or_client()`.
 addons/mimic/connection/mimic_port_mapper.gd: Internal UPnP port mapping worker used by the Mimic autoload.
 addons/mimic/settings/: Project settings registration and typed settings access.
 addons/mimic/settings/mimic_project_settings.gd: Static ProjectSettings helper with typed property accessors for Mimic settings.
@@ -84,7 +83,7 @@ examples/single_to_multiplayer/player/player.gd: Example player script.
 test/: Automated regression tests and integration probes.
 test/.output/: Ignored local verification output for GUT reports and integration logs; the dot-prefixed folder is skipped by Godot's editor file scan.
 test/unit/: GUT unit/regression tests for public Mimic behavior.
-test/unit/test_mimic_editor_auto_connector.gd: Direct regression tests for editor auto-connect guard and dispatch logic.
+test/unit/test_mimic_auto_connect.gd: Direct regression tests for the auto-connect tooling-run gate.
 test/integration/mimic_startup_probe.tscn: Minimal headless scene used by the no-network startup smoke test.
 test/integration/mimic_startup_probe.gd: Startup probe script that exits after the project and autoloads initialize.
 test/integration/mimic_connection_probe.tscn: Headless scene used by the two-instance connection smoke test.
