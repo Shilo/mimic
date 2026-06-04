@@ -337,6 +337,7 @@ func _connect_multiplayer_title_signals() -> void:
 	# is no signal for assigning or clearing the local peer, so a lone server
 	# with no remote peers keeps its launch-order title until a peer connects.
 	# That edge case is accepted on purpose to avoid a refresh timer.
+	# Use this node's own multiplayer, not Mimic.mp; see _get_multiplayer_peer_id.
 	var multiplayer_api := multiplayer
 	if multiplayer_api == null:
 		return
@@ -370,6 +371,9 @@ func _refresh_connection_title() -> void:
 
 
 func _get_multiplayer_peer_id() -> int:
+	# Use this node's own multiplayer (not Mimic.mp) so a window parented under a
+	# custom sub-tree MultiplayerAPI still reports its own peer id. Mimic.mp is
+	# always the root SceneTree multiplayer and ignores custom_multiplayers routing.
 	var multiplayer_api := multiplayer
 	if multiplayer_api == null or not multiplayer_api.has_multiplayer_peer():
 		return 0
