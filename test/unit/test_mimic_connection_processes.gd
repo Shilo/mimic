@@ -1,12 +1,16 @@
 extends GutTest
 
 const MIMIC_SCRIPT := preload("res://addons/mimic/mimic.gd")
+const MIMIC_MULTIPLAYER_TEST_SUPPORT := preload(
+	"res://test/unit/support/mimic_multiplayer_test_support.gd"
+)
 const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
 const MIMIC_TEST_PORTS := preload("res://test/unit/support/mimic_test_ports.gd")
 
 var _saved_settings := {}
 var _saved_multiplayer_poll := true
 var _custom_multiplayer_roots: Array[Node] = []
+var _custom_multiplayer_apis: Array[SceneMultiplayer] = []
 var _custom_mimic_instances: Array[Node] = []
 
 
@@ -16,6 +20,7 @@ func before_each() -> void:
 	_saved_multiplayer_poll = get_tree().is_multiplayer_poll_enabled()
 	get_tree().set_multiplayer_poll_enabled(true)
 	_custom_multiplayer_roots.clear()
+	_custom_multiplayer_apis.clear()
 	_custom_mimic_instances.clear()
 	_configure_transport(Mimic.TransportType.ENET, _next_test_port())
 	_replace_mimic_port_mapper(MimicPortMapper.new())
@@ -27,11 +32,11 @@ func after_each() -> void:
 			mimic.stop()
 	_custom_mimic_instances.clear()
 
-	for root in _custom_multiplayer_roots:
-		if is_instance_valid(root):
-			get_tree().set_multiplayer(null, root.get_path())
-			root.free()
-	_custom_multiplayer_roots.clear()
+	MIMIC_MULTIPLAYER_TEST_SUPPORT.cleanup_multiplayer_roots(
+		self,
+		_custom_multiplayer_roots,
+		_custom_multiplayer_apis
+	)
 
 	Mimic.stop()
 	_replace_mimic_port_mapper(MimicPortMapper.new())
@@ -248,16 +253,15 @@ func _assert_client_connection_can_be_canceled(transport: int) -> void:
 
 
 func _create_mimic_instance(root_label: String) -> Node:
-	var root := Node.new()
-	root.name = "%s%d" % [root_label, _custom_multiplayer_roots.size()]
-	add_child(root)
-
-	var custom_multiplayer := SceneMultiplayer.new()
-	get_tree().set_multiplayer(custom_multiplayer, root.get_path())
-
+	var multiplayer_root := MIMIC_MULTIPLAYER_TEST_SUPPORT.create_multiplayer_root(
+		self,
+		root_label,
+		_custom_multiplayer_roots,
+		_custom_multiplayer_apis
+	)
+	var root: Node = multiplayer_root["root"]
 	var mimic: Node = MIMIC_SCRIPT.new()
 	root.add_child(mimic)
-	_custom_multiplayer_roots.append(root)
 	_custom_mimic_instances.append(mimic)
 	return mimic
 

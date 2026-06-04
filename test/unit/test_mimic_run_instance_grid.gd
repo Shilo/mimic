@@ -1,6 +1,9 @@
 extends GutTest
 
 const GRID_SCRIPT := preload("res://addons/mimic/testing/mimic_run_instance_grid.gd")
+const MIMIC_MULTIPLAYER_TEST_SUPPORT := preload(
+	"res://test/unit/support/mimic_multiplayer_test_support.gd"
+)
 const MIMIC_TEST_PORTS := preload("res://test/unit/support/mimic_test_ports.gd")
 const REFERENCE_CLIENT_SIZE := Vector2i(1152, 648)
 const TALL_CELL_RECT := Rect2i(Vector2i.ZERO, Vector2i(960, 1080))
@@ -27,16 +30,11 @@ func after_each() -> void:
 		_grid.free()
 	_grid = null
 
-	for multiplayer_api in _custom_multiplayer_apis:
-		if multiplayer_api.multiplayer_peer != null:
-			multiplayer_api.multiplayer_peer.close()
-	_custom_multiplayer_apis.clear()
-
-	for root in _custom_multiplayer_roots:
-		if is_instance_valid(root):
-			get_tree().set_multiplayer(null, root.get_path())
-			root.free()
-	_custom_multiplayer_roots.clear()
+	MIMIC_MULTIPLAYER_TEST_SUPPORT.cleanup_multiplayer_roots(
+		self,
+		_custom_multiplayer_roots,
+		_custom_multiplayer_apis
+	)
 
 	get_tree().set_multiplayer_poll_enabled(_saved_multiplayer_poll)
 	get_window().title = _saved_window_title
@@ -305,16 +303,9 @@ func _attach_grid_to_multiplayer_root(root: Node, index: int, count: int) -> voi
 
 
 func _create_multiplayer_root(root_label: String) -> Dictionary:
-	var root := Node.new()
-	root.name = "%s%d" % [root_label, _custom_multiplayer_roots.size()]
-	add_child(root)
-
-	var multiplayer_api := SceneMultiplayer.new()
-	get_tree().set_multiplayer(multiplayer_api, root.get_path())
-	_custom_multiplayer_roots.append(root)
-	_custom_multiplayer_apis.append(multiplayer_api)
-
-	return {
-		"root": root,
-		"multiplayer_api": multiplayer_api,
-	}
+	return MIMIC_MULTIPLAYER_TEST_SUPPORT.create_multiplayer_root(
+		self,
+		root_label,
+		_custom_multiplayer_roots,
+		_custom_multiplayer_apis
+	)

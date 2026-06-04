@@ -1,21 +1,20 @@
 extends GutTest
 
-const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
+const MIMIC_SETTINGS := preload("res://test/unit/support/mimic_project_settings_test_support.gd")
 
 var _captured_lines: Array[Dictionary] = []
-var _saved_log_level_exists := false
-var _saved_log_level: Variant = null
+var _saved_log_settings := {}
 
 
 func before_each() -> void:
-	_save_log_level()
+	_saved_log_settings = MIMIC_SETTINGS.save_settings([MIMIC_SETTINGS.LOG_LEVEL])
 	_captured_lines.clear()
 	MimicLog.output_handler = _capture_output
 
 
 func after_each() -> void:
 	MimicLog.output_handler = Callable()
-	_restore_log_level()
+	MIMIC_SETTINGS.restore_settings(_saved_log_settings)
 
 
 func test_line_includes_stack_source_tag_when_available() -> void:
@@ -27,7 +26,7 @@ func test_line_includes_stack_source_tag_when_available() -> void:
 
 
 func test_log_formats_message_with_source_tag() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ALL)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.ALL)
 
 	_call_log()
 
@@ -35,7 +34,7 @@ func test_log_formats_message_with_source_tag() -> void:
 
 
 func test_warning_formats_message_with_source_tag() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.WARNING)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.WARNING)
 
 	_call_warning()
 
@@ -43,7 +42,7 @@ func test_warning_formats_message_with_source_tag() -> void:
 
 
 func test_error_formats_message_with_source_tag() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ERROR)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.ERROR)
 
 	_call_error()
 
@@ -51,7 +50,7 @@ func test_error_formats_message_with_source_tag() -> void:
 
 
 func test_forced_log_formats_message_with_source_tag_when_logs_disabled() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_log()
 
@@ -59,7 +58,7 @@ func test_forced_log_formats_message_with_source_tag_when_logs_disabled() -> voi
 
 
 func test_forced_warning_formats_message_with_source_tag_when_logs_disabled() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_warning()
 
@@ -71,7 +70,7 @@ func test_forced_warning_formats_message_with_source_tag_when_logs_disabled() ->
 
 
 func test_forced_error_formats_message_with_source_tag_when_logs_disabled() -> void:
-	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.NONE)
+	ProjectSettings.set_setting(MIMIC_SETTINGS.LOG_LEVEL, MimicLog.Level.NONE)
 
 	_call_forced_error()
 
@@ -206,16 +205,3 @@ func _assert_timestamp_prefix(line: String) -> void:
 
 func _make_logged_line_from_test() -> String:
 	return MimicLog._line(["hello", 42])
-
-
-func _save_log_level() -> void:
-	_saved_log_level_exists = ProjectSettings.has_setting(LOG_LEVEL)
-	if _saved_log_level_exists:
-		_saved_log_level = ProjectSettings.get_setting(LOG_LEVEL)
-
-
-func _restore_log_level() -> void:
-	if _saved_log_level_exists:
-		ProjectSettings.set_setting(LOG_LEVEL, _saved_log_level)
-	elif ProjectSettings.has_setting(LOG_LEVEL):
-		ProjectSettings.clear(LOG_LEVEL)
