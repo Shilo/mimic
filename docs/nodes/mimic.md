@@ -79,20 +79,6 @@ Mimic.get_external_address()
 
 `get_local_peer_id()` returns `0` while offline or connecting. `get_external_address()` returns the last address reported by UPnP port forwarding.
 
-## Multiplayer API Access
-
-`Mimic.mp` is a cached reference to the active `MultiplayerAPI`. Cache it in a local when you touch it more than once in a call, and hoist it into an `@onready` field for per-frame access:
-
-```gdscript
-var mp := Mimic.mp
-if mp.has_multiplayer_peer():
-	var id := mp.get_unique_id()
-```
-
-`Mimic.mp` is the root `SceneTree` `MultiplayerAPI` — the same object `get_tree().get_multiplayer()` returns, and the same one `node.multiplayer` resolves to for nodes that are not parented under a custom per-subtree `MultiplayerAPI`. As a plain cached field it is the cheapest of the three to read (faster than both `node.multiplayer` and `Mimic.multiplayer`), so prefer it on hot paths. Mimic never replaces the root `MultiplayerAPI`, so the reference stays valid for the whole session; reassign `Mimic.mp` yourself only if you swap the `SceneTree` multiplayer.
-
-For a plain authority check, Godot's `is_multiplayer_authority()` is already optimal — reach for `Mimic.mp` when you need the `MultiplayerAPI` object itself (for example `get_peers()`, RPC configuration, or connecting its signals).
-
 ## Signals
 
 ```gdscript

@@ -78,26 +78,10 @@ enum PortMappingProtocol {
 	TCP_AND_UDP,
 }
 
-## The active [MultiplayerAPI] for the local peer, cached when the autoload enters the tree.
-## [br][br]
-## Read [code]Mimic.mp[/code] instead of Godot's built-in [member Node.multiplayer]
-## on hot paths: it is a plain cached reference, so it skips the per-access engine
-## lookup that [member Node.multiplayer] performs on every read.
-## [br][br]
-## Mimic never replaces the root [MultiplayerAPI], so this reference stays valid for
-## the whole session. Reassign it yourself only if you swap the [SceneTree]'s
-## multiplayer API.
-var mp: MultiplayerAPI
-
 var _state: NetworkState = NetworkState.OFFLINE
 var _last_client_address := ""
 var _last_client_port := 0
 var _port_mapper := MimicPortMapper.new()
-
-
-func _enter_tree() -> void:
-	# Cache before _ready so nodes entering the tree alongside Mimic can read Mimic.mp.
-	mp = multiplayer
 
 
 func _ready() -> void:
@@ -237,6 +221,7 @@ func get_external_address() -> String:
 func get_local_peer_id() -> int:
 	if _state == NetworkState.OFFLINE or _state == NetworkState.CLIENT_CONNECTING:
 		return 0
+	var mp := multiplayer
 	if not mp.has_multiplayer_peer():
 		return 0
 	return mp.get_unique_id()
@@ -246,6 +231,7 @@ func get_local_peer_id() -> int:
 func get_peer_ids() -> PackedInt32Array:
 	if _state == NetworkState.OFFLINE:
 		return PackedInt32Array()
+	var mp := multiplayer
 	if not mp.has_multiplayer_peer():
 		return PackedInt32Array()
 	return mp.get_peers()
@@ -356,13 +342,14 @@ func _apply_peer_start_result(
 		var message := "%s: %s." % [failure_summary, error_string(result.error)]
 		return _fail_start(state, result.error, message)
 
-	mp.multiplayer_peer = result.peer
+	multiplayer.multiplayer_peer = result.peer
 	_change_state(state)
 	return OK
 
 
 func _connect_multiplayer_signals() -> void:
 	# Re-arm these before start attempts in case the active MultiplayerAPI changed.
+	var mp := multiplayer
 	if not mp.peer_connected.is_connected(_on_peer_connected):
 		mp.peer_connected.connect(_on_peer_connected)
 	if not mp.peer_disconnected.is_connected(_on_peer_disconnected):
@@ -424,6 +411,7 @@ func _fail_start(state: NetworkState, error: Error, message: String) -> Error:
 func _has_active_peer() -> bool:
 	if _state != NetworkState.OFFLINE:
 		return true
+	var mp := multiplayer
 	if not mp.has_multiplayer_peer():
 		return false
 
@@ -435,6 +423,7 @@ func _has_active_peer() -> bool:
 
 
 func _close_peer() -> void:
+	var mp := multiplayer
 	var current_peer := mp.multiplayer_peer if mp.has_multiplayer_peer() else null
 	if current_peer is OfflineMultiplayerPeer:
 		return
