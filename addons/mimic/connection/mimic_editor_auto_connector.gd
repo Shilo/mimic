@@ -16,12 +16,8 @@ static func try_start(
 	start_server_or_client: Callable,
 	start_client: Callable,
 	start_server: Callable,
-	cmdline_args_override: PackedStringArray = PackedStringArray()
+	cmdline_args: PackedStringArray = PackedStringArray()
 ) -> void:
-	var cmdline_args: PackedStringArray = cmdline_args_override
-	if cmdline_args.is_empty():
-		cmdline_args = OS.get_cmdline_args()
-
 	if _is_tooling_run(cmdline_args):
 		return
 	if not is_inside_tree:
@@ -41,7 +37,10 @@ static func try_start(
 			start_server.call()
 
 
-static func _is_tooling_run(cmdline_args: PackedStringArray) -> bool:
+static func _is_tooling_run(cmdline_args: PackedStringArray = PackedStringArray()) -> bool:
+	if cmdline_args.is_empty():
+		cmdline_args = OS.get_cmdline_args()
+
 	for argument in cmdline_args:
 		if argument in _TOOLING_ARGS:
 			return true

@@ -82,8 +82,7 @@ static func error_forced(...objects: Array) -> void:
 
 
 static func _should_log(message_level: Level) -> bool:
-	var log_level: Level = MimicProjectSettings.log_level
-	return log_level <= message_level
+	return MimicProjectSettings.log_level <= message_level
 
 
 static func _line(objects: Array) -> String:
