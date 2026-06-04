@@ -43,6 +43,8 @@ static var _is_editor_feature := OS.has_feature("editor")
 
 
 ## Prints an informational Mimic log message when the current log level allows it.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the log line.
 static func log(...objects: Array) -> void:
 	if not _should_log(Level.ALL):
 		return
@@ -51,6 +53,8 @@ static func log(...objects: Array) -> void:
 
 
 ## Pushes a Mimic warning when the current log level allows it.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the warning line.
 static func warning(...objects: Array) -> void:
 	if not _should_log(Level.WARNING):
 		return
@@ -59,6 +63,8 @@ static func warning(...objects: Array) -> void:
 
 
 ## Pushes a Mimic error when the current log level allows it.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the error line.
 static func error(...objects: Array) -> void:
 	if not _should_log(Level.ERROR):
 		return
@@ -67,16 +73,22 @@ static func error(...objects: Array) -> void:
 
 
 ## Prints an informational Mimic log message without checking the configured log level.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the log line.
 static func log_forced(...objects: Array) -> void:
 	_print_line(_prefix(), _join(objects))
 
 
 ## Pushes a Mimic warning without checking the configured log level.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the warning line.
 static func warning_forced(...objects: Array) -> void:
 	_push_warning_line(_prefix(), _join(objects))
 
 
 ## Pushes a Mimic error without checking the configured log level.
+## [br][br]
+## [param objects] are stringified and joined with spaces into the error line.
 static func error_forced(...objects: Array) -> void:
 	_push_error_line(_prefix(), _join(objects))
 

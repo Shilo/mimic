@@ -101,18 +101,31 @@ func _exit_tree() -> void:
 
 ## Starts a server with the configured transport.
 ## [br][br]
-## Pass [param port_override] or [param bind_address_override] to override the
-## matching Project Settings value for this call only. The default [code]-1[/code]
-## port and empty bind address use Project Settings.
+## [param port_override] sets the listen port for this call; positive values override
+## [member MimicProjectSettings.port], while the default [code]-1[/code] uses it.
+## [br][br]
+## [param bind_address_override] overrides the local bind address for this call only;
+## the default empty string uses [member MimicProjectSettings.bind_address].
+## [br][br]
+## Returns [constant OK] once the server peer is listening, or a non-[constant OK]
+## [enum Error] code when validation or peer creation fails. Failures also emit
+## [signal start_failed].
 func start_server(port_override: int = -1, bind_address_override: String = "") -> Error:
 	return _start_server(port_override, bind_address_override)
 
 
 ## Starts a client connection with the configured transport.
 ## [br][br]
-## Pass [param address_override] or [param port_override] to override the
-## matching Project Settings value for this call only. The default empty address
-## and [code]-1[/code] port use Project Settings.
+## [param address_override] overrides the server address for this call only; the
+## default empty string uses [member MimicProjectSettings.address].
+## [br][br]
+## [param port_override] sets the server port for this call; positive values override
+## [member MimicProjectSettings.port], while the default [code]-1[/code] uses it.
+## [br][br]
+## Returns [constant OK] once the connection attempt starts, or a non-[constant OK]
+## [enum Error] code when the address is empty, validation fails, or peer creation
+## fails. Failures also emit [signal start_failed]. The later connection result arrives
+## through [signal client_connected] or [signal client_connection_failed].
 func start_client(address_override: String = "", port_override: int = -1) -> Error:
 	_connect_multiplayer_signals()
 
@@ -163,8 +176,12 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 
 
 ## Tries to start a server, then falls back to [method start_client] on expected local hosting
-## failures.
+## failures such as the port already being in use.
+## [br][br]
 ## Fallback is skipped on dedicated/server exports.
+## [br][br]
+## Returns [constant OK] when the server starts or the client attempt begins, or a
+## non-[constant OK] [enum Error] code when neither can start.
 func start_server_or_client() -> Error:
 	# This avoids Godot's noisy ENet bind error when the local port is already occupied.
 	# The real _start_server call below remains authoritative when the best-effort probe passes.
@@ -212,7 +229,8 @@ func get_state() -> NetworkState:
 	return _state
 
 
-## Returns the last external address reported by UPnP port forwarding.
+## Returns the last external address reported by UPnP port forwarding, or an empty
+## string when no external address is currently stored.
 func get_external_address() -> String:
 	return _port_mapper.get_external_address()
 

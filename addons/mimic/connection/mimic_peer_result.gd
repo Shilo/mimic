@@ -1,5 +1,5 @@
 class_name MimicPeerResult extends RefCounted
-## Pairs a created [MultiplayerPeer] with the [Error] from its startup call.
+## Pairs a created [MultiplayerPeer] with the [enum Error] from its startup call.
 ## [br][br]
 ## [member peer] is [code]null[/code] when the selected transport cannot create one.
 

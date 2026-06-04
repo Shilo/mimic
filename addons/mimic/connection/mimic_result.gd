@@ -1,5 +1,5 @@
 class_name MimicResult extends RefCounted
-## Pairs a Godot [Error] with a human-readable message.
+## Pairs a Godot [enum Error] with a human-readable message.
 ## [br][br]
 ## [member error] is [constant OK] with an empty [member message] on success.
 

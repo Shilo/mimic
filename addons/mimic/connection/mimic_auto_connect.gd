@@ -28,6 +28,19 @@ static func is_tooling_run(cmdline_args: PackedStringArray = PackedStringArray()
 ## [br][br]
 ## ENet bind failures can be noisy in Godot output, so local auto-connect probes
 ## obvious occupied-port cases before attempting the authoritative server start.
+## [br][br]
+## [param transport] is the transport to probe; only ENet is checked, and other
+## transports return [constant OK].
+## [br][br]
+## [param port] is the host port to probe.
+## [br][br]
+## [param bind_address] is the local bind address to probe.
+## [br][br]
+## [param has_active_peer] skips the probe when [code]true[/code] so an existing peer is
+## left untouched.
+## [br][br]
+## Returns [constant OK] when no obvious local bind problem is detected, or
+## [constant ERR_CANT_CREATE] when the port appears unavailable.
 static func get_host_preflight_error(
 	transport: Mimic.TransportType,
 	port: int,
@@ -48,11 +61,19 @@ static func get_host_preflight_error(
 
 
 ## Returns [code]true[/code] for expected local host startup failures.
+## [br][br]
+## [param error] is the host start [enum Error] to classify; in-use, create, and open
+## failures are treated as expected.
 static func is_expected_host_failure(error: Error) -> bool:
 	return error == ERR_ALREADY_IN_USE or error == ERR_CANT_CREATE or error == ERR_CANT_OPEN
 
 
 ## Returns [code]true[/code] when a failed host attempt may continue as a client.
+## [br][br]
+## [param error] is the host start [enum Error] that triggered the fallback check.
+## [br][br]
+## [param has_active_peer] blocks fallback when [code]true[/code] so an existing peer is
+## not replaced.
 static func can_fallback_to_client(error: Error, has_active_peer: bool) -> bool:
 	if not is_expected_host_failure(error):
 		return false

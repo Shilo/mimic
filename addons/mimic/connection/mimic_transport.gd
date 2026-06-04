@@ -7,7 +7,16 @@ class_name MimicTransport extends Object
 
 ## Creates an unassigned server [MultiplayerPeer] for the selected Mimic transport.
 ## [br][br]
-## Returns a typed [MimicPeerResult].
+## [param transport] selects the transport backend to build the peer for.
+## [br][br]
+## [param port] is the port the server peer listens on.
+## [br][br]
+## [param bind_address] is the local address to bind; [code]"*"[/code] binds to all
+## interfaces.
+## [br][br]
+## Returns a [MimicPeerResult] whose [member MimicPeerResult.error] is [constant OK] with
+## the created [member MimicPeerResult.peer] on success, or carries the failure
+## [enum Error] otherwise.
 static func create_server_peer(
 	transport: Mimic.TransportType,
 	port: int,
@@ -42,7 +51,15 @@ static func create_server_peer(
 
 ## Creates an unassigned client [MultiplayerPeer] for the selected Mimic transport.
 ## [br][br]
-## Returns a typed [MimicPeerResult].
+## [param transport] selects the transport backend to build the peer for.
+## [br][br]
+## [param address] is the server address to connect to.
+## [br][br]
+## [param port] is the server port to connect to.
+## [br][br]
+## Returns a [MimicPeerResult] whose [member MimicPeerResult.error] is [constant OK] with
+## the created [member MimicPeerResult.peer] on success, or carries the failure
+## [enum Error] otherwise.
 static func create_client_peer(
 	transport: Mimic.TransportType,
 	address: String,
@@ -79,7 +96,13 @@ static func create_client_peer(
 
 ## Checks whether the selected transport and port can start.
 ## [br][br]
-## The returned [MimicResult] has [constant OK] and an empty message when a start may proceed.
+## [param transport] is the transport backend to validate.
+## [br][br]
+## [param port] is the port to validate; it must be between [code]1[/code] and
+## [code]65535[/code].
+## [br][br]
+## Returns a [MimicResult] with [constant OK] and an empty message when a start may
+## proceed, or an [enum Error] with an explanation when it cannot.
 static func check_start(transport: Mimic.TransportType, port: int) -> MimicResult:
 	if port < 1 or port > 65_535:
 		return MimicResult.new(ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
@@ -109,6 +132,9 @@ static func check_start(transport: Mimic.TransportType, port: int) -> MimicResul
 
 
 ## Returns the user-facing display name for a Mimic transport value.
+## [br][br]
+## [param transport] is the transport to label; an unrecognized value returns
+## [code]"Unknown"[/code].
 static func get_display_name(transport: Mimic.TransportType) -> String:
 	match transport:
 		Mimic.TransportType.OFFLINE:
@@ -123,6 +149,10 @@ static func get_display_name(transport: Mimic.TransportType) -> String:
 
 
 ## Returns the effective bind address after applying a one-call override.
+## [br][br]
+## [param bind_address_override] replaces the configured bind address when non-empty; an
+## empty value falls back to [member MimicProjectSettings.bind_address], and an empty
+## configured address resolves to [code]"*"[/code].
 static func get_bind_address(bind_address_override: String = "") -> String:
 	if not bind_address_override.is_empty():
 		return bind_address_override
@@ -131,6 +161,11 @@ static func get_bind_address(bind_address_override: String = "") -> String:
 
 
 ## Returns a WebSocket URL for the configured WebSocket client options.
+## [br][br]
+## [param address] is the host to connect to; a value already starting with
+## [code]ws://[/code] or [code]wss://[/code] is returned unchanged.
+## [br][br]
+## [param port] is the port embedded in the generated URL.
 static func get_websocket_url(address: String, port: int) -> String:
 	if address.begins_with("ws://") or address.begins_with("wss://"):
 		return address

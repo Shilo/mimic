@@ -18,6 +18,11 @@ var _queued_request := {}
 
 
 ## Returns the UPnP protocols to map for a transport and protocol policy.
+## [br][br]
+## [param transport] picks the default protocol when [param protocol] is the
+## transport-default policy: WebSocket maps TCP and other transports map UDP.
+## [br][br]
+## [param protocol] is the [enum Mimic.PortMappingProtocol] policy to apply.
 static func get_protocols(
 	transport: Mimic.TransportType,
 	protocol: Mimic.PortMappingProtocol
@@ -37,6 +42,9 @@ static func get_protocols(
 
 
 ## Returns the UPnP mapping description, falling back to [code]"Mimic"[/code] when empty.
+## [br][br]
+## [param project_name] is the description to use; an empty value yields
+## [code]"Mimic"[/code].
 static func get_description(project_name: String) -> String:
 	return "Mimic" if project_name.is_empty() else project_name
 
@@ -44,6 +52,8 @@ static func get_description(project_name: String) -> String:
 ## Starts a background UPnP add-mapping request for the configured transport policy.
 ## [br][br]
 ## Does nothing when [member MimicProjectSettings.port_forwarding_enabled] is [code]false[/code].
+## [br][br]
+## [param port] is the local port to map on the UPnP gateway.
 func add_mapping(port: int) -> void:
 	if not MimicProjectSettings.port_forwarding_enabled:
 		return
@@ -102,7 +112,8 @@ func wait_to_finish() -> void:
 		_finish_completed_request()
 
 
-## Returns the last external address reported by UPnP.
+## Returns the last external address reported by UPnP, or an empty string when no
+## external address is currently stored.
 func get_external_address() -> String:
 	return _external_address
 
