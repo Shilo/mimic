@@ -1,5 +1,4 @@
 param(
-	[double] $DuplicateThreshold = 2.0,
 	[int] $DuplicateMinLines = 8,
 	[int] $DuplicateMinTokens = 70,
 	[string] $OutputDir = "test/.output/quality",
@@ -21,7 +20,6 @@ $gdstyleVersion = "v0.1.4"
 $gdcruiserVersion = "1.7.0"
 $gdstyleConfig = Join-Path $qualityRoot "gdstyle.toml"
 $gdcruiserConfig = Join-Path $qualityRoot "gdcruiser.json"
-$jscpdBaselinePath = Join-Path $qualityRoot "jscpd_baseline.json"
 $jscpdPackageRoot = $qualityRoot
 $projectPaths = @("addons/mimic", "examples", "test")
 $gdstyleBlockingRules = @(
@@ -682,77 +680,36 @@ function Get-DevOnlyReferenceFiles {
 	return [string[]] $files
 }
 
-function Get-Sha256Text {
-	param([string] $Text)
-
-	$bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
-	$sha256 = [System.Security.Cryptography.SHA256]::Create()
-	try {
-		$hashBytes = $sha256.ComputeHash($bytes)
-		return [System.BitConverter]::ToString($hashBytes).Replace("-", "").ToLowerInvariant()
-	} finally {
-		$sha256.Dispose()
-	}
-}
-
 function Get-NormalizedJscpdPath {
 	param([string] $Path)
 
 	return $Path.Replace("\", "/")
 }
 
-function Get-JscpdCloneFingerprint {
-	param([object] $Clone)
-
-	$paths = @(
-		(Get-NormalizedJscpdPath $Clone.firstFile.name),
-		(Get-NormalizedJscpdPath $Clone.secondFile.name)
-	) | Sort-Object
-	$fragmentHash = Get-Sha256Text ([string] $Clone.fragment)
-	return "$($paths[0])|$($paths[1])|$fragmentHash"
-}
-
-function Assert-JscpdBaseline {
+function Assert-JscpdHasNoClones {
 	param([string] $ReportPath)
 
-	if (-not (Test-Path -LiteralPath $jscpdBaselinePath)) {
-		throw "jscpd baseline file is missing at $(Get-RelativePath $jscpdBaselinePath)."
-	}
-
-	$baseline = Get-Content -Raw -LiteralPath $jscpdBaselinePath | ConvertFrom-Json
-	$allowedFingerprints = [System.Collections.Generic.HashSet[string]]::new()
-	foreach ($allowedClone in @($baseline.allowedClones)) {
-		$paths = @(
-			(Get-NormalizedJscpdPath $allowedClone.firstFile),
-			(Get-NormalizedJscpdPath $allowedClone.secondFile)
-		) | Sort-Object
-		[void] $allowedFingerprints.Add("$($paths[0])|$($paths[1])|$($allowedClone.fragmentSha256)")
-	}
-
 	$report = Get-Content -Raw -LiteralPath $ReportPath | ConvertFrom-Json
-	$unexpectedClones = [System.Collections.Generic.List[string]]::new()
+	$clones = [System.Collections.Generic.List[string]]::new()
 	foreach ($clone in @($report.duplicates)) {
-		$fingerprint = Get-JscpdCloneFingerprint $clone
-		if (-not $allowedFingerprints.Contains($fingerprint)) {
-			$firstPath = Get-NormalizedJscpdPath $clone.firstFile.name
-			$secondPath = Get-NormalizedJscpdPath $clone.secondFile.name
-			$unexpectedClones.Add(
-				"${firstPath}:$($clone.firstFile.start)-$($clone.firstFile.end) ~ " +
-				"${secondPath}:$($clone.secondFile.start)-$($clone.secondFile.end)"
-			)
-		}
+		$firstPath = Get-NormalizedJscpdPath $clone.firstFile.name
+		$secondPath = Get-NormalizedJscpdPath $clone.secondFile.name
+		$clones.Add(
+			"${firstPath}:$($clone.firstFile.start)-$($clone.firstFile.end) ~ " +
+			"${secondPath}:$($clone.secondFile.start)-$($clone.secondFile.end)"
+		)
 	}
 
-	if ($unexpectedClones.Count -eq 0) {
-		Write-Output "jscpd baseline ratchet passed with $(@($report.duplicates).Count) known clone(s)."
+	if ($clones.Count -eq 0) {
+		Write-Output "jscpd zero-clone gate passed."
 		return
 	}
 
-	Write-Output "jscpd found $($unexpectedClones.Count) unapproved clone(s):"
-	foreach ($unexpectedClone in $unexpectedClones) {
-		Write-Output $unexpectedClone
+	Write-Output "jscpd found $($clones.Count) clone(s):"
+	foreach ($clone in $clones) {
+		Write-Output $clone
 	}
-	throw "Duplicate-code ratchet failed. Refactor new clones or update $(Get-RelativePath $jscpdBaselinePath) with an intentional baseline change."
+	throw "Duplicate-code gate failed. Refactor clones instead of adding an allowlist."
 }
 
 function Invoke-MimicPolicyCheck {
@@ -915,6 +872,7 @@ if (-not $SkipDuplicateCheck) {
 	$jscpdOutput = Join-Path $resolvedOutputDir "jscpd"
 	New-Item -ItemType Directory -Force -Path $jscpdOutput | Out-Null
 	$jscpdReportPath = Join-Path $jscpdOutput "jscpd-report.json"
+	# jscpd's threshold controls its own exit code; Mimic enforces clone policy from JSON.
 	$jscpdArgs = @(
 		"--reporters",
 		"console,ai,json",
@@ -925,7 +883,7 @@ if (-not $SkipDuplicateCheck) {
 		"--min-tokens",
 		[string] $DuplicateMinTokens,
 		"--threshold",
-		[string] $DuplicateThreshold,
+		"100",
 		"--formats-exts",
 		"gdscript:gd",
 		"--ignore",
@@ -934,10 +892,10 @@ if (-not $SkipDuplicateCheck) {
 	) + $projectPaths
 
 	Invoke-CheckedCommand `
-		-Label "Running jscpd duplicate-code check at <= $DuplicateThreshold% duplication..." `
+		-Label "Running jscpd duplicate-code check with zero-clone policy..." `
 		-Command $jscpd `
 		-Arguments $jscpdArgs
-	Assert-JscpdBaseline -ReportPath $jscpdReportPath
+	Assert-JscpdHasNoClones -ReportPath $jscpdReportPath
 } else {
 	Write-Output "Skipping duplicate-code check."
 }

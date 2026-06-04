@@ -44,12 +44,7 @@ The quality pass has five layers:
 - Hash-locked `gdcruiser==1.7.0` dependency architecture checks when bootstrapped.
 - Checksum-verified `gdstyle v0.1.4` diagnostics when available.
 
-The duplicate-code gate uses a 2% threshold with 8-line and 70-token minimums, then compares every reported clone fingerprint against `tools/quality/jscpd_baseline.json`. That makes it a ratchet: total duplication must stay under budget, and new clone fingerprints fail unless they are intentionally added to the baseline. The current baseline is two intentional-looking test helper/setup clones at about 1.8% duplication:
-
-- Project Settings name lists in `test_mimic_connection_processes.gd` and `test_mimic_project_settings.gd`.
-- Project Settings save/restore helpers in `test_mimic_connection_processes.gd` and `test_mimic_runtime.gd`.
-
-Treat any new clone report as a refactor prompt. If a duplicate is deliberately clearer than an abstraction, keep it, but update `tools/quality/jscpd_baseline.json` in the same review with a plain reason. For rare generated or fixture blocks that would be worse when abstracted, use a narrow `# jscpd:ignore-start` / `# jscpd:ignore-end` block with a nearby explanation and keep the total project duplication under the threshold.
+The duplicate-code gate uses 8-line and 70-token minimums, then fails on every reported clone. Mimic does not maintain a clone allowlist; treat any clone report as a refactor prompt. For rare generated or fixture blocks that would be worse when abstracted, use a narrow `# jscpd:ignore-start` / `# jscpd:ignore-end` block with a nearby explanation.
 
 ## AI Policy Rules
 
