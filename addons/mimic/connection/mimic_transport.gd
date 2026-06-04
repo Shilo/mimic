@@ -118,8 +118,7 @@ static func get_websocket_url(address: String, port: int) -> String:
 
 ## Typed result from a transport peer creation attempt.
 class PeerResult extends RefCounted:
-	## Error returned by the selected transport startup call.
-	var error: Error
+	var error: Error ## Error returned by the selected transport startup call.
 	## Created peer, or [code]null[/code] when the selected transport cannot create one.
 	var peer: MultiplayerPeer
 

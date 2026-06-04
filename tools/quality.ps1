@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $qualityRoot = Join-Path $PSScriptRoot "quality"
 $resolvedOutputDir = [System.IO.Path]::GetFullPath((Join-Path $repoRoot $OutputDir))
-$gdstyleVersion = "v0.1.4"
+$gdstyleVersion = "v0.1.5"
 $gdcruiserVersion = "1.7.0"
 $gdstyleConfig = Join-Path $qualityRoot "gdstyle.toml"
 $gdcruiserConfig = Join-Path $qualityRoot "gdcruiser.json"
@@ -128,7 +128,7 @@ function Get-GdstyleAssetMetadata {
 	if ($IsWindows -or $env:OS -eq "Windows_NT") {
 		return @{
 			Name = "gdstyle-x86_64-pc-windows-msvc.zip"
-			Sha256 = "9cf3e7bf5ab56ac0e2a568c11f1184dfed87450e0069a053d73f78538a7fb05f"
+			Sha256 = "50e5d86ca571d19083f6d9ca4be4b346323dfb56bca7854946937896d87c3b4c"
 		}
 	}
 	if ($IsMacOS) {
@@ -140,17 +140,17 @@ function Get-GdstyleAssetMetadata {
 		if ($machine -eq "arm64" -or $machine -eq "aarch64") {
 			return @{
 				Name = "gdstyle-aarch64-apple-darwin.tar.gz"
-				Sha256 = "6c46b740ffee6224fa299c3fc9d9e2e643ca58135f30e7aefbd68a44e14e8634"
+				Sha256 = "57173d1695c99242a1933944017fef6a885c12e8b0bf09faaa7ceb9ec5d71305"
 			}
 		}
 		return @{
 			Name = "gdstyle-x86_64-apple-darwin.tar.gz"
-			Sha256 = "cb470f366334301821573a5e1517927a4780d268a45f4785483474f247ef8e9e"
+			Sha256 = "4b1671dfd49feaa8c6d7632bcacba836ff99b8e788c6a1d68c327757e62331f7"
 		}
 	}
 	return @{
 		Name = "gdstyle-x86_64-unknown-linux-gnu.tar.gz"
-		Sha256 = "84c518c023d797e82cf6fc21ba9deb1a6abdf74cd7016cba9421efc420f0a299"
+		Sha256 = "3b6e72c1f4e43e6547c3b520c5d3158d0b0012a7c6ece4bfb2a08e0a3747d138"
 	}
 }
 
@@ -384,7 +384,7 @@ function Assert-GdstyleVersion {
 	if ($LASTEXITCODE -ne 0) {
 		throw "Failed to read gdstyle version from $GdstylePath."
 	}
-	if ($versionOutput -notmatch "0\.1\.4") {
+	if ($versionOutput -notmatch "0\.1\.5") {
 		throw "Expected gdstyle $gdstyleVersion, but found '$versionOutput' at $GdstylePath."
 	}
 }

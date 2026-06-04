@@ -42,7 +42,7 @@ The quality pass has five layers:
 - PowerShell syntax checks for repo automation scripts.
 - Lockfile-backed `jscpd@4.2.4` duplicate-code detection for GDScript.
 - Hash-locked `gdcruiser==1.7.0` dependency architecture checks when bootstrapped.
-- Checksum-verified `gdstyle v0.1.4` diagnostics when available.
+- Checksum-verified `gdstyle v0.1.5` diagnostics when available.
 
 The duplicate-code gate uses 8-line and 70-token minimums, then fails on every reported clone. Mimic does not maintain a clone allowlist; treat any clone report as a refactor prompt. For rare generated or fixture blocks that would be worse when abstracted, use a narrow `# jscpd:ignore-start` / `# jscpd:ignore-end` block with a nearby explanation.
 
