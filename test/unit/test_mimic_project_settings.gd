@@ -66,7 +66,7 @@ func test_accessors_return_defaults_when_settings_are_missing() -> void:
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
 	assert_eq(MimicProjectSettings.editor_auto_connect, Mimic.EditorAutoConnectMode.DISABLED)
 	assert_eq(MimicProjectSettings.address, "127.0.0.1")
-	assert_eq(MimicProjectSettings.port, 15490)
+	assert_eq(MimicProjectSettings.port, 15_490)
 	assert_eq(MimicProjectSettings.max_clients, 32)
 	assert_eq(MimicProjectSettings.bind_address, "*")
 	assert_eq(MimicProjectSettings.enet_channel_count, 0)
@@ -79,7 +79,10 @@ func test_accessors_return_defaults_when_settings_are_missing() -> void:
 	assert_false(MimicProjectSettings.port_forwarding_enabled)
 	assert_true(MimicProjectSettings.port_mapping_delete_on_stop)
 	assert_true(MimicProjectSettings.port_mapping_query_external_address)
-	assert_eq(MimicProjectSettings.port_mapping_protocol, Mimic.PortMappingProtocol.TRANSPORT_DEFAULT)
+	assert_eq(
+		MimicProjectSettings.port_mapping_protocol,
+		Mimic.PortMappingProtocol.TRANSPORT_DEFAULT
+	)
 	assert_eq(MimicProjectSettings.port_mapping_duration, 7200)
 	assert_eq(MimicProjectSettings.upnp_discover_timeout_ms, 2000)
 	assert_eq(MimicProjectSettings.upnp_discover_ttl, 2)
@@ -92,12 +95,12 @@ func test_accessors_return_defaults_when_settings_are_missing() -> void:
 
 func test_register_adds_missing_settings_without_overwriting_existing_values() -> void:
 	ProjectSettings.set_setting(ADDRESS, "10.0.0.55")
-	ProjectSettings.set_setting(PORT, 19001)
+	ProjectSettings.set_setting(PORT, 19_001)
 
 	MimicProjectSettings.register()
 
 	assert_eq(MimicProjectSettings.address, "10.0.0.55")
-	assert_eq(MimicProjectSettings.port, 19001)
+	assert_eq(MimicProjectSettings.port, 19_001)
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.ENET)
 	assert_true(ProjectSettings.has_setting(EDITOR_AUTO_CONNECT))
 	assert_true(ProjectSettings.has_setting(MAX_CLIENTS))
@@ -108,13 +111,13 @@ func test_accessors_read_typed_project_settings_values() -> void:
 	ProjectSettings.set_setting(TRANSPORT, Mimic.TransportType.WEBSOCKET)
 	ProjectSettings.set_setting(EDITOR_AUTO_CONNECT, Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT)
 	ProjectSettings.set_setting(ADDRESS, "example.test")
-	ProjectSettings.set_setting(PORT, 19002)
+	ProjectSettings.set_setting(PORT, 19_002)
 	ProjectSettings.set_setting(MAX_CLIENTS, 12)
 	ProjectSettings.set_setting(BIND_ADDRESS, "127.0.0.1")
 	ProjectSettings.set_setting(ENET_CHANNEL_COUNT, 3)
 	ProjectSettings.set_setting(ENET_IN_BANDWIDTH, 1000)
 	ProjectSettings.set_setting(ENET_OUT_BANDWIDTH, 2000)
-	ProjectSettings.set_setting(ENET_CLIENT_LOCAL_PORT, 19003)
+	ProjectSettings.set_setting(ENET_CLIENT_LOCAL_PORT, 19_003)
 	ProjectSettings.set_setting(WEBSOCKET_CLIENT_USE_TLS, true)
 	ProjectSettings.set_setting(WEBSOCKET_PATH, "game")
 	ProjectSettings.set_setting(WEBSOCKET_HANDSHAKE_TIMEOUT, 5.5)
@@ -128,15 +131,18 @@ func test_accessors_read_typed_project_settings_values() -> void:
 	ProjectSettings.set_setting(LOG_LEVEL, MimicLog.Level.ERROR)
 
 	assert_eq(MimicProjectSettings.transport, Mimic.TransportType.WEBSOCKET)
-	assert_eq(MimicProjectSettings.editor_auto_connect, Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT)
+	assert_eq(
+		MimicProjectSettings.editor_auto_connect,
+		Mimic.EditorAutoConnectMode.SERVER_THEN_CLIENT
+	)
 	assert_eq(MimicProjectSettings.address, "example.test")
-	assert_eq(MimicProjectSettings.port, 19002)
+	assert_eq(MimicProjectSettings.port, 19_002)
 	assert_eq(MimicProjectSettings.max_clients, 12)
 	assert_eq(MimicProjectSettings.bind_address, "127.0.0.1")
 	assert_eq(MimicProjectSettings.enet_channel_count, 3)
 	assert_eq(MimicProjectSettings.enet_in_bandwidth, 1000)
 	assert_eq(MimicProjectSettings.enet_out_bandwidth, 2000)
-	assert_eq(MimicProjectSettings.enet_client_local_port, 19003)
+	assert_eq(MimicProjectSettings.enet_client_local_port, 19_003)
 	assert_true(MimicProjectSettings.websocket_client_use_tls)
 	assert_eq(MimicProjectSettings.websocket_path, "game")
 	assert_eq(MimicProjectSettings.websocket_handshake_timeout, 5.5)

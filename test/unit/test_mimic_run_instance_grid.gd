@@ -2,10 +2,10 @@ extends GutTest
 
 const GRID_SCRIPT := preload("res://addons/mimic/testing/mimic_run_instance_grid.gd")
 
-var _grid = null
+var _grid: Node = null
 var _custom_multiplayer_roots: Array[Node] = []
 var _custom_multiplayer_apis: Array[SceneMultiplayer] = []
-var _next_title_test_port := 19700
+var _next_title_test_port := 19_700
 var _saved_multiplayer_poll := true
 var _saved_window_title := ""
 
@@ -148,7 +148,10 @@ func test_frame_border_is_hardcoded_not_measured_to_avoid_window_gaps() -> void:
 		assert_eq(
 			border,
 			Vector2i(1, 1),
-			"Windows frame border must stay hardcoded at 1px; a measured value reintroduces window gaps"
+			(
+				"Windows frame border must stay hardcoded at 1px; "
+				+ "a measured value reintroduces window gaps"
+			)
 		)
 	else:
 		assert_eq(border, Vector2i.ZERO)
@@ -210,8 +213,12 @@ func test_should_fit_uses_unclamped_cell_aspect_for_tiny_cells() -> void:
 	var tiny_wide_cell_rect := Rect2i(Vector2i.ZERO, Vector2i(100, 40))
 	var reference_client_size := Vector2i(1152, 648)
 
-	assert_true(_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_width"))
-	assert_false(_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_height"))
+	assert_true(
+		_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_width")
+	)
+	assert_false(
+		_should_fit(tiny_wide_cell_rect, reference_client_size, "canvas_items", "keep_height")
+	)
 
 
 func test_window_index_title_uses_launch_order_until_connected() -> void:
@@ -224,7 +231,7 @@ func test_peer_title_appends_peer_id_to_launch_order_after_connection() -> void:
 	var title: String = _grid.call(
 		"_format_peer_title",
 		"Mimic Multiplayer [Session 2/3]",
-		618443343
+		618_443_343
 	)
 
 	assert_eq(title, "Mimic Multiplayer [Session 2/3] [Peer 618443343]")

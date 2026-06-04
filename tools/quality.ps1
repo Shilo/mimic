@@ -24,6 +24,9 @@ $gdcruiserConfig = Join-Path $qualityRoot "gdcruiser.json"
 $jscpdBaselinePath = Join-Path $qualityRoot "jscpd_baseline.json"
 $jscpdPackageRoot = $qualityRoot
 $projectPaths = @("addons/mimic", "examples", "test")
+$gdstyleBlockingRules = @(
+	"quality/type-hint"
+)
 
 New-Item -ItemType Directory -Force -Path $resolvedOutputDir | Out-Null
 
@@ -773,9 +776,9 @@ function Invoke-MimicPolicyCheck {
 	Add-RegexPolicyIssues `
 		-Issues $issues `
 		-Rule "ai/no-direct-addon-print" `
-		-Message "Route addon runtime output through MimicLog so log level and formatting stay centralized." `
-		-Files $addonFiles `
-		-Pattern '\b(print|prints|printerr)\s*\(' `
+		-Message "Remove stray debug print calls; use MimicLog for addon runtime output." `
+		-Files $gdFiles `
+		-Pattern '\b(print|prints|printerr|print_rich|print_verbose|printt|printraw)\s*\(' `
 		-Exclude @("addons/mimic/debug/mimic_log.gd")
 
 	Add-RawRegexPolicyIssues `
@@ -1016,6 +1019,24 @@ if (-not $SkipGdstyle) {
 			} else {
 				$gdstyleDiagnostics = @($convertedDiagnostics)
 			}
+		}
+		$blockingGdstyleDiagnostics = @(
+			$gdstyleDiagnostics | Where-Object {
+				($gdstyleBlockingRules -contains [string]$_.rule) -or
+				([string]$_.severity -eq "error")
+			}
+		)
+		if ($blockingGdstyleDiagnostics.Count -gt 0) {
+			Write-Output "gdstyle reported $($blockingGdstyleDiagnostics.Count) blocking diagnostic(s). Full report: $(Get-RelativePath $gdstyleJsonPath)."
+			$blockingGdstyleDiagnostics |
+				Select-Object -First 8 |
+				ForEach-Object {
+					Write-Output "$($_.file):$($_.span.line) [$($_.rule)] $($_.message)"
+				}
+			if ($blockingGdstyleDiagnostics.Count -gt 8) {
+				Write-Output "...and $($blockingGdstyleDiagnostics.Count - 8) more blocking diagnostic(s)."
+			}
+			throw "gdstyle blocking diagnostics found. See $(Get-RelativePath $gdstyleJsonPath)."
 		}
 		if ($gdstyleDiagnostics.Count -gt 0) {
 			Write-Output "gdstyle reported $($gdstyleDiagnostics.Count) advisory diagnostic(s). Full report: $(Get-RelativePath $gdstyleJsonPath)."

@@ -21,7 +21,7 @@ extends Node
 
 const _DIR := "user://mimic/run_grid"
 const _GROUP_MS := 3000
-const _STALE_MS := 15000
+const _STALE_MS := 15_000
 const _SETTLE_TIMEOUT := 2.0
 const _SETTLE_STEP := 0.15
 const _STABLE_SCANS := 3
@@ -71,26 +71,38 @@ func _ready() -> void:
 
 func _wait_for_markers(started_at: int) -> Array[String]:
 	var markers: Array[String] = []
-	var previous_count := -1
-	var stable_scans := 0
-	var elapsed := 0.0
 
-	while elapsed < _SETTLE_TIMEOUT:
-		markers = _get_markers(started_at)
+	return await _wait_for_markers_scan(started_at, markers, -1, 0, 0.0)
 
-		if markers.size() == previous_count:
-			stable_scans += 1
-		else:
-			stable_scans = 0
-			previous_count = markers.size()
 
-		if stable_scans >= _STABLE_SCANS:
-			break
+func _wait_for_markers_scan(
+	started_at: int,
+	markers: Array[String],
+	previous_count: int,
+	stable_scans: int,
+	elapsed: float
+) -> Array[String]:
+	if elapsed >= _SETTLE_TIMEOUT:
+		return markers
 
-		await get_tree().create_timer(_SETTLE_STEP).timeout
-		elapsed += _SETTLE_STEP
+	markers = _get_markers(started_at)
+	if markers.size() == previous_count:
+		stable_scans += 1
+	else:
+		stable_scans = 0
+		previous_count = markers.size()
 
-	return markers
+	if stable_scans >= _STABLE_SCANS:
+		return markers
+
+	await get_tree().create_timer(_SETTLE_STEP).timeout
+	return await _wait_for_markers_scan(
+		started_at,
+		markers,
+		previous_count,
+		stable_scans,
+		elapsed + _SETTLE_STEP
+	)
 
 
 func _get_markers(started_at: int) -> Array[String]:
@@ -133,7 +145,12 @@ func _tile(index: int, count: int) -> void:
 	_set_frame_rect(frame_rect, frame_margins)
 
 
-func _get_cell_rect(index: int, count: int, area: Rect2i, reference_client_size: Vector2i) -> Rect2i:
+func _get_cell_rect(
+	index: int,
+	count: int,
+	area: Rect2i,
+	reference_client_size: Vector2i
+) -> Rect2i:
 	var grid := _get_grid(count, area.size, _get_aspect(reference_client_size))
 	var cell := Vector2i(area.size.x / grid.x, area.size.y / grid.y)
 	var slot := Vector2i(index % grid.x, index / grid.x)
@@ -203,7 +220,9 @@ func _should_fit_to_cell(
 	frame_margins := Vector4i(0, 0, 0, 0)
 ) -> bool:
 	var stretch_mode := String(ProjectSettings.get_setting(_STRETCH_MODE_SETTING, "disabled"))
-	var stretch_aspect := String(ProjectSettings.get_setting(_STRETCH_ASPECT_SETTING, _STRETCH_ASPECT_KEEP))
+	var stretch_aspect := String(
+		ProjectSettings.get_setting(_STRETCH_ASPECT_SETTING, _STRETCH_ASPECT_KEEP)
+	)
 	return _should_fit_to_cell_for_stretch(
 		cell_rect,
 		reference_client_size,
@@ -341,12 +360,13 @@ func _set_grid_title(index: int, count: int) -> void:
 
 func _refresh_connection_title() -> void:
 	var peer_id := _get_multiplayer_peer_id()
-	var title := _grid_title
+	var target_title := _grid_title
 	if peer_id > 0 and not _grid_title.is_empty():
-		title = _format_peer_title(_grid_title, peer_id)
+		target_title = _format_peer_title(_grid_title, peer_id)
 
-	if not title.is_empty() and get_window().title != title:
-		get_window().title = title
+	var window := get_window()
+	if not target_title.is_empty() and window.title != target_title:
+		window.title = target_title
 
 
 func _get_multiplayer_peer_id() -> int:

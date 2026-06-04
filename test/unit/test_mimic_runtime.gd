@@ -8,7 +8,7 @@ const PORT_FORWARDING_ENABLED := "mimic_multiplayer/port_forwarding/enabled"
 const LOG_LEVEL := "mimic_multiplayer/debug/log_level"
 
 var _saved_settings := {}
-var _next_port := 19100
+var _next_port := 19_100
 
 
 func before_each() -> void:
@@ -106,7 +106,15 @@ func _next_test_port() -> int:
 
 
 func _save_settings() -> void:
-	for setting_name in [TRANSPORT, EDITOR_AUTO_CONNECT, ADDRESS, PORT, PORT_FORWARDING_ENABLED, LOG_LEVEL]:
+	var setting_names := [
+		TRANSPORT,
+		EDITOR_AUTO_CONNECT,
+		ADDRESS,
+		PORT,
+		PORT_FORWARDING_ENABLED,
+		LOG_LEVEL,
+	]
+	for setting_name in setting_names:
 		_saved_settings[setting_name] = {
 			"exists": ProjectSettings.has_setting(setting_name),
 			"value": ProjectSettings.get_setting(setting_name),

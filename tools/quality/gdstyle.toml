@@ -23,6 +23,8 @@ exclude = [
 	"tools",
 ]
 
+# Mimic's custom policy enforces direct print bans with a MimicLog exception.
+# gdstyle's generic no-debug-print rule cannot express that exception.
 [rules]
 "syntax/lex-error" = "error"
 "naming/file-name-snake-case" = "error"
@@ -38,8 +40,7 @@ exclude = [
 "quality/await-in-loop" = "error"
 "quality/allocation-in-loop" = "error"
 "quality/process-get-node" = "error"
-"quality/no-debug-print" = "warn"
-"quality/type-hint" = "warn"
+"quality/type-hint" = "error"
 "quality/max-function-length" = "warn"
 "quality/max-file-length" = "warn"
 "quality/max-public-methods" = "warn"

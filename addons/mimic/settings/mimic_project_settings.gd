@@ -4,26 +4,6 @@ class_name MimicProjectSettings extends Object
 ## [br][br]
 ## Settings are registered by the editor plugin and read by the Mimic runtime.
 
-# These mirror Mimic and MimicLog public enum values used by ProjectSettings hints.
-enum _TransportType {
-	OFFLINE,
-	ENET,
-	WEBSOCKET,
-	WEBRTC,
-}
-enum _PortMappingProtocol {
-	TRANSPORT_DEFAULT,
-	TCP,
-	UDP,
-	TCP_AND_UDP,
-}
-enum _LogLevel {
-	ALL,
-	WARNING,
-	ERROR,
-	NONE,
-}
-
 const _TRANSPORT := "mimic_multiplayer/connection/transport"
 const _EDITOR_AUTO_CONNECT := "mimic_multiplayer/connection/editor_auto_connect"
 const _ADDRESS := "mimic_multiplayer/connection/address"
@@ -53,10 +33,12 @@ const _EDITOR_AUTO_CONNECT_HINT := "Disabled,Server Then Client,Client,Server"
 const _PORT_MAPPING_PROTOCOL_HINT := "Transport Default,TCP,UDP,TCP and UDP"
 const _LOG_LEVEL_HINT := "All,Warning,Error,None"
 
-const _DEFAULT_TRANSPORT := _TransportType.ENET
+# Mimic.TransportType.ENET.
+const _DEFAULT_TRANSPORT := 1
+# Mimic.EditorAutoConnectMode.DISABLED.
 const _DEFAULT_EDITOR_AUTO_CONNECT := 0
 const _DEFAULT_ADDRESS := "127.0.0.1"
-const _DEFAULT_PORT := 15490
+const _DEFAULT_PORT := 15_490
 const _DEFAULT_MAX_CLIENTS := 32
 const _DEFAULT_BIND_ADDRESS := "*"
 const _DEFAULT_ENET_CHANNEL_COUNT := 0
@@ -69,11 +51,13 @@ const _DEFAULT_WEBSOCKET_HANDSHAKE_TIMEOUT := 3.0
 const _DEFAULT_PORT_FORWARDING_ENABLED := false
 const _DEFAULT_PORT_MAPPING_DELETE_ON_STOP := true
 const _DEFAULT_PORT_MAPPING_QUERY_EXTERNAL_ADDRESS := true
-const _DEFAULT_PORT_MAPPING_PROTOCOL := _PortMappingProtocol.TRANSPORT_DEFAULT
+# Mimic.PortMappingProtocol.TRANSPORT_DEFAULT.
+const _DEFAULT_PORT_MAPPING_PROTOCOL := 0
 const _DEFAULT_PORT_MAPPING_DURATION := 7200
 const _DEFAULT_UPNP_DISCOVER_TIMEOUT_MS := 2000
 const _DEFAULT_UPNP_DISCOVER_TTL := 2
-const _DEFAULT_LOG_LEVEL := _LogLevel.WARNING
+# MimicLog.Level.WARNING.
+const _DEFAULT_LOG_LEVEL := 1
 
 const _SETTINGS := [
 	{
@@ -229,7 +213,8 @@ static var transport: int:
 	get:
 		return _get_int(_TRANSPORT, _DEFAULT_TRANSPORT)
 
-## Editor-only connection startup action run by the Mimic autoload. See [enum Mimic.EditorAutoConnectMode].
+## Editor-only connection startup action run by the Mimic autoload.
+## See [enum Mimic.EditorAutoConnectMode].
 static var editor_auto_connect: int:
 	get:
 		return _get_int(_EDITOR_AUTO_CONNECT, _DEFAULT_EDITOR_AUTO_CONNECT)

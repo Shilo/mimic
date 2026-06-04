@@ -63,7 +63,11 @@ func test_forced_warning_formats_message_with_source_tag_when_logs_disabled() ->
 
 	_call_forced_warning()
 
-	_assert_captured_line(MimicLog.Level.WARNING, "[test_mimic_log._call_forced_warning]", "setup warning")
+	_assert_captured_line(
+		MimicLog.Level.WARNING,
+		"[test_mimic_log._call_forced_warning]",
+		"setup warning"
+	)
 
 
 func test_forced_error_formats_message_with_source_tag_when_logs_disabled() -> void:
@@ -71,11 +75,18 @@ func test_forced_error_formats_message_with_source_tag_when_logs_disabled() -> v
 
 	_call_forced_error()
 
-	_assert_captured_line(MimicLog.Level.ERROR, "[test_mimic_log._call_forced_error]", "probe failure")
+	_assert_captured_line(
+		MimicLog.Level.ERROR,
+		"[test_mimic_log._call_forced_error]",
+		"probe failure"
+	)
 
 
 func test_format_caller_name_uses_source_and_function() -> void:
-	assert_eq(MimicLog._format_caller_name("res://addons/mimic/mimic.gd", "start_server"), "mimic.start_server")
+	assert_eq(
+		MimicLog._format_caller_name("res://addons/mimic/mimic.gd", "start_server"),
+		"mimic.start_server"
+	)
 	assert_eq(MimicLog._format_caller_name("res://addons/mimic/mimic.gd", ""), "mimic")
 	assert_eq(MimicLog._format_caller_name("", "anonymous"), "anonymous")
 	assert_eq(MimicLog._format_caller_name("", ""), "")
@@ -89,7 +100,10 @@ func test_timestamp_is_wrapped_in_brackets() -> void:
 
 
 func test_dim_wraps_text_in_color_tag_for_editor_output() -> void:
-	assert_eq(MimicLog._dim("[01-02 03:04:05] [tag]"), "[color=#808080][01-02 03:04:05] [tag][/color]")
+	assert_eq(
+		MimicLog._dim("[01-02 03:04:05] [tag]"),
+		"[color=#808080][01-02 03:04:05] [tag][/color]"
+	)
 
 
 func test_message_is_not_safe_for_print_rich_when_it_contains_opening_bracket() -> void:
@@ -114,7 +128,10 @@ func test_editor_line_stays_plain_when_message_contains_opening_bracket() -> voi
 
 
 func test_format_source_tag_uses_peer_id_prefix_when_available() -> void:
-	assert_eq(MimicLog._format_source_tag("mimic._on_connected_to_server", 2), "[2 mimic._on_connected_to_server]")
+	assert_eq(
+		MimicLog._format_source_tag("mimic._on_connected_to_server", 2),
+		"[2 mimic._on_connected_to_server]"
+	)
 	assert_eq(MimicLog._format_source_tag("mimic._start_server", 0), "[mimic._start_server]")
 	assert_eq(MimicLog._format_source_tag("", 2), "[2 Mimic]")
 
@@ -150,7 +167,11 @@ func _capture_output(level: MimicLog.Level, message: String) -> void:
 	})
 
 
-func _assert_captured_line(level: MimicLog.Level, source_tag: String, expected_message: String) -> void:
+func _assert_captured_line(
+	level: MimicLog.Level,
+	source_tag: String,
+	expected_message: String
+) -> void:
 	assert_eq(_captured_lines.size(), 1)
 	if _captured_lines.is_empty():
 		return

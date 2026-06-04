@@ -52,7 +52,7 @@ const SETTING_NAMES := [
 var _saved_settings := {}
 var _saved_multiplayer_poll := true
 var _custom_multiplayer_roots: Array[Node] = []
-var _next_port := 19200
+var _next_port := 19_200
 
 
 func before_each() -> void:
@@ -250,7 +250,7 @@ func test_websocket_url_builder_preserves_explicit_websocket_url() -> void:
 	ProjectSettings.set_setting(WEBSOCKET_PATH, "ignored")
 
 	assert_eq(
-		Mimic._get_websocket_url("ws://example.test:19000/custom", 19000),
+		Mimic._get_websocket_url("ws://example.test:19000/custom", 19_000),
 		"ws://example.test:19000/custom"
 	)
 

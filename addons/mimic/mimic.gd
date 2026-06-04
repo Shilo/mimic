@@ -166,7 +166,7 @@ func start_client(address_override: String = "", port_override: int = -1) -> Err
 		TransportType.OFFLINE, TransportType.WEBRTC:
 			return _fail_unavailable_transport(NetworkState.CLIENT_CONNECTING)
 		_:
-			return _fail_start(NetworkState.CLIENT_CONNECTING, ERR_UNAVAILABLE, "Unsupported transport.")
+			return _fail_unsupported_transport(NetworkState.CLIENT_CONNECTING)
 
 	if error != OK:
 		peer.close()
@@ -310,7 +310,7 @@ func _start_server(
 		TransportType.OFFLINE, TransportType.WEBRTC:
 			return _fail_unavailable_transport(NetworkState.SERVER_LISTENING)
 		_:
-			return _fail_start(NetworkState.SERVER_LISTENING, ERR_UNAVAILABLE, "Unsupported transport.")
+			return _fail_unsupported_transport(NetworkState.SERVER_LISTENING)
 
 	if error != OK:
 		peer.close()
@@ -328,7 +328,13 @@ func _start_server(
 
 
 func _start_editor_auto_connect() -> void:
-	if _is_editor_auto_connect_tooling_run() or not is_inside_tree() or not is_offline() or _has_active_peer():
+	if _is_editor_auto_connect_tooling_run():
+		return
+	if not is_inside_tree():
+		return
+	if not is_offline():
+		return
+	if _has_active_peer():
 		return
 
 	match MimicProjectSettings.editor_auto_connect:
@@ -351,7 +357,7 @@ func _is_editor_auto_connect_tooling_run() -> bool:
 func _validate_start(state: NetworkState, port: int) -> Error:
 	var transport := _get_transport_type()
 
-	if port < 1 or port > 65535:
+	if port < 1 or port > 65_535:
 		return _fail_start(state, ERR_PARAMETER_RANGE_ERROR, "Port must be between 1 and 65535.")
 
 	if transport == TransportType.ENET and OS.has_feature("web"):
@@ -435,7 +441,11 @@ func _fail_start(state: NetworkState, error: int, message: String) -> Error:
 func _fail_unavailable_transport(state: NetworkState) -> Error:
 	match _get_transport_type():
 		TransportType.OFFLINE:
-			return _fail_start(state, ERR_UNAVAILABLE, "Offline transport cannot start network connections.")
+			return _fail_start(
+				state,
+				ERR_UNAVAILABLE,
+				"Offline transport cannot start network connections."
+			)
 		TransportType.WEBRTC:
 			return _fail_start(
 				state,
@@ -443,7 +453,11 @@ func _fail_unavailable_transport(state: NetworkState) -> Error:
 				"WebRTC transport needs signaling and is not implemented yet."
 			)
 		_:
-			return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
+			return _fail_unsupported_transport(state)
+
+
+func _fail_unsupported_transport(state: NetworkState) -> Error:
+	return _fail_start(state, ERR_UNAVAILABLE, "Unsupported transport.")
 
 
 func _get_server_or_client_preflight_error() -> Error:
@@ -453,7 +467,7 @@ func _get_server_or_client_preflight_error() -> Error:
 		return OK
 
 	var port := MimicProjectSettings.port
-	if port < 1 or port > 65535:
+	if port < 1 or port > 65_535:
 		return OK
 
 	var bind_address := _get_bind_address()
