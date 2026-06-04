@@ -775,10 +775,10 @@ function Invoke-MimicPolicyCheck {
 
 	Add-RegexPolicyIssues `
 		-Issues $issues `
-		-Rule "ai/no-direct-addon-print" `
-		-Message "Remove stray debug print calls; use MimicLog for addon runtime output." `
+		-Rule "ai/no-direct-gdscript-print" `
+		-Message "Remove stray debug print calls; use MimicLog for runtime output and assertions for tests." `
 		-Files $gdFiles `
-		-Pattern '\b(print|prints|printerr|print_rich|print_verbose|printt|printraw)\s*\(' `
+		-Pattern '\b(print|prints|printerr|print_debug|print_rich|print_verbose|printt|printraw)\s*\(' `
 		-Exclude @("addons/mimic/debug/mimic_log.gd")
 
 	Add-RawRegexPolicyIssues `
