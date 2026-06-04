@@ -56,6 +56,9 @@ The custom policy check targets mistakes that generic linters do not understand:
 - Production addon `preload("res://addons/mimic/...")` dependencies instead of `class_name` usage.
 - New `MultiplayerSpawner` logic before the project explicitly returns to spawn/despawn design.
 - Raw RPC layers inside the addon before there is a design request for that behavior.
+- Local declarations that shadow base class members, matching Godot's `SHADOWED_VARIABLE_BASE_CLASS` warning shape.
+- Inferred `var value := expression as Type` declarations when an explicit `var value: Type = expression` declaration is clearer.
+- Enum values detouring through `int`, especially enum-like function parameters typed as `int` instead of the relevant enum type.
 - Missing `##` documentation comments for addon-owned public classes, signals, enums, enum values, exported/public variables, constants, methods, and inner classes.
 - Runtime references to quality tooling from `project.godot`.
 

@@ -25,6 +25,61 @@ $projectPaths = @("addons/mimic", "examples", "test")
 $gdstyleBlockingRules = @(
 	"quality/type-hint"
 )
+$mimicReadableCastTypes = @(
+	"Array",
+	"Dictionary",
+	"Error",
+	"Level",
+	"Mimic.EditorAutoConnectMode",
+	"Mimic.NetworkState",
+	"Mimic.PortMappingProtocol",
+	"Mimic.TransportType",
+	"MimicLog.Level",
+	"PackedByteArray",
+	"PackedColorArray",
+	"PackedFloat32Array",
+	"PackedFloat64Array",
+	"PackedInt32Array",
+	"PackedInt64Array",
+	"PackedStringArray",
+	"PackedVector2Array",
+	"PackedVector3Array",
+	"PackedVector4Array",
+	"PortMappingProtocol",
+	"String",
+	"StringName",
+	"TransportType",
+	"UPNP.UPNPResult",
+	"Vector2",
+	"Vector2i",
+	"Vector3",
+	"Vector3i",
+	"Vector4",
+	"Vector4i"
+)
+$mimicEnumParameterNames = @(
+	"attempted_state",
+	"log_level",
+	"mapping_protocol",
+	"message_level",
+	"mode",
+	"network_state",
+	"port_mapping_protocol",
+	"previous_state",
+	"state",
+	"transport"
+)
+$mimicEnumDeclarationCastTypes = @(
+	"Level",
+	"Mimic.EditorAutoConnectMode",
+	"Mimic.NetworkState",
+	"Mimic.PortMappingProtocol",
+	"Mimic.TransportType",
+	"MimicLog.Level",
+	"NetworkState",
+	"PortMappingProtocol",
+	"TransportType"
+)
 
 New-Item -ItemType Directory -Force -Path $resolvedOutputDir | Out-Null
 
@@ -510,6 +565,573 @@ function Get-BraceDelta {
 	return ([regex]::Matches($Line, "\{").Count - [regex]::Matches($Line, "\}").Count)
 }
 
+function Get-ParenthesisDelta {
+	param([string] $Line)
+
+	return ([regex]::Matches($Line, "\(").Count - [regex]::Matches($Line, "\)").Count)
+}
+
+function New-StringSet {
+	$set = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+	return ,$set
+}
+
+function Add-StringSetValue {
+	param(
+		[System.Collections.Generic.HashSet[string]] $Set,
+		[string] $Value
+	)
+
+	if (-not [string]::IsNullOrWhiteSpace($Value)) {
+		$Set.Add($Value) | Out-Null
+	}
+}
+
+function Resolve-GodotDocClassesRoot {
+	$candidates = @()
+	if (-not [string]::IsNullOrWhiteSpace($env:GODOT_SOURCE_PATH)) {
+		$candidates += $env:GODOT_SOURCE_PATH
+	}
+	$candidates += "C:\Programming_Files\Godot\godot-master"
+
+	foreach ($candidate in $candidates) {
+		$docClassesRoot = Join-Path $candidate "doc/classes"
+		if (Test-Path -LiteralPath $docClassesRoot) {
+			return $docClassesRoot
+		}
+	}
+
+	return ""
+}
+
+function Add-FallbackNativeClassMembers {
+	param(
+		[string] $ClassName,
+		[System.Collections.Generic.HashSet[string]] $Members,
+		[System.Collections.Generic.HashSet[string]] $Visited
+	)
+
+	if ([string]::IsNullOrWhiteSpace($ClassName) -or $Visited.Contains($ClassName)) {
+		return
+	}
+	$Visited.Add($ClassName) | Out-Null
+
+	$fallbackParents = @{
+		CanvasItem = "Node"
+		CanvasLayer = "Node"
+		CharacterBody2D = "PhysicsBody2D"
+		CollisionObject2D = "Node2D"
+		EditorPlugin = "Node"
+		MultiplayerSynchronizer = "Node"
+		Node = "Object"
+		Node2D = "CanvasItem"
+		Object = ""
+		PhysicsBody2D = "CollisionObject2D"
+		RefCounted = "Object"
+	}
+	$fallbackMembers = @{
+		CanvasItem = @(
+			"hide",
+			"is_visible_in_tree",
+			"material",
+			"modulate",
+			"self_modulate",
+			"show",
+			"visibility_changed",
+			"visible",
+			"z_index"
+		)
+		CharacterBody2D = @("floor_velocity", "get_floor_normal", "move_and_slide", "velocity")
+		EditorPlugin = @("add_autoload_singleton", "get_editor_interface", "remove_autoload_singleton")
+		MultiplayerSynchronizer = @(
+			"delta_synchronized",
+			"public_visibility",
+			"replication_config",
+			"root_path",
+			"set_visibility_for",
+			"synchronized"
+		)
+		Node = @(
+			"add_child",
+			"get_node",
+			"get_parent",
+			"get_tree",
+			"name",
+			"owner",
+			"process_mode",
+			"process_priority",
+			"queue_free",
+			"ready",
+			"remove_child",
+			"tree_entered",
+			"tree_exited",
+			"tree_exiting"
+		)
+		Node2D = @("global_position", "global_rotation", "global_scale", "position", "rotation", "scale")
+		Object = @(
+			"connect",
+			"disconnect",
+			"emit_signal",
+			"free",
+			"get",
+			"get_class",
+			"get_instance_id",
+			"get_method_list",
+			"get_property_list",
+			"has_signal",
+			"is_class",
+			"notification",
+			"property_list_changed",
+			"script",
+			"script_changed",
+			"set"
+		)
+		RefCounted = @("get_reference_count", "init_ref", "reference", "unreference")
+	}
+
+	if ($fallbackMembers.ContainsKey($ClassName)) {
+		foreach ($member in $fallbackMembers[$ClassName]) {
+			Add-StringSetValue -Set $Members -Value $member
+		}
+	}
+
+	if ($fallbackParents.ContainsKey($ClassName)) {
+		Add-FallbackNativeClassMembers `
+			-ClassName $fallbackParents[$ClassName] `
+			-Members $Members `
+			-Visited $Visited
+	}
+}
+
+function Add-NativeClassMembersFromDocs {
+	param(
+		[string] $ClassName,
+		[System.Collections.Generic.HashSet[string]] $Members,
+		[System.Collections.Generic.HashSet[string]] $Visited,
+		[string] $DocClassesRoot
+	)
+
+	if ([string]::IsNullOrWhiteSpace($ClassName) -or $Visited.Contains($ClassName)) {
+		return
+	}
+	$Visited.Add($ClassName) | Out-Null
+
+	if ([string]::IsNullOrWhiteSpace($DocClassesRoot)) {
+		Add-FallbackNativeClassMembers -ClassName $ClassName -Members $Members -Visited (New-StringSet)
+		return
+	}
+
+	$classDocPath = Join-Path $DocClassesRoot "$ClassName.xml"
+	if (-not (Test-Path -LiteralPath $classDocPath)) {
+		Add-FallbackNativeClassMembers -ClassName $ClassName -Members $Members -Visited (New-StringSet)
+		return
+	}
+
+	[xml] $classDoc = Get-Content -Raw -LiteralPath $classDocPath
+	$classNode = $classDoc.class
+
+	foreach ($method in @($classNode.methods.method)) {
+		Add-StringSetValue -Set $Members -Value ([string] $method.name)
+	}
+	foreach ($member in @($classNode.members.member)) {
+		Add-StringSetValue -Set $Members -Value ([string] $member.name)
+	}
+	foreach ($signal in @($classNode.signals.signal)) {
+		Add-StringSetValue -Set $Members -Value ([string] $signal.name)
+	}
+	foreach ($constant in @($classNode.constants.constant)) {
+		Add-StringSetValue -Set $Members -Value ([string] $constant.name)
+		$enumName = [string] $constant.enum
+		if (-not [string]::IsNullOrWhiteSpace($enumName)) {
+			Add-StringSetValue -Set $Members -Value (($enumName -split "\.")[-1])
+		}
+	}
+
+	$parentClassName = [string] $classNode.inherits
+	if (-not [string]::IsNullOrWhiteSpace($parentClassName)) {
+		Add-NativeClassMembersFromDocs `
+			-ClassName $parentClassName `
+			-Members $Members `
+			-Visited $Visited `
+			-DocClassesRoot $DocClassesRoot
+	}
+}
+
+function Get-GdscriptSymbolLine {
+	param([string] $Line)
+
+	return ($Line.Trim() -replace '^(@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s+)+', '')
+}
+
+function Get-GdscriptClassMetadata {
+	param([string[]] $Files)
+
+	$metadataByFile = @{}
+	foreach ($file in $Files) {
+		$lines = Get-Content -LiteralPath $file
+		$className = ""
+		$baseName = ""
+		$members = New-StringSet
+
+		foreach ($line in $lines) {
+			if ($line -match '^\s') {
+				continue
+			}
+
+			$symbolLine = Get-GdscriptSymbolLine -Line $line
+			if ($symbolLine -match '^class_name\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+extends\s+([A-Za-z_][A-Za-z0-9_\.]*))?') {
+				$className = $Matches[1]
+				if (-not [string]::IsNullOrWhiteSpace($Matches[2])) {
+					$baseName = $Matches[2]
+				}
+				continue
+			}
+			if ($symbolLine -match '^extends\s+([A-Za-z_][A-Za-z0-9_\.]*)') {
+				$baseName = $Matches[1]
+				continue
+			}
+
+			if ($symbolLine -match '^signal\s+([A-Za-z_][A-Za-z0-9_]*)\b') {
+				Add-StringSetValue -Set $members -Value $Matches[1]
+				continue
+			}
+			if ($symbolLine -match '^enum\s+([A-Za-z_][A-Za-z0-9_]*)\b') {
+				Add-StringSetValue -Set $members -Value $Matches[1]
+				continue
+			}
+			if ($symbolLine -match '^(?:static\s+)?func\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(') {
+				Add-StringSetValue -Set $members -Value $Matches[1]
+				continue
+			}
+			if ($symbolLine -match '^(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b') {
+				Add-StringSetValue -Set $members -Value $Matches[1]
+				continue
+			}
+			if ($symbolLine -match '^const\s+([A-Za-z_][A-Za-z0-9_]*)\b') {
+				Add-StringSetValue -Set $members -Value $Matches[1]
+			}
+		}
+
+		$metadataByFile[$file] = [PSCustomObject] @{
+			class_name = $className
+			base_name = $baseName
+			members = $members
+		}
+	}
+
+	return $metadataByFile
+}
+
+function Add-GdscriptBaseClassMembers {
+	param(
+		[string] $BaseName,
+		[hashtable] $MetadataByClassName,
+		[System.Collections.Generic.HashSet[string]] $Members,
+		[System.Collections.Generic.HashSet[string]] $Visited,
+		[string] $DocClassesRoot
+	)
+
+	if ([string]::IsNullOrWhiteSpace($BaseName) -or $Visited.Contains($BaseName)) {
+		return
+	}
+	$Visited.Add($BaseName) | Out-Null
+
+	if ($MetadataByClassName.ContainsKey($BaseName)) {
+		$metadata = $MetadataByClassName[$BaseName]
+		foreach ($member in $metadata.members) {
+			Add-StringSetValue -Set $Members -Value $member
+		}
+		Add-GdscriptBaseClassMembers `
+			-BaseName $metadata.base_name `
+			-MetadataByClassName $MetadataByClassName `
+			-Members $Members `
+			-Visited $Visited `
+			-DocClassesRoot $DocClassesRoot
+		return
+	}
+
+	Add-NativeClassMembersFromDocs `
+		-ClassName $BaseName `
+		-Members $Members `
+		-Visited (New-StringSet) `
+		-DocClassesRoot $DocClassesRoot
+}
+
+function Get-GdscriptFunctionSignature {
+	param(
+		[string[]] $Lines,
+		[int] $StartIndex
+	)
+
+	$signature = $Lines[$StartIndex]
+	$depth = Get-ParenthesisDelta $signature
+	$index = $StartIndex
+	while ($depth -gt 0 -and $index + 1 -lt $Lines.Count) {
+		$index += 1
+		$signature += "`n$($Lines[$index])"
+		$depth += Get-ParenthesisDelta $Lines[$index]
+	}
+
+	return [PSCustomObject] @{
+		text = $signature
+		end_index = $index
+	}
+}
+
+function Get-GdscriptLocalDeclarations {
+	param([string[]] $Lines)
+
+	$declarations = [System.Collections.Generic.List[object]]::new()
+	for ($index = 0; $index -lt $Lines.Count; $index++) {
+		$line = $Lines[$index]
+		$codeLine = $line
+		$commentIndex = $codeLine.IndexOf("#", [System.StringComparison]::Ordinal)
+		if ($commentIndex -ge 0) {
+			$codeLine = $codeLine.Substring(0, $commentIndex)
+		}
+		$trimmedLine = $codeLine.Trim()
+		if ($trimmedLine -eq "") {
+			continue
+		}
+
+		if ($trimmedLine -match '^(?:static\s+)?func\s+[A-Za-z_][A-Za-z0-9_]*\s*\(') {
+			$signature = Get-GdscriptFunctionSignature -Lines $Lines -StartIndex $index
+			$openIndex = $signature.text.IndexOf("(", [System.StringComparison]::Ordinal)
+			$closeIndex = $signature.text.LastIndexOf(")", [System.StringComparison]::Ordinal)
+			if ($openIndex -ge 0 -and $closeIndex -gt $openIndex) {
+				$parameters = $signature.text.Substring($openIndex + 1, $closeIndex - $openIndex - 1)
+				$parameterPattern = [regex]::new('(?:^|,)\s*(?:\.\.\.)?(?<Name>[A-Za-z_][A-Za-z0-9_]*)\s*(?::=|:|=|,|$)')
+				foreach ($match in $parameterPattern.Matches($parameters)) {
+					$lineOffset = ($parameters.Substring(0, $match.Index) -split "`r?`n").Count - 1
+					$declarations.Add([PSCustomObject] @{
+						kind = "function parameter"
+						line = $index + $lineOffset + 1
+						name = [string] $match.Groups["Name"].Value
+					}) | Out-Null
+				}
+			}
+			$index = $signature.end_index
+			continue
+		}
+
+		if ($codeLine -match '^\s+(?:var|const)\s+([A-Za-z_][A-Za-z0-9_]*)\b') {
+			$declarations.Add([PSCustomObject] @{
+				kind = "local declaration"
+				line = $index + 1
+				name = $Matches[1]
+			}) | Out-Null
+			continue
+		}
+		if ($codeLine -match '^\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b') {
+			$declarations.Add([PSCustomObject] @{
+				kind = "for iterator"
+				line = $index + 1
+				name = $Matches[1]
+			}) | Out-Null
+		}
+	}
+
+	return $declarations
+}
+
+function Add-GdscriptShadowedBaseClassIssues {
+	param(
+		[System.Collections.Generic.List[object]] $Issues,
+		[string[]] $Files
+	)
+
+	$metadataByFile = Get-GdscriptClassMetadata -Files $Files
+	$metadataByClassName = @{}
+	foreach ($file in $metadataByFile.Keys) {
+		$metadata = $metadataByFile[$file]
+		if (-not [string]::IsNullOrWhiteSpace($metadata.class_name)) {
+			$metadataByClassName[$metadata.class_name] = $metadata
+		}
+	}
+	$docClassesRoot = Resolve-GodotDocClassesRoot
+
+	foreach ($file in $Files) {
+		$metadata = $metadataByFile[$file]
+		if ([string]::IsNullOrWhiteSpace($metadata.base_name)) {
+			continue
+		}
+
+		$baseMembers = New-StringSet
+		Add-GdscriptBaseClassMembers `
+			-BaseName $metadata.base_name `
+			-MetadataByClassName $metadataByClassName `
+			-Members $baseMembers `
+			-Visited (New-StringSet) `
+			-DocClassesRoot $docClassesRoot
+		if ($baseMembers.Count -eq 0) {
+			continue
+		}
+
+		$relativePath = Get-RelativePath $file
+		$lines = Get-Content -LiteralPath $file
+		foreach ($declaration in Get-GdscriptLocalDeclarations -Lines $lines) {
+			if (-not $baseMembers.Contains($declaration.name)) {
+				continue
+			}
+			Add-PolicyIssue `
+				-Issues $Issues `
+				-Rule "style/shadowed-variable-base-class" `
+				-Message "Rename '$($declaration.name)'; this $($declaration.kind) shadows a base class member and Godot reports that as SHADOWED_VARIABLE_BASE_CLASS." `
+				-Path $relativePath `
+				-Line $declaration.line
+		}
+	}
+}
+
+function Test-GdscriptReadableCastType {
+	param([string] $TypeName)
+
+	if ($mimicReadableCastTypes -contains $TypeName) {
+		return $true
+	}
+	$unqualifiedTypeName = ($TypeName -split "\.")[-1]
+	return $mimicReadableCastTypes -contains $unqualifiedTypeName
+}
+
+function Add-GdscriptInferredCastDeclarationIssues {
+	param(
+		[System.Collections.Generic.List[object]] $Issues,
+		[string[]] $Files
+	)
+
+	$pattern = [regex]::new('^\s*var\s+(?<Name>[A-Za-z_][A-Za-z0-9_]*)\s*:=\s*(?<Expression>.+?)\s+as\s+(?<Type>[A-Za-z_][A-Za-z0-9_\.]*)\s*(?:#.*)?$')
+	foreach ($file in $Files) {
+		$relativePath = Get-RelativePath $file
+		$lines = Get-Content -LiteralPath $file
+		for ($index = 0; $index -lt $lines.Count; $index++) {
+			$line = $lines[$index]
+			if ($line.TrimStart().StartsWith("#")) {
+				continue
+			}
+			$match = $pattern.Match($line)
+			if (-not $match.Success) {
+				continue
+			}
+
+			$typeName = [string] $match.Groups["Type"].Value
+			if (-not (Test-GdscriptReadableCastType -TypeName $typeName)) {
+				continue
+			}
+
+			Add-PolicyIssue `
+				-Issues $Issues `
+				-Rule "style/no-inferred-as-declaration" `
+				-Message "Prefer 'var $($match.Groups["Name"].Value): $typeName = ...' over inferring a declaration through 'as $typeName'." `
+				-Path $relativePath `
+				-Line ($index + 1)
+		}
+	}
+}
+
+function Test-GdscriptEnumDeclarationCastType {
+	param([string] $TypeName)
+
+	if ($mimicEnumDeclarationCastTypes -contains $TypeName) {
+		return $true
+	}
+	$unqualifiedTypeName = ($TypeName -split "\.")[-1]
+	return $mimicEnumDeclarationCastTypes -contains $unqualifiedTypeName
+}
+
+function Add-GdscriptRedundantEnumCastDeclarationIssues {
+	param(
+		[System.Collections.Generic.List[object]] $Issues,
+		[string[]] $Files
+	)
+
+	$pattern = [regex]::new('^\s*var\s+(?<Name>[A-Za-z_][A-Za-z0-9_]*)\s*:\s*(?<DeclaredType>[A-Za-z_][A-Za-z0-9_\.]*)\s*=\s*(?<Expression>.+?)\s+as\s+(?<CastType>[A-Za-z_][A-Za-z0-9_\.]*)\s*(?:#.*)?$')
+	foreach ($file in $Files) {
+		$relativePath = Get-RelativePath $file
+		$lines = Get-Content -LiteralPath $file
+		for ($index = 0; $index -lt $lines.Count; $index++) {
+			$line = $lines[$index]
+			if ($line.TrimStart().StartsWith("#")) {
+				continue
+			}
+			$match = $pattern.Match($line)
+			if (-not $match.Success) {
+				continue
+			}
+
+			$declaredType = [string] $match.Groups["DeclaredType"].Value
+			$castType = [string] $match.Groups["CastType"].Value
+			if ($declaredType -ne $castType) {
+				continue
+			}
+			if (-not (Test-GdscriptEnumDeclarationCastType -TypeName $declaredType)) {
+				continue
+			}
+
+			Add-PolicyIssue `
+				-Issues $Issues `
+				-Rule "style/no-redundant-enum-as-declaration" `
+				-Message "Drop redundant 'as $castType'; the '$($match.Groups["Name"].Value)' declaration already has that enum type." `
+				-Path $relativePath `
+				-Line ($index + 1)
+		}
+	}
+}
+
+function Add-GdscriptEnumIntIssues {
+	param(
+		[System.Collections.Generic.List[object]] $Issues,
+		[string[]] $Files
+	)
+
+	$enumValueCastPatterns = @(
+		'\b(?:Mimic\.)?(?:EditorAutoConnectMode|NetworkState|PortMappingProtocol|TransportType)\.[A-Z][A-Z0-9_]*\s+as\s+int\b',
+		'\b(?:MimicLog\.)?Level\.[A-Z][A-Z0-9_]*\s+as\s+int\b',
+		'\bint\s*\(\s*(?:Mimic\.)?(?:EditorAutoConnectMode|NetworkState|PortMappingProtocol|TransportType)\.[A-Z][A-Z0-9_]*\s*\)',
+		'\bint\s*\(\s*(?:MimicLog\.)?Level\.[A-Z][A-Z0-9_]*\s*\)'
+	)
+	$enumParameterPattern = [regex]::new(
+		'\b(?<Name>' + (($mimicEnumParameterNames | ForEach-Object { [regex]::Escape($_) }) -join "|") + ')\s*:\s*int\b'
+	)
+
+	foreach ($file in $Files) {
+		$relativePath = Get-RelativePath $file
+		$lines = Get-Content -LiteralPath $file
+		for ($index = 0; $index -lt $lines.Count; $index++) {
+			$line = $lines[$index]
+			if ($line.TrimStart().StartsWith("#")) {
+				continue
+			}
+
+			foreach ($pattern in $enumValueCastPatterns) {
+				if ($line -match $pattern) {
+					Add-PolicyIssue `
+						-Issues $Issues `
+						-Rule "style/no-enum-to-int-cast" `
+						-Message "Keep enum values typed as enums instead of casting them to int." `
+						-Path $relativePath `
+						-Line ($index + 1)
+					break
+				}
+			}
+
+			$trimmedLine = $line.Trim()
+			if ($trimmedLine -match '^(?:static\s+)?func\s+[A-Za-z_][A-Za-z0-9_]*\s*\(') {
+				$signature = Get-GdscriptFunctionSignature -Lines $lines -StartIndex $index
+				foreach ($parameterMatch in $enumParameterPattern.Matches($signature.text)) {
+					$lineOffset = ($signature.text.Substring(0, $parameterMatch.Index) -split "`r?`n").Count - 1
+					Add-PolicyIssue `
+						-Issues $Issues `
+						-Rule "style/no-enum-int-parameter" `
+						-Message "Use the relevant enum type for '$($parameterMatch.Groups["Name"].Value)' instead of typing the value as int." `
+						-Path $relativePath `
+						-Line ($index + $lineOffset + 1)
+				}
+				$index = $signature.end_index
+			}
+		}
+	}
+}
+
 function Add-GdscriptPublicDocumentationIssues {
 	param(
 		[System.Collections.Generic.List[object]] $Issues,
@@ -774,6 +1396,10 @@ function Invoke-MimicPolicyCheck {
 		-Files $addonFiles `
 		-Pattern '(^|\s)@rpc\b|\brpc(_id)?\s*\('
 
+	Add-GdscriptShadowedBaseClassIssues -Issues $issues -Files $gdFiles
+	Add-GdscriptInferredCastDeclarationIssues -Issues $issues -Files $gdFiles
+	Add-GdscriptRedundantEnumCastDeclarationIssues -Issues $issues -Files $gdFiles
+	Add-GdscriptEnumIntIssues -Issues $issues -Files $gdFiles
 	Add-GdscriptPublicDocumentationIssues -Issues $issues -Files $addonFiles
 
 	Add-RawRegexPolicyIssues `
