@@ -596,9 +596,13 @@ function Resolve-GodotDocClassesRoot {
 	$candidates += "C:\Programming_Files\Godot\godot-master"
 
 	foreach ($candidate in $candidates) {
-		$docClassesRoot = Join-Path $candidate "doc/classes"
-		if (Test-Path -LiteralPath $docClassesRoot) {
-			return $docClassesRoot
+		try {
+			$docClassesRoot = [System.IO.Path]::Combine($candidate, "doc/classes")
+			if (Test-Path -LiteralPath $docClassesRoot) {
+				return $docClassesRoot
+			}
+		} catch {
+			continue
 		}
 	}
 
