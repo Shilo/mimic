@@ -173,7 +173,7 @@ func _get_grid(count: int, screen_size: Vector2i, target_aspect := 16.0 / 9.0) -
 	for rows in range(1, count + 1):
 		var columns := ceili(float(count) / rows)
 		var cell := Vector2(float(screen_size.x) / columns, float(screen_size.y) / rows)
-		var score := abs(cell.aspect() - target_aspect)
+		var score: float = abs(cell.aspect() - target_aspect)
 
 		if score < best_score:
 			best_score = score
